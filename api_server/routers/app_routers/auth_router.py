@@ -214,8 +214,8 @@ async def login_user(
             "email": auth_result.get("email"),
             "first_name": auth_result.get("first_name"),
             "last_name": auth_result.get("last_name"),
-            "iss": "gluttex-api",
-            "aud": ["gluttex-web", "gluttex-mobile"],
+            "iss": "verdelia-api",
+            "aud": ["verdelia-web", "verdelia-mobile"],
             "access_token": auth_result.get("access_token"),
             "refresh_token": auth_result.get("refresh_token"),
         }

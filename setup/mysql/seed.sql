@@ -6,7 +6,7 @@
 
 
 -- Insert product_category (referenced by product)
-INSERT INTO `gluttex`.`product_category` (`product_category_icon`) VALUES
+INSERT INTO `verdelia`.`product_category` (`product_category_icon`) VALUES
 ('Baked Goods'),
 ('Spreads'),
 ('Cereals'),
@@ -19,7 +19,7 @@ INSERT INTO `gluttex`.`product_category` (`product_category_icon`) VALUES
 ('Canned & Packaged Goods ');
 
 -- Insert product_provider_type (referenced by product_provider)
-INSERT INTO `gluttex`.`product_provider_type` (`product_provider_type_icon_url`) VALUES
+INSERT INTO `verdelia`.`product_provider_type` (`product_provider_type_icon_url`) VALUES
 ('Restaurant'),
 ('Bakery'),
 ('Factory'),
@@ -28,7 +28,7 @@ INSERT INTO `gluttex`.`product_provider_type` (`product_provider_type_icon_url`)
 ("Distributor");
 
 -- Insert recipe_category (just for completeness)
-INSERT INTO `gluttex`.`recipe_category` (`recipe_category_icon_url`) VALUES
+INSERT INTO `verdelia`.`recipe_category` (`recipe_category_icon_url`) VALUES
 ("Appetizers & Snacks"),
 ("Soups & Stews"),
 ("Salads"),
@@ -51,7 +51,7 @@ INSERT INTO `gluttex`.`recipe_category` (`recipe_category_icon_url`) VALUES
 ("Grilling & BBQ");
 
 -- Insert provider_details first (before product_provider)
-INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+INSERT INTO `verdelia`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Magasin habibou sans gluten', 'Facebook: https://www.facebook.com/profile.php?id=100063549909208'),
 ('Uno', 'Facebook: https://www.facebook.com/UNO.Hypermarche/, Instagram: https://www.instagram.com/uno_hypermarche/'),
 ('Superette université', 'N/A'),
@@ -62,7 +62,7 @@ select * from provider_details;
 
 
 -- Insert product_provider with valid type IDs (1-6)
-INSERT INTO `gluttex`.`product_provider` (`product_provider_details_id`, `product_provider_type_id`) VALUES
+INSERT INTO `verdelia`.`product_provider` (`product_provider_details_id`, `product_provider_type_id`) VALUES
 (1, 2),  -- Provider 1: Magasin habibou (Bakery)
 (2, 4),  -- Provider 2: Uno (Supermarket)
 (3, 4),  -- Provider 3: Superette université (Supermarket)
@@ -72,19 +72,19 @@ INSERT INTO `gluttex`.`product_provider` (`product_provider_details_id`, `produc
 (2, 4);  -- Provider 7: Another entry for Uno
 
 -- Insert person_details first (before person)
-INSERT INTO `gluttex`.`person_details` 
+INSERT INTO `verdelia`.`person_details` 
     (person_first_name, person_last_name, person_birth_date, person_gender, person_country_code) 
 VALUES 
     ('Some', 'One', '2003-01-01', 'Male', '213');
 
 -- Insert person with valid blood_type_id (1-8)
-INSERT INTO `gluttex`.`person` 
+INSERT INTO `verdelia`.`person` 
     (person_details_id, person_blood_type) 
 VALUES 
     (1, "B+"); 
 
 -- Insert app_user with valid app_user_type_id (1-4) and person_id (1)
-INSERT INTO `gluttex`.`app_user` 
+INSERT INTO `verdelia`.`app_user` 
     (app_user_name, app_user_password, app_user_person_id, app_user_type) 
 VALUES 
     ('SomeOne', 'password', 1, "ADMIN"),
@@ -93,7 +93,7 @@ VALUES
 
 -- Insert products with valid product_provider_id (1-7) and product_category_id (1-10)
 -- Note: product_owner should reference valid app_user.id_app_user
-INSERT INTO `gluttex`.`product` 
+INSERT INTO `verdelia`.`product` 
 (`product_owner`,`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
 -- Products for provider 2
 (2,'Grano''Sac Raisin Cacahuetes', 'Grano''Sac','Delicious gluten-free baked goods made with raisins and peanuts.', 2, 1, '1234567890123', 5.99, 100, CURDATE(), CURDATE()),
@@ -213,7 +213,7 @@ INSERT INTO `product` (
 
 
 -- Insert provided_service_category first
-INSERT INTO `gluttex`.`provided_service_category` (
+INSERT INTO `verdelia`.`provided_service_category` (
   `provided_service_category_name`,
   `provided_service_category_icon_url`,
   `provided_service_category_avg_duration`,
@@ -243,7 +243,7 @@ INSERT INTO `gluttex`.`provided_service_category` (
 
 -- Insert provided_services with valid category_id (1-21) and product_provider_id (2-7)
 -- Note: provided_service_product_provider_id should reference existing product_provider.id_product_provider
-INSERT INTO `gluttex`.`provided_service` (
+INSERT INTO `verdelia`.`provided_service` (
   `provided_service_name`,
   `provided_service_description`,
   `provided_service_category_id`,
@@ -284,7 +284,7 @@ INSERT INTO `gluttex`.`provided_service` (
 ('Pap Smear Test', 'Cervical cancer screening test', 6, 7, 60.0000, 45.0000, 30.00, 1, '{"recommended_age": "21-65"}');
 
 -- Insert service_staff_requirement with valid service_id (1-17)
-INSERT INTO `gluttex`.`service_staff_requirement` (
+INSERT INTO `verdelia`.`service_staff_requirement` (
   `service_staff_requirement_service_id`,
   `service_staff_requirement_min_count`,
   `service_staff_requirement_max_count`,
@@ -362,7 +362,7 @@ INSERT INTO `gluttex`.`service_staff_requirement` (
 (17, 1, 2, 35.0000, 1.50, 'Sample processing');
 
 -- Insert service_resource_requirement with valid service_id (1-17) and product_ref (1-7)
-INSERT INTO `gluttex`.`service_resource_requirement` (
+INSERT INTO `verdelia`.`service_resource_requirement` (
   `service_resource_requirement_service_id`,
   `service_resource_requirement_name`,
   `service_resource_requirement_type`,
@@ -455,7 +455,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 (17, 'Microscope Slides', 'Lab Supply', 5, 1.0000, 1, 'Examination slides', 1);
 
 -- -- Insert carts with valid references
--- INSERT INTO `gluttex`.`cart` (
+-- INSERT INTO `verdelia`.`cart` (
 --   `cart_product_provider_id`,
 --   `cart_selling_user`,
 --   `cart_status`,
@@ -514,7 +514,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 -- (7, 1, 'pending', 300.0000, 'Dental crown procedure - mold taken', 1);
 
 -- -- More varied cart examples
--- INSERT INTO `gluttex`.`cart` (
+-- INSERT INTO `verdelia`.`cart` (
 --   `cart_product_provider_id`,
 --   `cart_selling_user`,
 --   `cart_status`,
@@ -534,7 +534,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 -- (5, 1, 'open', 0.0000, 'Flu shot reminder cart', 1);
 
 -- -- Insert ordered_services with valid cart_id (1-42) and service_id (1-17)
--- INSERT INTO `gluttex`.`ordered_service` (
+-- INSERT INTO `verdelia`.`ordered_service` (
 --   `ordered_service_cart_id`,
 --   `ordered_service_service_id`,
 --   `ordered_service_quantity`,
@@ -629,7 +629,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 -- (42, 10, 1, 25.0000, 25.0000, 'Plus flu vaccination');
 
 -- -- Insert ordered_items with valid product_id (1-7) and cart_ref (1-42)
--- INSERT INTO `gluttex`.`ordered_item` (
+-- INSERT INTO `verdelia`.`ordered_item` (
 --   `ordered_product_id`,
 --   `ordered_quantity`,
 --   `applied_vat`,
@@ -745,7 +745,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 -- (3, 1, 8.0, 25.0000, 15.0, 42);   -- Software
 
 -- -- Insert more varied orders
--- INSERT INTO `gluttex`.`ordered_item` (
+-- INSERT INTO `verdelia`.`ordered_item` (
 --   `ordered_product_id`,
 --   `ordered_quantity`,
 --   `applied_vat`,
@@ -781,7 +781,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 -- (3, 3, 18.0, 12.0000, 30.0, 12);
 
 -- -- Insert invoices with valid cart_id (1-42)
--- -- INSERT INTO `gluttex`.`invoice` (
+-- -- INSERT INTO `verdelia`.`invoice` (
 -- --   `invoice_cart_id`,
 -- --   `invoice_number`,
 -- --   `invoice_total_amount`,
@@ -841,7 +841,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 -- -- (42, 'INV-2024-042', 130.0000, 'canceled', '2024-02-26', '2024-03-26', 'Dental + flu');
 
 -- -- -- Insert more invoices
--- -- INSERT INTO `gluttex`.`invoice` (
+-- -- INSERT INTO `verdelia`.`invoice` (
 -- --   `invoice_cart_id`,
 -- --   `invoice_number`,
 -- --   `invoice_total_amount`,
@@ -864,7 +864,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 -- -- (25, 'INV-2024-055', 100.0000, 'unpaid', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 'Current dental work');
 
 -- -- -- Insert payments with valid invoice_id (1-60)
--- -- INSERT INTO `gluttex`.`payment` (
+-- -- INSERT INTO `verdelia`.`payment` (
 -- --   `payment_invoice_id`,
 -- --   `payment_amount`,
 -- --   `payment_method`,
@@ -878,7 +878,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 -- -- (3, 220.7500, 'card', 'completed', 'TXN-56789012', 'Debit card payment');
 
 
--- -- INSERT INTO `gluttex`.`cart` (
+-- -- INSERT INTO `verdelia`.`cart` (
 -- --   `cart_product_provider_id`,
 -- --   `cart_selling_user`,
 -- --   `cart_status`,
@@ -937,7 +937,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 -- (7, 2, 'pending', 300.0000, 'Dental crown procedure - mold taken', 2);
 
 -- -- More varied cart examples
--- INSERT INTO `gluttex`.`cart` (
+-- INSERT INTO `verdelia`.`cart` (
 --   `cart_product_provider_id`,
 --   `cart_selling_user`,
 --   `cart_status`,
@@ -957,7 +957,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 -- (5, 2, 'open', 0.0000, 'Flu shot reminder cart', 2);
 
 -- Insert dummy data for ordered_service table
--- INSERT INTO `gluttex`.`ordered_service` (
+-- INSERT INTO `verdelia`.`ordered_service` (
 --   `ordered_service_cart_id`,
 --   `ordered_service_service_id`,
 --   `ordered_service_quantity`,
@@ -1093,7 +1093,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 
 
 -- Insert dummy data for ordered_item table
--- INSERT INTO `gluttex`.`ordered_item` (
+-- INSERT INTO `verdelia`.`ordered_item` (
 --   `ordered_product_id`,
 --   `ordered_quantity`,
 --   `applied_vat`,
@@ -1222,7 +1222,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 
 
 -- More varied orders with different scenarios
--- INSERT INTO `gluttex`.`ordered_item` (
+-- INSERT INTO `verdelia`.`ordered_item` (
 --   `ordered_product_id`,
 --   `ordered_quantity`,
 --   `applied_vat`,
@@ -1263,7 +1263,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 
 
 -- -- Insert dummy data for ordered_item table referencing placed_order (IDs 38-74)
--- INSERT INTO `gluttex`.`ordered_item` (
+-- INSERT INTO `verdelia`.`ordered_item` (
 --   `ordered_product_id`,
 --   `ordered_quantity`,
 --   `applied_vat`,
@@ -1420,7 +1420,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 
 
 -- Insert dummy data for invoice table
--- INSERT INTO `gluttex`.`invoice` (
+-- INSERT INTO `verdelia`.`invoice` (
 --   `invoice_cart_id`,
 --   `invoice_number`,
 --   `invoice_total_amount`,
@@ -1557,7 +1557,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 
 
 -- More invoices for comprehensive coverage
--- INSERT INTO `gluttex`.`invoice` (
+-- INSERT INTO `verdelia`.`invoice` (
 --   `invoice_cart_id`,
 --   `invoice_number`,
 --   `invoice_total_amount`,
@@ -1603,7 +1603,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 -- (16, 'INV-2024-060', 1440.0000, 'unpaid', '2024-07-01', '2024-07-31', 'Q3 Corporate executive health package - pending');
 
 -- First, create payments (some with invoice references)
--- INSERT INTO `gluttex`.`payment` (
+-- INSERT INTO `verdelia`.`payment` (
 --   `payment_invoice_id`,
 --   `payment_amount`,
 --   `payment_method`,
@@ -1654,7 +1654,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 -- (NULL, 200.0000, 'bank', 'completed', 'BANK-67890123', 'Direct bank transfer for services');
 
 -- -- Now create receipts (some with payment references, some without)
--- INSERT INTO `gluttex`.`receipt` (
+-- INSERT INTO `verdelia`.`receipt` (
 --   `receipt_payment_id`,
 --   `receipt_number`,
 --   `receipt_amount`,
@@ -1698,7 +1698,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 
 
 -- -- Now create deposits (some with receipts, some without)
--- INSERT INTO `gluttex`.`deposit` (
+-- INSERT INTO `verdelia`.`deposit` (
 --   `deposit_cart_id`,
 --   `deposit_invoice_id`,
 --   `deposit_amount`,
@@ -1773,7 +1773,7 @@ values
 (4, 'admin', '77b23d5396b51608e7189cf8895bd283c88639db5ed6211fa8bfbaecf477409f',  "admin",NULL , NULL , '2025-12-10 08:01:27', '2025-12-10 08:01:27', '2025-12-10 08:01:27' );
 
 
-INSERT INTO `gluttex`.`management_rule` (
+INSERT INTO `verdelia`.`management_rule` (
   `rule_ref_org`,
   `rule_ref_provider`,
   `rule_ref_user`,
@@ -1803,7 +1803,7 @@ INSERT INTO `gluttex`.`management_rule` (
 (NULL, 7, 4, 63, 'OBSOLETE', DATE_ADD(NOW(), INTERVAL 7 DAY));
 
 -- Optional: Insert more variations with different statuses for testing
-INSERT INTO `gluttex`.`management_rule` (
+INSERT INTO `verdelia`.`management_rule` (
   `rule_ref_org`,
   `rule_ref_provider`,
   `rule_ref_user`,
@@ -1828,85 +1828,85 @@ INSERT INTO `gluttex`.`management_rule` (
 
 
 
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Wheat'), 
 ('Barley'), 
 ('Rye'), 
 ('Oats');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Corn'), 
 ('Rice'), 
 ('Soy'), 
 ('Milk');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Egg'), 
 ('Peanuts'), 
 ('Tree Nuts'), 
 ('Fish');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Shellfish'), 
 ('Lentils'), 
 ('Chickpeas'), 
 ('Buckwheat');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Almond'), 
 ('Coconut'), 
 ('Sunflower Seeds');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Pumpkin Seeds'), 
 ('Sesame Seeds'), 
 ('Potato'), 
 ('Sweet Potato');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Gelatin'), 
 ('Lupin'), 
 ('Mustard');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Fennel'), 
 ('Cumin');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Ginger');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Garlic');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Onion');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Leek'), 
 ('Shallot'), 
 ('Scallion'), 
 ('Chive'), 
 ('Parsley');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Cilantro'), 
 ('Basil'), 
 ('Oregano'), 
 ('Thyme');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Rosemary'), 
 ('Sage'), 
 ('Mint'), 
 ('Lemongrass');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Lavender'), 
 ('Paprika'), 
 ('Chili Pepper'), 
 ('Black Pepper');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('White Pepper'), 
 ('Green Pepper'), 
 ('Red Pepper'), 
 ('Cinnamon'), 
 ('Allspice');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Butter'), 
 ('Margarine'), 
 ('Vegetable Oil'), 
 ('Baking Powder');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Baking Soda'), 
 ('Cornstarch'), 
 ('All-Purpose Flour');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES  
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES  
 ('Pastry Flour'), 
 ('Self-Rising Flour'); 
 
@@ -2030,7 +2030,7 @@ INSERT INTO provider_organisation (
     provider_organisation_name, 
     provider_organisation_desc
 ) VALUES
-('Gluttex International', 'Leading provider of gluten-free products and specialty food items across North Africa. Committed to quality and innovation in celiac-friendly nutrition.'),
+('Verdelia International', 'Leading provider of gluten-free products and specialty food items across North Africa. Committed to quality and innovation in celiac-friendly nutrition.'),
 ('MediFarm Algérie', 'Agricultural cooperative specializing in organic grains, legumes, and traditional Algerian produce. Focus on sustainable farming and fair trade practices.'),
 ('Sahara Fresh Distribution', 'Major distributor of fresh produce, dairy products, and packaged goods serving retail chains across Algeria. Fast delivery and competitive pricing.'),
 ('El Djazair Food Industries', 'Food manufacturing company producing traditional Algerian pastries, couscous, and preserved goods. Family-owned since 1985.'),
@@ -2041,15 +2041,15 @@ INSERT INTO provider_organisation (
 INSERT INTO notification (notification_code, notification_params, notification_user_ref, notification_created_at, notification_read_at) VALUES
 
 -- Organization Invitations (referencing the 5 organizations)
-('ROLE_INVITATION', '{"entity_id": 1, "entity_name": "Gluttex International", "entity_type": "organization", "role_name": "Store Manager", "invited_by": "Admin User", "invitation_date": "2024-06-01T10:30:00", "management_rule_id": 101}', 4, '2024-06-01 10:30:00', NULL),
+('ROLE_INVITATION', '{"entity_id": 1, "entity_name": "Verdelia International", "entity_type": "organization", "role_name": "Store Manager", "invited_by": "Admin User", "invitation_date": "2024-06-01T10:30:00", "management_rule_id": 101}', 4, '2024-06-01 10:30:00', NULL),
 ('ROLE_INVITATION', '{"entity_id": 2, "entity_name": "MediFarm Algérie", "entity_type": "organization", "role_name": "Product Manager", "invited_by": "Sarah Johnson", "invitation_date": "2024-06-05T14:15:00", "management_rule_id": 102}', 4, '2024-06-05 14:15:00', '2024-06-06 09:20:00'),
 ('ROLE_INVITATION', '{"entity_id": 3, "entity_name": "Sahara Fresh Distribution", "entity_type": "organization", "role_name": "Inventory Manager", "invited_by": "Michael Brown", "invitation_date": "2024-06-10T09:45:00", "management_rule_id": 103}', 4, '2024-06-10 09:45:00', NULL),
 ('ROLE_INVITATION', '{"entity_id": 4, "entity_name": "El Djazair Food Industries", "entity_type": "organization", "role_name": "Quality Control Manager", "invited_by": "Ahmed Benali", "invitation_date": "2024-06-12T11:00:00", "management_rule_id": 104}', 4, '2024-06-12 11:00:00', NULL),
 ('ROLE_INVITATION', '{"entity_id": 5, "entity_name": "Atlas Mountains Organic", "entity_type": "organization", "role_name": "Procurement Specialist", "invited_by": "Fatima Zohra", "invitation_date": "2024-06-15T13:30:00", "management_rule_id": 105}', 4, '2024-06-15 13:30:00', NULL),
 
 -- Supplier Invitations (referencing 7 suppliers)
-('ROLE_INVITATION', '{"entity_id": 1, "entity_name": "Gluttex North Algeria", "entity_type": "supplier", "role_name": "Supplier Admin", "invited_by": "Admin User", "invitation_date": "2024-06-02T09:00:00", "management_rule_id": 201}', 4, '2024-06-02 09:00:00', '2024-06-02 10:30:00'),
-('ROLE_INVITATION', '{"entity_id": 2, "entity_name": "Gluttex South Region", "entity_type": "supplier", "role_name": "Regional Manager", "invited_by": "Admin User", "invitation_date": "2024-06-03T14:00:00", "management_rule_id": 202}', 4, '2024-06-03 14:00:00', NULL),
+('ROLE_INVITATION', '{"entity_id": 1, "entity_name": "Verdelia North Algeria", "entity_type": "supplier", "role_name": "Supplier Admin", "invited_by": "Admin User", "invitation_date": "2024-06-02T09:00:00", "management_rule_id": 201}', 4, '2024-06-02 09:00:00', '2024-06-02 10:30:00'),
+('ROLE_INVITATION', '{"entity_id": 2, "entity_name": "Verdelia South Region", "entity_type": "supplier", "role_name": "Regional Manager", "invited_by": "Admin User", "invitation_date": "2024-06-03T14:00:00", "management_rule_id": 202}', 4, '2024-06-03 14:00:00', NULL),
 ('ROLE_INVITATION', '{"entity_id": 3, "entity_name": "MediFarm Central", "entity_type": "supplier", "role_name": "Farm Coordinator", "invited_by": "Sarah Johnson", "invitation_date": "2024-06-07T10:00:00", "management_rule_id": 203}', 4, '2024-06-07 10:00:00', '2024-06-08 08:00:00'),
 ('ROLE_INVITATION', '{"entity_id": 4, "entity_name": "Sahara Fresh Algiers", "entity_type": "supplier", "role_name": "Logistics Manager", "invited_by": "Michael Brown", "invitation_date": "2024-06-09T15:30:00", "management_rule_id": 204}', 4, '2024-06-09 15:30:00', NULL),
 ('ROLE_INVITATION', '{"entity_id": 5, "entity_name": "El Djazair Traditional", "entity_type": "supplier", "role_name": "Production Supervisor", "invited_by": "Ahmed Benali", "invitation_date": "2024-06-11T11:00:00", "management_rule_id": 205}', 4, '2024-06-11 11:00:00', '2024-06-12 14:00:00'),

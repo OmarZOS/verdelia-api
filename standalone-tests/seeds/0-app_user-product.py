@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Gluttex API Test Runner - Comprehensive Data Generation
+Verdelia API Test Runner - Comprehensive Data Generation
 Run with: python test_runner.py
 
 Fixes over the previous revision:
@@ -1311,7 +1311,7 @@ class TestRunner:
     async def run(self, skip_users: bool = False, skip_login: bool = False,
                   context_file: str = "test_context.json"):
         print("\n" + "=" * 60)
-        print("🚀 GLUTTEX API TEST RUNNER - COMPREHENSIVE")
+        print("🚀 VERDELIA API TEST RUNNER - COMPREHENSIVE")
         print("=" * 60)
         print(f"📍 URL: {self.base_url}")
         print(f"🕐 Started: {datetime.now().strftime('%H:%M:%S')}")
@@ -1422,7 +1422,7 @@ class TestRunner:
 async def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Gluttex API Test Runner - Comprehensive")
+    parser = argparse.ArgumentParser(description="Verdelia API Test Runner - Comprehensive")
     parser.add_argument("--url", default="http://localhost:9000")
     parser.add_argument("--skip-users", action="store_true")
     parser.add_argument("--skip-login", action="store_true")

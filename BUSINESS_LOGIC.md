@@ -1,4 +1,4 @@
-# Gluttex API Business Logic
+# Verdelia API Business Logic
 
 This document describes the business behavior currently implemented in the API codebase. It is a code trace, not a product specification: where the implementation is incomplete, duplicated, or inconsistent, that is called out explicitly.
 
@@ -83,7 +83,7 @@ The verifier contains a fallback that decodes without signature validation if no
 
 ### OAuth
 
-`GET /login/{provider}` validates the provider through `OAuthConfigService`, creates an OAuth client, and redirects to the provider. `GET /auth/{provider}` handles the callback, obtains user information through `AuthService`, and redirects to a `gluttex://auth/callback` deep link containing encoded data or an error.
+`GET /login/{provider}` validates the provider through `OAuthConfigService`, creates an OAuth client, and redirects to the provider. `GET /auth/{provider}` handles the callback, obtains user information through `AuthService`, and redirects to a `verdelia://auth/callback` deep link containing encoded data or an error.
 
 Supported providers declared by `AuthService` are Google, Facebook, and Instagram. Provider configuration and actual callback behavior are delegated to the auth client/configuration services.
 

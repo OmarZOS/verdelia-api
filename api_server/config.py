@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     
     # API Settings
     API_VERSION: str = "1.0.0"
-    API_TITLE: str = "Gluttex API"
+    API_TITLE: str = "Verdelia API"
     API_DESCRIPTION: str = "API Documentation"
     
     # Server Settings

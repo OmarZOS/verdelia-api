@@ -193,7 +193,7 @@ class SupplierRepository:
     
     def get_all_supplier_types(self) -> List[ProductProviderType]:
         """Get all supplier types"""
-        return storage_broker.get(ProductProviderType, {}, None, [])
+        return storage_broker.get(ProductProviderType, {}, None, [ProductProviderType.naming_contribution])
     
     def get_supplier_images(self, provider_id: str) -> List[ProviderImage]:
         """Get all images for a supplier"""

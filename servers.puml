@@ -3,34 +3,34 @@ skinparam componentStyle rectangle
 skinparam shadowing false
 
 package "Client Layer" {
-  [gluttex-web]
-  [gluttex-mobile]
+  [verdelia-web]
+  [verdelia-mobile]
 }
 
 package "Core Services" {
-  [gluttex-api]
-  [gluttex-auth]
-  [gluttex-stream]
-  [gluttex-fs]
+  [verdelia-api]
+  [verdelia-auth]
+  [verdelia-stream]
+  [verdelia-fs]
 }
 
 
 package "Infrastructure" {
   [rabbitmq]
-  [gluttex-db]
+  [verdelia-db]
 }
 
-[gluttex-web] --> [gluttex-api] : REST / HTTPS
-[gluttex-mobile] --> [gluttex-api] : REST / HTTPS
+[verdelia-web] --> [verdelia-api] : REST / HTTPS
+[verdelia-mobile] --> [verdelia-api] : REST / HTTPS
 
-[gluttex-web] --> [gluttex-stream] : WebSocket / SSE
-[gluttex-mobile] --> [gluttex-stream] : Realtime
+[verdelia-web] --> [verdelia-stream] : WebSocket / SSE
+[verdelia-mobile] --> [verdelia-stream] : Realtime
 
-[gluttex-api] --> [gluttex-auth]
-[gluttex-api] --> [gluttex-db]
-[gluttex-api] --> [gluttex-fs]
-[gluttex-api] --> [rabbitmq]
+[verdelia-api] --> [verdelia-auth]
+[verdelia-api] --> [verdelia-db]
+[verdelia-api] --> [verdelia-fs]
+[verdelia-api] --> [rabbitmq]
 
-[gluttex-stream] --> [rabbitmq]
+[verdelia-stream] --> [rabbitmq]
 
 @enduml

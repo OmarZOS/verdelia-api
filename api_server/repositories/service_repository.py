@@ -97,7 +97,7 @@ class ServiceRepository:
                 ProvidedServiceCategory,
                 {},
                 [],
-                None,
+                [ProvidedServiceCategory.naming_contribution],
                 offset,
                 limit
             )

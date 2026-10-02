@@ -121,7 +121,7 @@
 #         response = AuthService.create_redirect_response(data)
         
 #         location = response.headers.get("location", "")
-#         assert "gluttex://auth/callback?data=" in location
+#         assert "verdelia://auth/callback?data=" in location
 #         assert response.status_code == 307
     
 #     def test_create_redirect_response_error(self):
@@ -131,7 +131,7 @@
         
 #         location = response.headers.get("location", "")
 #         decoded_location = urllib.parse.unquote(location)
-#         assert f"gluttex://auth/callback?error={error_msg}" in decoded_location
+#         assert f"verdelia://auth/callback?error={error_msg}" in decoded_location
 #         assert response.status_code == 307
     
 #     def test_create_redirect_response_json_encoding(self):
@@ -278,7 +278,7 @@
                 
 #                 assert isinstance(result, RedirectResponse)
 #                 location = result.headers.get("location", "")
-#                 assert "gluttex://auth/callback?data=" in location
+#                 assert "verdelia://auth/callback?data=" in location
     
 #     @pytest.mark.asyncio
 #     async def test_handle_oauth_callback_no_user_info(self, auth_service, mock_request):

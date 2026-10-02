@@ -1,6 +1,6 @@
 # api_models.py
 """
-API Models for Gluttex System
+API Models for Verdelia System
 All models include proper types, default values, and validation.
 """
 

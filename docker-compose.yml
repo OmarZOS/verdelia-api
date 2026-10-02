@@ -16,7 +16,7 @@ services:
   #     - ./setup/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
 
   #   networks:
-  #     - gluttex-net
+  #     - verdelia-net
 
   # rabbitmq:
   #   image: rabbitmq:3.13-management-alpine
@@ -69,17 +69,17 @@ services:
 
 
   #   networks:
-  #     - gluttex-net
+  #     - verdelia-net
 
-  # gluttex-web:
-  #   container_name: gluttex-web
-  #   hostname: gluttex-web
-  #   image: gluttex-web:latest
+  # verdelia-web:
+  #   container_name: verdelia-web
+  #   hostname: verdelia-web
+  #   image: verdelia-web:latest
   #   restart: unless-stopped
   #   ports:
   #     - 9070:9070
   #   networks:
-  #     - gluttex-net
+  #     - verdelia-net
   #   deploy:
   #     resources:
   #       limits:
@@ -88,7 +88,7 @@ services:
 
   mysql:
     image: mysql
-    container_name: gluttex-db
+    container_name: verdelia-db
     restart: always
     command: --max_allowed_packet=256M --init-file /data/application/init.sql
 
@@ -104,10 +104,10 @@ services:
       - ./setup/mysql/model.sql:/data/application/init.sql
       - ./volumes/data:/var/lib/mysql
     networks:
-      - gluttex-net
-  gluttex-api:
-    container_name: gluttex-api
-    hostname: gluttex-api
+      - verdelia-net
+  verdelia-api:
+    container_name: verdelia-api
+    hostname: verdelia-api
     restart: unless-stopped
     build:
       context: ./api_server
@@ -115,7 +115,7 @@ services:
       args:
         - API_PORT=${API_PORT}
     command: uvicorn server:app --host 0.0.0.0 --port ${API_PORT} --reload
-    image: omarzos/gluttex-api
+    image: omarzos/verdelia-api
     ports:
       - ${API_PORT}:${API_PORT}
     environment:
@@ -161,7 +161,7 @@ services:
       - FINANCE_SERVER_PREFIX=${FINANCE_SERVER_PREFIX}
       
     networks:
-      - gluttex-net
+      - verdelia-net
     volumes:
       - ./api_server:/code
     
@@ -171,9 +171,9 @@ services:
           cpus: '1'
           memory: 512M
   
-  gluttex-auth:
-    container_name: gluttex-auth
-    hostname: gluttex-auth
+  verdelia-auth:
+    container_name: verdelia-auth
+    hostname: verdelia-auth
     restart: unless-stopped
     command: uvicorn server:app --host 0.0.0.0 --port ${AUTH_PORT} --reload # 
     image: omarzos/emastan-auth:latest
@@ -188,7 +188,7 @@ services:
     ports:
       - ${AUTH_PORT}:${AUTH_PORT}
     networks:
-      - gluttex-net
+      - verdelia-net
     # volumes:
     #   - ./volumes/auth_db/:/auth_db/
     deploy:
@@ -197,9 +197,9 @@ services:
           cpus: '0.5'
           memory: 256M
 
-  gluttex-finance:
-    container_name: gluttex-finance
-    hostname: gluttex-finance
+  verdelia-finance:
+    container_name: verdelia-finance
+    hostname: verdelia-finance
     restart: unless-stopped
     command: uvicorn server:app --host 0.0.0.0 --port ${FINANCE_SERVER_PORT} --reload
     image: omarzos/finance-api:latest
@@ -214,16 +214,16 @@ services:
       - SQL_DATABASE=${SQL_DATABASE}
       - SQL_PORT=3306
     networks:
-      - gluttex-net
+      - verdelia-net
     deploy:
       resources:
         limits:
           cpus: '0.5'
           memory: 512M
 
-  gluttex-silo:
-    container_name: gluttex-silo
-    hostname: gluttex-silo
+  verdelia-silo:
+    container_name: verdelia-silo
+    hostname: verdelia-silo
     restart: unless-stopped
     command: uvicorn server:app --host 0.0.0.0 --port ${SILO_SERVER_PORT} 
     image: omarzos/esilo-api:latest
@@ -238,16 +238,16 @@ services:
       - SQL_DATABASE=${SQL_DATABASE}
       - SQL_PORT=3306
     networks:
-      - gluttex-net
+      - verdelia-net
     deploy:
       resources:
         limits:
           cpus: '0.5'
           memory: 512M
 
-  gluttex-fs:
-    container_name: gluttex-fs
-    hostname: gluttex-fs
+  verdelia-fs:
+    container_name: verdelia-fs
+    hostname: verdelia-fs
     restart: unless-stopped
     command: uvicorn server:app --host 0.0.0.0 --port ${FS_PORT} --reload
     image: omarzos/emagrad-fs:latest
@@ -258,7 +258,7 @@ services:
       - FS_BASE_STORAGE=${FS_BASE_STORAGE}
       - FS_CACHE_STORAGE=${FS_CACHE_STORAGE}
     networks:
-      - gluttex-net
+      - verdelia-net
     # volumes:
     #   - ./volumes/fs/:/fs/
     deploy:
@@ -267,9 +267,9 @@ services:
           cpus: '0.5'
           memory: 512M
 
-  # gluttex-stream:
-  #   container_name: gluttex-stream
-  #   hostname: gluttex-stream
+  # verdelia-stream:
+  #   container_name: verdelia-stream
+  #   hostname: verdelia-stream
   #   restart: unless-stopped
   #   command: uvicorn server:app --host 0.0.0.0 --port 9097 --reload
   #   image: omarzos/asif-stream
@@ -278,7 +278,7 @@ services:
   #   environment:
   #     - FS_PORT=9097
   #   networks:
-  #     - gluttex-net
+  #     - verdelia-net
   #   deploy:
   #     resources:
   #       limits:
@@ -291,6 +291,6 @@ volumes:
 
 
 networks:
-  gluttex-net:
-    name: gluttex-net
+  verdelia-net:
+    name: verdelia-net
     driver: bridge

@@ -116,7 +116,7 @@ async def send_test_notification(user_id: int = 4, message: str = "Test notifica
             pika.ConnectionParameters(
                 host='localhost',
                 port=5672,
-                virtual_host='/gluttex',
+                virtual_host='/verdelia',
                 credentials=pika.PlainCredentials('dev_user', 'dev_pass')
             )
         )

@@ -233,7 +233,7 @@ class OptimizedOrderTestRunner:
     def __init__(
         self,
         base_url: str = "http://localhost:9000",
-        silo_url: str = "http://gluttex-silo:9096",
+        silo_url: str = "http://verdelia-silo:9096",
     ):
         self.base_url = base_url
         self.silo_url = silo_url
@@ -248,7 +248,7 @@ class OptimizedOrderTestRunner:
         verify = not (
             self.base_url.startswith("http://localhost")
             or self.base_url.startswith("http://127.")
-            or self.base_url.startswith("http://gluttex")
+            or self.base_url.startswith("http://verdelia")
         )
         self.client = httpx.AsyncClient(timeout=timeout, verify=verify, limits=limits)
         return self
@@ -874,7 +874,7 @@ async def main():
 
     parser = argparse.ArgumentParser(description="Optimized Order Test Runner — workflow-aware")
     parser.add_argument("--url", default="http://localhost:9000")
-    parser.add_argument("--silo-url", default="http://gluttex-silo:9096")
+    parser.add_argument("--silo-url", default="http://verdelia-silo:9096")
     parser.add_argument("--context-file", default="test_context.json")
     parser.add_argument("--orders-per-user", type=int, default=20)
     parser.add_argument("--max-users", type=int, default=5)

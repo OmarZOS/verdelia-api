@@ -502,7 +502,7 @@ class AppUser(Base):
     app_user_subscription_ref = Column(Integer)
     app_user_email = Column(String(255))
     app_user_wallet_id = Column(Integer)
-    app_user_login_option = Column(Enum('google', 'gluttex'))
+    app_user_login_option = Column(Enum('google', 'verdelia'))
     verified_app_user = Column(TINYINT)
 
     app_user_person = relationship('Person', back_populates='app_user')

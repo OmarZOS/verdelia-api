@@ -12,7 +12,7 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
       RABBITMQ_DEFAULT_VHOST: /
     networks:
-      - gluttex-net
+      - verdelia-net
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - rabbitmq_logs:/var/log/rabbitmq
@@ -20,30 +20,30 @@ services:
       - "traefik.enable=true"
 
       # Management UI over HTTPS
-      - "traefik.http.routers.rabbitmq-ui.rule=Host(`rabbitmq.gluttex.com`)"
+      - "traefik.http.routers.rabbitmq-ui.rule=Host(`rabbitmq.verdelia.com`)"
       - "traefik.http.routers.rabbitmq-ui.entrypoints=websecure"
       - "traefik.http.routers.rabbitmq-ui.tls.certresolver=letsencrypt"
       - "traefik.http.services.rabbitmq-ui.loadbalancer.server.port=15672"
 
       # AMQP over TLS (TCP)
-      - "traefik.tcp.routers.rabbitmq-amqps.rule=HostSNI(`amqp.gluttex.com`)"
+      - "traefik.tcp.routers.rabbitmq-amqps.rule=HostSNI(`amqp.verdelia.com`)"
       - "traefik.tcp.routers.rabbitmq-amqps.entrypoints=amqps"
       - "traefik.tcp.routers.rabbitmq-amqps.tls.certresolver=letsencrypt"
       - "traefik.tcp.services.rabbitmq-amqps.loadbalancer.server.port=5671"
 
 
 
-  gluttex-web:
-    container_name: gluttex-web
-    hostname: gluttex-web
+  verdelia-web:
+    container_name: verdelia-web
+    hostname: verdelia-web
     build:
       context: ./landing
-    image: gluttex-web:latest
+    image: verdelia-web:latest
     restart: unless-stopped
     ports:
       - 9070:9070
     networks:
-      - gluttex-net
+      - verdelia-net
     deploy:
       resources:
         limits:
@@ -51,21 +51,21 @@ services:
           memory: 512M
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gluttex-web.rule=Host(`gluttex.com`)"
-      - "traefik.http.routers.gluttex-web.entrypoints=websecure"
-      - "traefik.http.routers.gluttex-web.tls=true"
-      - "traefik.http.routers.gluttex-web.tls.certresolver=letsencrypt"
-      - "traefik.http.services.gluttex-web.loadbalancer.server.port=9070"
+      - "traefik.http.routers.verdelia-web.rule=Host(`verdelia.com`)"
+      - "traefik.http.routers.verdelia-web.entrypoints=websecure"
+      - "traefik.http.routers.verdelia-web.tls=true"
+      - "traefik.http.routers.verdelia-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.verdelia-web.loadbalancer.server.port=9070"
 
-  gluttex-api:
-    container_name: gluttex-api
-    hostname: gluttex-api
+  verdelia-api:
+    container_name: verdelia-api
+    hostname: verdelia-api
     restart: unless-stopped
     build:
       context: api_server/
       args:
         - API_PORT=9000
-    image: omarzos/gluttex-api
+    image: omarzos/verdelia-api
     environment:
       - API_PORT=9000
       - SQL_SCHEMA=${SQL_SCHEMA}
@@ -100,7 +100,7 @@ services:
       - RABBITMQ_VHOST=${RABBITMQ_VHOST}
       - ENV_MODE="PRODUCTION"
     networks:
-      - gluttex-net
+      - verdelia-net
     deploy:
       resources:
         limits:
@@ -108,18 +108,18 @@ services:
           memory: 512M
     labels:
       - "traefik.enable=true"
-      # - "traefik.docker.network=gluttex-net"  # Critical fix
-      - "traefik.http.routers.gluttex-api.rule=Host(`gluttex.com`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.gluttex-api.entrypoints=websecure"
-      - "traefik.http.routers.gluttex-api.tls=true"
-      - "traefik.http.routers.gluttex-api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.gluttex-api.loadbalancer.server.port=9000"
+      # - "traefik.docker.network=verdelia-net"  # Critical fix
+      - "traefik.http.routers.verdelia-api.rule=Host(`verdelia.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.verdelia-api.entrypoints=websecure"
+      - "traefik.http.routers.verdelia-api.tls=true"
+      - "traefik.http.routers.verdelia-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.verdelia-api.loadbalancer.server.port=9000"
 
-  gluttex-auth:
-    container_name: gluttex-auth
-    hostname: gluttex-auth
+  verdelia-auth:
+    container_name: verdelia-auth
+    hostname: verdelia-auth
     restart: unless-stopped
-    image: omarzos/gluttex-auth
+    image: omarzos/verdelia-auth
     environment:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - AUTH_PORT=9090
@@ -129,7 +129,7 @@ services:
       - DEFAULT_ADMIN_USERNAME=${DEFAULT_ADMIN_USERNAME}
       - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD}
     networks:
-      - gluttex-net
+      - verdelia-net
     volumes:
       - ./auth_db/:/auth_db/
     deploy:
@@ -139,21 +139,21 @@ services:
           memory: 256M
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gluttex-auth.rule=Host(`gluttex.com`) && PathPrefix(`/auth`)"
-      - "traefik.http.routers.gluttex-auth.entrypoints=websecure"
-      - "traefik.http.routers.gluttex-auth.tls=true"
-      - "traefik.http.routers.gluttex-auth.tls.certresolver=letsencrypt"
-      - "traefik.http.services.gluttex-auth.loadbalancer.server.port=9090"
+      - "traefik.http.routers.verdelia-auth.rule=Host(`verdelia.com`) && PathPrefix(`/auth`)"
+      - "traefik.http.routers.verdelia-auth.entrypoints=websecure"
+      - "traefik.http.routers.verdelia-auth.tls=true"
+      - "traefik.http.routers.verdelia-auth.tls.certresolver=letsencrypt"
+      - "traefik.http.services.verdelia-auth.loadbalancer.server.port=9090"
 
-  gluttex-fs:
-    container_name: gluttex-fs
-    hostname: gluttex-fs
+  verdelia-fs:
+    container_name: verdelia-fs
+    hostname: verdelia-fs
     restart: unless-stopped
-    image: omarzos/gluttex-fs
+    image: omarzos/verdelia-fs
     environment:
       - FS_PORT=9099
     networks:
-      - gluttex-net
+      - verdelia-net
     volumes:
       - ./fs/:/fs/
     deploy:
@@ -163,15 +163,15 @@ services:
           memory: 512M
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gluttex-fs.rule=Host(`gluttex.com`) && PathPrefix(`/fs`)"
-      - "traefik.http.routers.gluttex-fs.entrypoints=websecure"
-      - "traefik.http.routers.gluttex-fs.tls=true"
-      - "traefik.http.routers.gluttex-fs.tls.certresolver=letsencrypt"
-      - "traefik.http.services.gluttex-fs.loadbalancer.server.port=9099"
+      - "traefik.http.routers.verdelia-fs.rule=Host(`verdelia.com`) && PathPrefix(`/fs`)"
+      - "traefik.http.routers.verdelia-fs.entrypoints=websecure"
+      - "traefik.http.routers.verdelia-fs.tls=true"
+      - "traefik.http.routers.verdelia-fs.tls.certresolver=letsencrypt"
+      - "traefik.http.services.verdelia-fs.loadbalancer.server.port=9099"
 
-  gluttex-stream:
-    container_name: gluttex-stream
-    image: omarzos/gluttex-stream
+  verdelia-stream:
+    container_name: verdelia-stream
+    image: omarzos/verdelia-stream
     restart: unless-stopped
     command: uvicorn server:app --host 0.0.0.0 --port 9097
     environment:
@@ -181,16 +181,16 @@ services:
       - AMQP_USER=${AMQP_USER}
       - AMQP_PASS=${AMQP_PASS}
     networks:
-      - gluttex-net
+      - verdelia-net
     labels:
       - "traefik.enable=true"
 
       # FIXED (no useless middlewares)
-      - "traefik.http.routers.gluttex-stream.rule=Host(`gluttex.com`) && PathPrefix(`/stream`)"
-      - "traefik.http.routers.gluttex-stream.entrypoints=websecure"
-      - "traefik.http.routers.gluttex-stream.tls=true"
-      - "traefik.http.routers.gluttex-stream.tls.certresolver=letsencrypt"
-      - "traefik.http.services.gluttex-stream.loadbalancer.server.port=9097"
+      - "traefik.http.routers.verdelia-stream.rule=Host(`verdelia.com`) && PathPrefix(`/stream`)"
+      - "traefik.http.routers.verdelia-stream.entrypoints=websecure"
+      - "traefik.http.routers.verdelia-stream.tls=true"
+      - "traefik.http.routers.verdelia-stream.tls.certresolver=letsencrypt"
+      - "traefik.http.services.verdelia-stream.loadbalancer.server.port=9097"
 
 
       # WebSocket support
@@ -232,7 +232,7 @@ services:
       - "8080:8080"  # dashboard
       - "5671:5671"  # AMQPS
     networks:
-      - gluttex-net
+      - verdelia-net
     volumes:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
@@ -246,7 +246,7 @@ volumes:
     driver: local
 
 networks:
-  gluttex-net:
-    name: gluttex-net
+  verdelia-net:
+    name: verdelia-net
     driver: bridge
     attachable: true

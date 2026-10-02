@@ -36,7 +36,7 @@ You can use docker-compose to build and deploy the containers:
 #### Development
 Connect to the container 
 
-    sudo docker exec -it gluttex-db mysql -u dev_user gluttex -p
+    sudo docker exec -it verdelia-db mysql -u dev_user verdelia -p
 
 Create a user that can access from anywhere:
 
@@ -47,9 +47,9 @@ Create a user that can access from anywhere:
 
 To generate the `models.py` file, you can execute the following instruction:
 
-    docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' gluttex-db
+    docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' verdelia-db
 
-    sqlacodegen --outfile=api_server/core/models.py   mysql+pymysql://dev_user:dev_password@[$MYSQL_HOST]/gluttex
+    sqlacodegen --outfile=api_server/core/models.py   mysql+pymysql://dev_user:dev_password@[$MYSQL_HOST]/verdelia
 
 For the spatial data: 
 

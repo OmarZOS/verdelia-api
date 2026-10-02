@@ -4,12 +4,12 @@ services:
 
   # mysql:
   #   image: mysql
-  #   container_name: gluttex-db
+  #   container_name: verdelia-db
   #   restart: always
   #   command: --max_allowed_packet=256M --init-file /data/application/init.sql
 
   #   environment:
-  #     MYSQL_DATABASE: gluttex
+  #     MYSQL_DATABASE: verdelia
   #     MYSQL_USER: dev_user
   #     MYSQL_ROOT_PASSWORD: dev_password
   #     MYSQL_PASSWORD: dev_password
@@ -19,10 +19,10 @@ services:
   #     - ./mysql/model.sql:/data/application/init.sql
   #     - ./data:/var/lib/mysql
   #   networks:
-  #     - gluttex-net
-  gluttex-api:
-    container_name: gluttex-api-test
-    hostname: gluttex-api-test
+  #     - verdelia-net
+  verdelia-api:
+    container_name: verdelia-api-test
+    hostname: verdelia-api-test
     restart: unless-stopped
     build:
       context: api_server/
@@ -30,24 +30,24 @@ services:
       # cmd : "pytest"
       # args:
         # - API_PORT=9000
-    image: omarzos/gluttex-api-test
+    image: omarzos/verdelia-api-test
     environment:
       - API_PORT=9000
       - SQL_SCHEMA=mysql+pymysql
-      - SQL_HOST=gluttex-db
-      - SQL_DATABASE=gluttex
+      - SQL_HOST=verdelia-db
+      - SQL_DATABASE=verdelia
       - SQL_USER=dev_user
       - SQL_PASSWORD=dev_password
       - SQL_PORT=3306
       - AUTH_PORT=9090
-      - AUTH_SERVER_NAME=gluttex-auth
+      - AUTH_SERVER_NAME=verdelia-auth
       - AUTH_REGISTRATION_ENDPOINT=/auth/users/
       - AUTH_LOGIN_ENDPOINT=${AUTH_LOGIN_ENDPOINT}
       - AUTH_DELETE_ENDPOINT=${AUTH_DELETE_ENDPOINT}
       - ALGORITHM=${ALGORITHM}
       - API_SECRET_KEY=${SECRET_KEY}
       - FILE_UPLOAD_ENDPOINT=/fs/upload
-      - FS_HOST=gluttex-fs
+      - FS_HOST=verdelia-fs
       - FS_PORT=9099
       - API_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - API_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
@@ -57,7 +57,7 @@ services:
       - API_INSTAGRAM_CLIENT_SECRET=${INSTAGRAM_CLIENT_SECRET}
       - AUTH_CHANGE_ENDPOINT=${AUTH_CHANGE_ENDPOINT}
     networks:
-      - gluttex-net
+      - verdelia-net
     deploy:
       resources:
         limits:
@@ -65,22 +65,22 @@ services:
           memory: 512M
     # labels:
     #   - "traefik.enable=true"
-    #   # - "traefik.docker.network=gluttex-net"  # Critical fix
-    #   - "traefik.http.routers.gluttex-api.rule=Host(`gluttex.com`) && PathPrefix(`/api`)"
-    #   - "traefik.http.routers.gluttex-api.entrypoints=websecure"
-    #   - "traefik.http.routers.gluttex-api.tls=true"
-    #   - "traefik.http.routers.gluttex-api.tls.certresolver=letsencrypt"
-    #   - "traefik.http.services.gluttex-api.loadbalancer.server.port=9000"
+    #   # - "traefik.docker.network=verdelia-net"  # Critical fix
+    #   - "traefik.http.routers.verdelia-api.rule=Host(`verdelia.com`) && PathPrefix(`/api`)"
+    #   - "traefik.http.routers.verdelia-api.entrypoints=websecure"
+    #   - "traefik.http.routers.verdelia-api.tls=true"
+    #   - "traefik.http.routers.verdelia-api.tls.certresolver=letsencrypt"
+    #   - "traefik.http.services.verdelia-api.loadbalancer.server.port=9000"
 
-  # gluttex-auth:
-  #   container_name: gluttex-auth
-  #   hostname: gluttex-auth
+  # verdelia-auth:
+  #   container_name: verdelia-auth
+  #   hostname: verdelia-auth
   #   restart: unless-stopped
   #   # build:
   #     # context: auth_server/
   #     # args:
   #       # - AUTH_PORT=9090
-  #   image: omarzos/gluttex-auth
+  #   image: omarzos/verdelia-auth
   #   environment:
   #     - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
   #     - AUTH_PORT=9090
@@ -88,7 +88,7 @@ services:
   #     - API_ALGORITHM=${ALGORITHM}
   #     - AUTH_DATABASE_URL=sqlite:///../auth_db/auth_db_data.db
   #   networks:
-  #     - gluttex-net
+  #     - verdelia-net
   #   volumes:
   #     - ./auth_server/:/code
   #     - ./auth_db/:/auth_db/
@@ -99,25 +99,25 @@ services:
   #         memory: 256M
   #   # labels:
   #   #   - "traefik.enable=true"
-  #   #   - "traefik.http.routers.gluttex-auth.rule=Host(`gluttex.com`) && PathPrefix(`/auth`)"
-  #   #   - "traefik.http.routers.gluttex-auth.entrypoints=websecure"
-  #   #   - "traefik.http.routers.gluttex-auth.tls=true"
-  #   #   - "traefik.http.routers.gluttex-auth.tls.certresolver=letsencrypt"
-  #   #   - "traefik.http.services.gluttex-auth.loadbalancer.server.port=9090"
+  #   #   - "traefik.http.routers.verdelia-auth.rule=Host(`verdelia.com`) && PathPrefix(`/auth`)"
+  #   #   - "traefik.http.routers.verdelia-auth.entrypoints=websecure"
+  #   #   - "traefik.http.routers.verdelia-auth.tls=true"
+  #   #   - "traefik.http.routers.verdelia-auth.tls.certresolver=letsencrypt"
+  #   #   - "traefik.http.services.verdelia-auth.loadbalancer.server.port=9090"
 
-  # gluttex-fs:
-  #   container_name: gluttex-fs
-  #   hostname: gluttex-fs
+  # verdelia-fs:
+  #   container_name: verdelia-fs
+  #   hostname: verdelia-fs
   #   restart: unless-stopped
   #   # build:
   #     # context: file_server/
   #     # args:
   #       # - FS_PORT=9099
-  #   image: omarzos/gluttex-fs
+  #   image: omarzos/verdelia-fs
   #   environment:
   #     - FS_PORT=9099
   #   networks:
-  #     - gluttex-net
+  #     - verdelia-net
   #   volumes:
   #     - ./file_server/:/code
   #     - ./fs/:/fs/
@@ -128,11 +128,11 @@ services:
   #         memory: 512M
   #   # labels:
   #   #   - "traefik.enable=true"
-  #   #   - "traefik.http.routers.gluttex-fs.rule=Host(`gluttex.com`) && PathPrefix(`/fs`)"
-  #   #   - "traefik.http.routers.gluttex-fs.entrypoints=websecure"
-  #   #   - "traefik.http.routers.gluttex-fs.tls=true"
-  #   #   - "traefik.http.routers.gluttex-fs.tls.certresolver=letsencrypt"
-  #   #   - "traefik.http.services.gluttex-fs.loadbalancer.server.port=9099"
+  #   #   - "traefik.http.routers.verdelia-fs.rule=Host(`verdelia.com`) && PathPrefix(`/fs`)"
+  #   #   - "traefik.http.routers.verdelia-fs.entrypoints=websecure"
+  #   #   - "traefik.http.routers.verdelia-fs.tls=true"
+  #   #   - "traefik.http.routers.verdelia-fs.tls.certresolver=letsencrypt"
+  #   #   - "traefik.http.services.verdelia-fs.loadbalancer.server.port=9099"
 
   # # traefik:
   # #   image: traefik:v2.10
@@ -153,7 +153,7 @@ services:
   # #     - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
   # #     - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
       
-  # #     # - "--providers.docker.network=gluttex-net"  # Explicit network
+  # #     # - "--providers.docker.network=verdelia-net"  # Explicit network
   # #     - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
   # #     - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=digitalocean"
   # #     - "--certificatesresolvers.letsencrypt.acme.dnschallenge.delaybeforecheck=30"
@@ -164,13 +164,13 @@ services:
   # #     - "443:443"
   # #     - "8080:8080"
   # #   networks:
-  # #     - gluttex-net
+  # #     - verdelia-net
   # #   volumes:
   # #     - "./letsencrypt:/letsencrypt"
   # #     - "/var/run/docker.sock:/var/run/docker.sock:ro"
   # #   labels:
   # #     - "traefik.enable=true"
-  # #     # - "traefik.http.routers.traefik.rule=Host(`traefik.gluttex.com`)"
+  # #     # - "traefik.http.routers.traefik.rule=Host(`traefik.verdelia.com`)"
   # #     - "traefik.http.routers.traefik.service=api@internal"
   # #     - "traefik.http.routers.traefik.entrypoints=websecure"
   # #     # - "traefik.http.routers.traefik.tls=true"
@@ -179,7 +179,7 @@ services:
   # #     # - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_AUTH_CREDENTIALS}"
 
 networks:
-  gluttex-net:
-    name: gluttex-net
+  verdelia-net:
+    name: verdelia-net
     driver: bridge
     attachable: true

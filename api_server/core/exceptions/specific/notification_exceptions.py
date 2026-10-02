@@ -1,6 +1,6 @@
 # core/exceptions/specific/notification_exceptions.py
 """
-Notification-specific exceptions for the Gluttex system.
+Notification-specific exceptions for the Verdelia system.
 """
 
 from typing import Optional, Dict, Any, List

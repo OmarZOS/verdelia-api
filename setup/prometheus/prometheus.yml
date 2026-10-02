@@ -2,26 +2,26 @@ global:
   scrape_interval: 5s
 
 scrape_configs:
-  - job_name: "gluttex-api"
+  - job_name: "verdelia-api"
     static_configs:
-      - targets: ["gluttex-api:9000"]
+      - targets: ["verdelia-api:9000"]
 
-  - job_name: "gluttex-auth"
+  - job_name: "verdelia-auth"
     scheme: https
 
     tls_config:
       insecure_skip_verify: true
 
     static_configs:
-      - targets: ["gluttex-auth:9090"]
+      - targets: ["verdelia-auth:9090"]
 
-  - job_name: "gluttex-fs"
+  - job_name: "verdelia-fs"
     static_configs:
-      - targets: ["gluttex-fs:9099"]
+      - targets: ["verdelia-fs:9099"]
 
-  - job_name: "gluttex-stream"
+  - job_name: "verdelia-stream"
     static_configs:
-      - targets: ["gluttex-stream:9097"]
+      - targets: ["verdelia-stream:9097"]
 
   - job_name: "rabbitmq"
     static_configs:

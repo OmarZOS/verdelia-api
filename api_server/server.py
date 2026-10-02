@@ -1,6 +1,6 @@
 # main.py
 """
-FastAPI application entry point for Gluttex API.
+FastAPI application entry point for Verdelia API.
 Configures middleware, exception handlers, routers, and root endpoints.
 """
 
@@ -67,7 +67,7 @@ async def lifespan(app: FastAPI):
     Handles startup and shutdown events.
     """
     # Startup
-    logger.info("Starting up Gluttex API...")
+    logger.info("Starting up Verdelia API...")
     logger.info(f"Environment: {settings.DEBUG}")
     logger.info(f"API Version: {settings.API_VERSION}")
     
@@ -77,7 +77,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown
-    logger.info("Shutting down Gluttex API...")
+    logger.info("Shutting down Verdelia API...")
     
     # Clean up resources
     # await close_db_pool()

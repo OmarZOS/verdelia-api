@@ -1,8 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS "gluttex" /*!40100 DEFAULT CHARACTER SET utf8mb3 */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `gluttex`;
+CREATE DATABASE  IF NOT EXISTS "verdelia" /*!40100 DEFAULT CHARACTER SET utf8mb3 */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `verdelia`;
 -- MySQL dump 10.13  Distrib 8.0.36, for Linux (x86_64)
 --
--- Host: dbaas-db-10408380-do-user-13698920-0.e.db.ondigitalocean.com    Database: gluttex
+-- Host: dbaas-db-10408380-do-user-13698920-0.e.db.ondigitalocean.com    Database: verdelia
 -- ------------------------------------------------------
 -- Server version	8.0.35
 
@@ -680,13 +680,13 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 
 
 
-INSERT INTO `gluttex`.`app_user_type` ( `app_user_type_desc`) VALUES
+INSERT INTO `verdelia`.`app_user_type` ( `app_user_type_desc`) VALUES
 ( 'Client'),
 ( 'Admin'),
 ( 'Cooking chef'),
 ( 'Supplier');
 
-INSERT INTO `gluttex`.`blood_type` ( `blood_type_desc`) VALUES
+INSERT INTO `verdelia`.`blood_type` ( `blood_type_desc`) VALUES
 ('O+'),
 ('A+'),
 ('B+'),
@@ -696,7 +696,7 @@ INSERT INTO `gluttex`.`blood_type` ( `blood_type_desc`) VALUES
 ('B-'),
 ('AB-');
 
-INSERT INTO `gluttex`.`product_category` ( `product_category_desc`) VALUES
+INSERT INTO `verdelia`.`product_category` ( `product_category_desc`) VALUES
 ('Baked Goods'),
 ('Spreads'),
 ('Cereals'),
@@ -708,7 +708,7 @@ INSERT INTO `gluttex`.`product_category` ( `product_category_desc`) VALUES
 ('Flours & Baking Ingredients'),
 ('Canned & Packaged Goods ');
 
-INSERT INTO `gluttex`.`product_provider_type` ( `product_provider_type_desc`) VALUES
+INSERT INTO `verdelia`.`product_provider_type` ( `product_provider_type_desc`) VALUES
 ('Restaurant'),
 ('Bakery'),
 ('Factory'),
@@ -717,7 +717,7 @@ INSERT INTO `gluttex`.`product_provider_type` ( `product_provider_type_desc`) VA
 ("Distributor");
 
 
-INSERT INTO `gluttex`.`recipe_category` ( `recipe_category_desc`) VALUES
+INSERT INTO `verdelia`.`recipe_category` ( `recipe_category_desc`) VALUES
 ("Appetizers & Snacks"),
 ("Soups & Stews"),
 ("Salads"),
@@ -745,7 +745,7 @@ INSERT INTO `gluttex`.`recipe_category` ( `recipe_category_desc`) VALUES
 
 
 
--- INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+-- INSERT INTO `verdelia`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 -- ('Smart Technologies', 'Phone: +213 609 1126074, Email: mjmhqzs@example.com'),
 -- ('Eco Systems', 'Phone: +213 606 7668104, Email: fbkulvv@example.com'),
 -- ('Smart Corporation', 'Phone: +213 675 9893109, Email: jkjkbvj@example.com'),
@@ -780,7 +780,7 @@ INSERT INTO `gluttex`.`recipe_category` ( `recipe_category_desc`) VALUES
 
 
 
--- INSERT INTO `gluttex`.`location` (`location_position`, `location_name`) VALUES
+-- INSERT INTO `verdelia`.`location` (`location_position`, `location_name`) VALUES
 -- ('31.4704', '10.5995','Algiers'),
 -- ('21.9235', '6.6383','Oran'),
 -- ('33.3383', '-0.7512','Constantine'),
@@ -813,7 +813,7 @@ INSERT INTO `gluttex`.`recipe_category` ( `recipe_category_desc`) VALUES
 -- ('25.2283', '-0.0806','Khenchela');
 
 -- Insert data into the address table
-INSERT INTO `gluttex`.`address` (`address_street`, `address_city`, `address_country`)
+INSERT INTO `verdelia`.`address` (`address_street`, `address_city`, `address_country`)
 VALUES
 ('Rue Lamameri Ali', 'Bouzareah', 'Algeria'),
 ('Avenue Houari Boumedien', 'Bordj El Bahri', 'Algeria'),
@@ -824,54 +824,54 @@ VALUES
 
 
 -- Insertions for Amissan -gluten free-
-INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+INSERT INTO `verdelia`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Amissan -gluten free-', 'Facebook: https://www.facebook.com/profile.php?id=100063573159141, Phone number: 0781 56 64 26');
-INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
+INSERT INTO `verdelia`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
 (ST_GeomFromText('POINT(3.00456923564612 36.79664864280521)'), 'Rue Lamameri Ali', 1);
-INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
+INSERT INTO `verdelia`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (1,1,2);
 
 -- Insertions for Magasin habibou sans gluten
-INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+INSERT INTO `verdelia`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Magasin habibou sans gluten', 'Facebook: https://www.facebook.com/profile.php?id=100063549909208');
-INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
+INSERT INTO `verdelia`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
 (ST_GeomFromText('POINT(3.244388200045344 36.79104995021719)'), 'Avenue Houari Boumedien', 2);
-INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
+INSERT INTO `verdelia`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (2,2,2);
 
 -- Insertions for Uno
-INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+INSERT INTO `verdelia`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Uno', 'Facebook: https://www.facebook.com/UNO.Hypermarche/, Instagram: https://www.instagram.com/uno_hypermarche/');
-INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
+INSERT INTO `verdelia`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
 (ST_GeomFromText('POINT(3.191942199815943 36.71305045006746)'), 'Route de Dar El Beida', 3);
-INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
+INSERT INTO `verdelia`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (3,3,4);
 
 -- Insertions for Superette université
-INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+INSERT INTO `verdelia`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Superette université', 'N/A');
-INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
+INSERT INTO `verdelia`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
 (ST_GeomFromText('POINT(2.872905857188605 36.68805559407475)'), 'N63', 4);
-INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
+INSERT INTO `verdelia`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (4,4,4);
 
 -- Insertions for Corridors Shopping
-INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+INSERT INTO `verdelia`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Corridors Shopping', 'N/A');
-INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
+INSERT INTO `verdelia`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
 (ST_GeomFromText('POINT(2.9833228 36.6683827)'), 'Khraicia', 5);
-INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
+INSERT INTO `verdelia`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (5,5,1);
 
 -- Insertions for Caramel sans gluten
-INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+INSERT INTO `verdelia`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Caramel sans gluten', 'N/A');
-INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
+INSERT INTO `verdelia`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
 (ST_GeomFromText('POINT(2.9514329 36.75573869999999)'), 'Cheraga', 6);
-INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
+INSERT INTO `verdelia`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (6,6,4);
 
-INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+INSERT INTO `verdelia`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Dar El Karim', 'Facebook: https://www.facebook.com/darelkari, Phone: 0551 23 45 67'),
 ('S&R Sans Gluten', 'Facebook: https://www.facebook.com/srglutenfree, Phone: 0562 98 76 54'),
 ('Caramel Sans Gluten', 'Instagram: @caramel_sans_gluten, Phone: 0771 23 45 67'),
@@ -886,7 +886,7 @@ INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_inf
 
 
 -- Insert locations
-INSERT INTO `gluttex`.`location` (`location_position`, `location_name`) VALUES
+INSERT INTO `verdelia`.`location` (`location_position`, `location_name`) VALUES
 (ST_GeomFromText('POINT(3.001 36.75)'), 'Ouled Fayet, Algiers'),
 (ST_GeomFromText('POINT(3.021 36.76)'), 'Bouzareah, Algiers'),
 (ST_GeomFromText('POINT(3.033 36.75)'), 'Chéraga, Algiers'),
@@ -899,7 +899,7 @@ INSERT INTO `gluttex`.`location` (`location_position`, `location_name`) VALUES
 (ST_GeomFromText('POINT(3.058 36.74)'), 'Kouba, Algiers');
 
 -- Insert providers into product_provider table (assuming type 2 = Bakery)
-INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`, `product_provider_type_id`) VALUES
+INSERT INTO `verdelia`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`, `product_provider_type_id`) VALUES
 (1, 1, 2),
 (2, 2, 2),
 (3, 3, 2),
@@ -914,7 +914,7 @@ INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `produ
 
 
 -- Insert providers for Sétif
-INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+INSERT INTO `verdelia`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Sétif Sans Gluten', 'Facebook: https://www.facebook.com/setifglutenfree, Phone: 0561 34 56 78'),
 ('Boulangerie Sidi El Khier', 'Instagram: @sidi_el_khier, Phone: 0772 45 67 89'),
 ('Gourmandise Sans Gluten', 'Website: https://www.gourmandise-setif.com, Phone: 0663 78 90 21'),
@@ -927,7 +927,7 @@ INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_inf
 ('Le Pain Sans Gluten', 'Website: https://www.lepainsansgluten.com, Phone: 0562 45 67 89');
 
 -- Insert locations for Sétif
-INSERT INTO `gluttex`.`location` (`location_position`, `location_name`) VALUES
+INSERT INTO `verdelia`.`location` (`location_position`, `location_name`) VALUES
 (ST_GeomFromText('POINT(5.403 36.191)'), 'Aïn El Kebira, Sétif'),
 (ST_GeomFromText('POINT(5.405 36.196)'), 'El Eulma, Sétif'),
 (ST_GeomFromText('POINT(5.408 36.195)'), 'Bougaa, Sétif'),
@@ -941,7 +941,7 @@ INSERT INTO `gluttex`.`location` (`location_position`, `location_name`) VALUES
 
 
 -- Insert providers into product_provider table
-INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`, `product_provider_type_id`) VALUES
+INSERT INTO `verdelia`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`, `product_provider_type_id`) VALUES
 (29, 1, 2),  -- Bakery
 (30, 2, 2),
 (31, 3, 2),
@@ -956,7 +956,7 @@ INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `produ
 
 
 
-INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+INSERT INTO `verdelia`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Sans Gluten Oran', 'Facebook: https://www.facebook.com/sansglutenoran, Phone: 0771 23 45 67'),
 ('BioLibre', 'Instagram: https://www.instagram.com/biolibre_oran, Phone: 0662 34 56 78'),
 ('Le Pain Sans Gluten', 'Website: https://www.lepainsansgluten.com, Phone: 0551 98 76 54'),
@@ -968,7 +968,7 @@ INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_inf
 ('Free & Fresh', 'Website: https://www.freeandfresh.com, Phone: 0552 67 89 34'),
 ('Santaré', 'Phone: 0561 90 12 34');
 
-INSERT INTO `gluttex`.`location` (`location_position`, `location_name`) VALUES
+INSERT INTO `verdelia`.`location` (`location_position`, `location_name`) VALUES
 (ST_GeomFromText('POINT(-0.6298 35.6989)'), 'Place d’Armes'),
 (ST_GeomFromText('POINT(-0.6243 35.6972)'), 'Rue Larbi Ben M’Hidi'),
 (ST_GeomFromText('POINT(-0.6305 35.6961)'), 'Boulevard Emir Abdelkader'),
@@ -980,7 +980,7 @@ INSERT INTO `gluttex`.`location` (`location_position`, `location_name`) VALUES
 (ST_GeomFromText('POINT(-0.6522 35.6987)'), 'Cité Djamel'),
 (ST_GeomFromText('POINT(-0.6543 35.6964)'), 'Es-Senia');
 
-INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`, `product_provider_type_id`) VALUES
+INSERT INTO `verdelia`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`, `product_provider_type_id`) VALUES
 (49,27,2),
 (50,28,3),
 (51,29,2),
@@ -994,7 +994,7 @@ INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `produ
 
 
 -- Insert data into person_details table
-INSERT INTO gluttex.person_details 
+INSERT INTO verdelia.person_details 
     (person_first_name, person_last_name, person_birth_date, person_gender, person_nationality) 
 VALUES 
     ('Some', 'One', '2003-01-01', 'Male', 'Algerian');
@@ -1002,54 +1002,54 @@ VALUES
 -- Get the ID of the newly inserted person_details
 
 -- Insert data into person table
-INSERT INTO gluttex.person 
+INSERT INTO verdelia.person 
     (person_details_id, person_blood_type_id, person_location_id) 
 VALUES 
     (1, 1, 1); 
 
 -- Insert data into app_user table
-INSERT INTO gluttex.app_user 
+INSERT INTO verdelia.app_user 
     (app_user_name, app_user_password, app_user_person_id, app_user_type_id) 
 VALUES 
     ('SomeOne', 'password', 1, 1); 
 
 
 -- Baked Goods
-INSERT INTO `gluttex`.`product` (`product_owner`,`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
+INSERT INTO `verdelia`.`product` (`product_owner`,`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
 (1,'Grano\'Sac Raisin Cacahuetes', 'Grano\'Sac','Delicious gluten-free baked goods made with raisins and peanuts. Perfect for a nutritious snack.', 1, 1, '1234567890123', 5.99, 100, CURDATE(), CURDATE()),
 (1,'Butter Biscuits LEGER', 'LEGER','Light and crispy gluten-free butter biscuits, a guilt-free treat for any time of the day.', 1, 1, '1234567890124', 4.49, 150, CURDATE(), CURDATE()),
 (1,'Cookies', 'Home Bakery','Indulgent gluten-free cookies baked to perfection, a delightful blend of flavors in every bite.', 1, 1, '1234567890125', 3.99, 200, CURDATE(), CURDATE()),
 (1,'Gullon Cookies', 'Gullon','Classic gluten-free cookies from Gullon, a favorite snack for both kids and adults.', 1, 1, '1234567890126', 6.29, 120, CURDATE(), CURDATE());
 
 -- Spreads
-INSERT INTO `gluttex`.`product` (`product_owner`,`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
+INSERT INTO `verdelia`.`product` (`product_owner`,`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
 (1,'Date Butter', 'NutriLife','A rich and creamy date butter, packed with nutrients and perfect for spreading on toast or crackers.', 1, 2, '1234567890127', 7.99, 80, CURDATE(), CURDATE()),
 (1,'CARAIBE Crème à Tartiner', 'CARAIBE','Decadent chocolate spread from CARAIBE, a luxurious treat for chocolate lovers.', 1, 2, '1234567890128', 8.49, 100, CURDATE(), CURDATE()),
 (1,'JUMPY Beurre De Cacahuète', 'JUMPY','Smooth and creamy peanut butter spread, a versatile ingredient for sandwiches, smoothies, and desserts.', 1, 2, '1234567890129', 5.79, 90, CURDATE(), CURDATE());
 
 -- Cereals
-INSERT INTO `gluttex`.`product` (`product_owner`,`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
+INSERT INTO `verdelia`.`product` (`product_owner`,`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
 (1,'Semoule de pain', 'BioCereal','Organic gluten-free semolina, perfect for making bread, couscous, and various desserts.', 1, 3, '1234567890130', 3.99, 120, CURDATE(), CURDATE()),
 (1,'Flocons D\'avoine (fariné)', 'NatureLand','Finely ground gluten-free oat flakes, ideal for baking bread, cookies, and other baked goods.', 1, 3, '1234567890131', 6.49, 80, CURDATE(), CURDATE()),
 (1,'Flocons D\'avoine (petits)', 'Healthy Harvest','Whole gluten-free oat flakes, a nutritious addition to your breakfast bowl or baked treats.', 1, 3, '1234567890132', 4.99, 100, CURDATE(), CURDATE());
 
 -- Pasta
-INSERT INTO `gluttex`.`product` (`product_owner`,`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
+INSERT INTO `verdelia`.`product` (`product_owner`,`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
 (1,'Farine à Pizza', 'Mama\'s Kitchen','Premium gluten-free pizza flour blend, perfect for making homemade pizzas with a crispy crust.', 1, 4, '1234567890133', 5.99, 150, CURDATE(), CURDATE()),
 (1,'COUDE Pâtes sans gluten', 'Italian Delight','Gluten-free elbow pasta, ideal for pasta salads, casseroles, and creamy pasta dishes.', 1, 4, '1234567890134', 4.49, 100, CURDATE(), CURDATE());
 
 -- Snacks
-INSERT INTO `gluttex`.`product` (`product_owner`,`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
+INSERT INTO `verdelia`.`product` (`product_owner`,`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
 (1,'Grano\'Sac Raisin Cacahuetes', 'Grano\'Sac','Delicious gluten-free baked goods made with raisins and peanuts. Perfect for a nutritious snack.', 1, 5, '1234567890123', 5.99, 100, CURDATE(), CURDATE()),
 (1,'Cookies', 'Home Bakery','Indulgent gluten-free cookies baked to perfection, a delightful blend of flavors in every bite.', 1, 5, '1234567890125', 3.99, 200, CURDATE(), CURDATE()),
 (1,'Gullon Cookies', 'Gullon','Classic gluten-free cookies from Gullon, a favorite snack for both kids and adults.', 1, 5, '1234567890126', 6.29, 120, CURDATE(), CURDATE());
 
 -- Desserts
-INSERT INTO `gluttex`.`product` (`product_owner`,`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
+INSERT INTO `verdelia`.`product` (`product_owner`,`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
 (1,'Confiture Delicia fruit', 'Delicia','Exquisite gluten-free fruit jam, bursting with natural flavors and sweetness.', 1, 7, '1234567890135', 7.99, 80, CURDATE(), CURDATE()),
 (1,'Confiture Ela fraise', 'Ela','Delightful strawberry jam, perfect for spreading on toast, biscuits, or pairing with cheese.', 1, 7, '1234567890136', 6.49, 90, CURDATE(), CURDATE()),
 (1,'Flan Vanille Nouara', 'Nouara','Creamy vanilla flan dessert, a classic indulgence that melts in your mouth with every spoonful.', 1, 7, '1234567890137', 8.99, 70, CURDATE(), CURDATE());
-INSERT INTO `gluttex`.`product` 
+INSERT INTO `verdelia`.`product` 
 (`product_owner`, `product_name`, `product_brand`, `product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`, `last_updated`, `created`) 
 VALUES
 -- Juices
@@ -1083,7 +1083,7 @@ VALUES
 
 
 
-INSERT INTO `gluttex`.`recipe` 
+INSERT INTO `verdelia`.`recipe` 
 (`recipe_owner_id`, `recipe_category_id`, `recipe_preparation_time`, `recipe_instructions`, `recipe_name`, `recipe_description`, `recipe_creation`, `recipe_last_updated`)
 VALUES
 (1, 1, '0h30', 'Step 1: Do this.\nStep 2: Do that.', 'Tasty Appetizer', 'A delicious appetizer to start your meal.', NOW(), NOW()),
@@ -1097,7 +1097,7 @@ VALUES
 (1, 9, '3h0', 'Step 1: Prepare dough.\nStep 2: Bake.', 'Sourdough Bread', 'Homemade sourdough bread.', NOW(), NOW()),
 (1, 10, '1h15', 'Step 1: Prepare ingredients.\nStep 2: Bake.', 'Chocolate Cake', 'Rich and moist chocolate cake.', NOW(), NOW());
 
-INSERT INTO  `gluttex`.`disease_severity` (`disease_severity_desc`) VALUES
+INSERT INTO  `verdelia`.`disease_severity` (`disease_severity_desc`) VALUES
 ('Marsh 0'),
 ('Marsh 1'),
 ('Marsh 2'),
@@ -1107,11 +1107,11 @@ INSERT INTO  `gluttex`.`disease_severity` (`disease_severity_desc`) VALUES
 ('Marsh 3c'),
 ('Marsh 4');
 
-insert into `gluttex`.`patient` (`patient_person_id` ,`patient_disease_severity_id`) values 
+insert into `verdelia`.`patient` (`patient_person_id` ,`patient_disease_severity_id`) values 
 (1,1);
 
 
-INSERT INTO `gluttex`.`symptom` (symptom_name, symptom_desc) VALUES
+INSERT INTO `verdelia`.`symptom` (symptom_name, symptom_desc) VALUES
 ('Abdominal Pain', 'Pain in the stomach area'),
 ('Bloating', 'Swelling of the abdomen'),
 ('Diarrhea', 'Frequent loose stools'),
@@ -1219,7 +1219,7 @@ INSERT INTO `gluttex`.`symptom` (symptom_name, symptom_desc) VALUES
 ('Celiac Disease', 'Autoimmune disorder affecting the small intestine');
 
 
-INSERT INTO `gluttex`.`serology_indicator` (serology_indicator_name, serology_indicator_desc) VALUES
+INSERT INTO `verdelia`.`serology_indicator` (serology_indicator_name, serology_indicator_desc) VALUES
 ('Antibody Level', 'Measurement of specific antibodies present in the blood. Often used to assess immune response or autoimmune conditions.'),
 ('Hemoglobin', 'The amount of hemoglobin in the blood, measured in grams per deciliter (g/dL). 2 is a protein in red blood cells that carries oxygen.'),
 ('Vitamin D', 'Measurement of the level of 3 in the blood, important for bone health and immune function.'),
@@ -1249,7 +1249,7 @@ INSERT INTO `gluttex`.`serology_indicator` (serology_indicator_name, serology_in
 
 
 -- Dummy data insertions
-INSERT INTO `gluttex`.`serology` (patient_id, indicator_id, indicator_value, serology_date) VALUES
+INSERT INTO `verdelia`.`serology` (patient_id, indicator_id, indicator_value, serology_date) VALUES
 (1, '1', 'High', '2024-01-10'),
 (1, '2', '13.5 g/dL', '2024-01-10'),
 (1, '3', '20 ng/mL', '2024-01-10'),
@@ -1283,90 +1283,90 @@ INSERT INTO `gluttex`.`serology` (patient_id, indicator_id, indicator_value, ser
 
 
 
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Wheat'), 
 ('Barley'), 
 ('Rye'), 
 ('Oats');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Corn'), 
 ('Rice'), 
 ('Soy'), 
 ('Milk');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Egg'), 
 ('Peanuts'), 
 ('Tree Nuts'), 
 ('Fish');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Shellfish'), 
 ('Lentils'), 
 ('Chickpeas'), 
 ('Buckwheat');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Almond'), 
 ('Coconut'), 
 ('Sunflower Seeds');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Pumpkin Seeds'), 
 ('Sesame Seeds'), 
 ('Potato'), 
 ('Sweet Potato');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Gelatin'), 
 ('Lupin'), 
 ('Mustard');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Fennel'), 
 ('Cumin');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Ginger');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Garlic');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Onion');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Leek'), 
 ('Shallot'), 
 ('Scallion'), 
 ('Chive'), 
 ('Parsley');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Cilantro'), 
 ('Basil'), 
 ('Oregano'), 
 ('Thyme');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Rosemary'), 
 ('Sage'), 
 ('Mint'), 
 ('Lemongrass');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Lavender'), 
 ('Paprika'), 
 ('Chili Pepper'), 
 ('Black Pepper');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('White Pepper'), 
 ('Green Pepper'), 
 ('Red Pepper'), 
 ('Cinnamon'), 
 ('Allspice');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Butter'), 
 ('Margarine'), 
 ('Vegetable Oil'), 
 ('Baking Powder');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES 
 ('Baking Soda'), 
 ('Cornstarch'), 
 ('All-Purpose Flour');
-INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES  
+INSERT INTO `verdelia`.`ingredient` (ingredient_name) VALUES  
 ('Pastry Flour'), 
 ('Self-Rising Flour'); 
 
 
-INSERT INTO `gluttex`.`product_image` (`product_image_url`, `product_ref_id`) VALUES
+INSERT INTO `verdelia`.`product_image` (`product_image_url`, `product_ref_id`) VALUES
 ('/fs/product/1/1/a8d09b7c-4373-4279-8b84-156627bcfcfe', 1),
 ('/fs/product/1/2/4dcfa594-20da-4173-bf38-d55b5babf5fc', 2),
 ('/fs/product/1/3/e79b4666-111e-4fb2-8167-a59e10b5a2b2', 3),
@@ -1387,7 +1387,7 @@ INSERT INTO `gluttex`.`product_image` (`product_image_url`, `product_ref_id`) VA
 ('/fs/product/1/18/5f9bf70a-f8ff-49fd-9457-57dc463b236a', 18),
 ('/fs/product/1/19/4100f11e-9cd8-4e73-b398-7a92213421a6', 19);
 
-INSERT INTO `gluttex`.`recipe_image` (`recipe_image_url`, `recipe_ref_id`) VALUES
+INSERT INTO `verdelia`.`recipe_image` (`recipe_image_url`, `recipe_ref_id`) VALUES
 ('/fs/recipe/1/1/c3a0479a-7158-453a-aca6-de2686273b9a', 1),
 ('/fs/recipe/1/2/c3c495df-499c-4080-bd94-fbfbac4b7373', 2),
 ('/fs/recipe/1/3/74a8713d-e4cd-410c-b283-ecd255043eb6', 3),

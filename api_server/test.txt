@@ -1,7 +1,7 @@
 ============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0 -- /usr/bin/python3
 cachedir: .pytest_cache
-rootdir: /home/omar/Projects/gluttex/gluttex-api/api_server
+rootdir: /home/omar/Projects/verdelia/verdelia-api/api_server
 configfile: pytest.ini
 testpaths: tests
 plugins: asyncio-1.3.0, anyio-4.11.0
@@ -110,7 +110,7 @@ ____________ TestStaffListingEndpoints.test_get_user_staff_success _____________
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 103, in test_get_user_staff_success
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 103, in test_get_user_staff_success
     |     response = client.get("/api/v1/staff/user/1")
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 514, in get
@@ -169,7 +169,7 @@ ____________ TestStaffListingEndpoints.test_get_user_staff_success _____________
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -225,10 +225,10 @@ ____________ TestStaffListingEndpoints.test_get_user_staff_success _____________
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
     |     result = rule_service.get_user_rules(user_id)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     |     user = self.rule_repo.get_user_by_id(user_id)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -237,7 +237,7 @@ ____________ TestStaffListingEndpoints.test_get_user_staff_success _____________
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 103, in test_get_user_staff_success
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 103, in test_get_user_staff_success
     response = client.get("/api/v1/staff/user/1")
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 514, in get
@@ -296,7 +296,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -352,10 +352,10 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
     result = rule_service.get_user_rules(user_id)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     user = self.rule_repo.get_user_by_id(user_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -499,7 +499,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -555,10 +555,10 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
     |     result = rule_service.get_user_rules(user_id)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     |     user = self.rule_repo.get_user_by_id(user_id)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -578,7 +578,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -634,10 +634,10 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
     result = rule_service.get_user_rules(user_id)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     user = self.rule_repo.get_user_by_id(user_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -711,7 +711,7 @@ _______ TestStaffListingEndpoints.test_get_user_staff_with_status_filter _______
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 112, in test_get_user_staff_with_status_filter
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 112, in test_get_user_staff_with_status_filter
     |     response = client.get("/api/v1/staff/user/1?status=ACTIVE")
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 514, in get
@@ -770,7 +770,7 @@ _______ TestStaffListingEndpoints.test_get_user_staff_with_status_filter _______
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -826,10 +826,10 @@ _______ TestStaffListingEndpoints.test_get_user_staff_with_status_filter _______
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
     |     result = rule_service.get_user_rules(user_id, status.upper())
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     |     user = self.rule_repo.get_user_by_id(user_id)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -838,7 +838,7 @@ _______ TestStaffListingEndpoints.test_get_user_staff_with_status_filter _______
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 112, in test_get_user_staff_with_status_filter
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 112, in test_get_user_staff_with_status_filter
     response = client.get("/api/v1/staff/user/1?status=ACTIVE")
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 514, in get
@@ -897,7 +897,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -953,10 +953,10 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
     result = rule_service.get_user_rules(user_id, status.upper())
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     user = self.rule_repo.get_user_by_id(user_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -1100,7 +1100,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -1156,10 +1156,10 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
     |     result = rule_service.get_user_rules(user_id, status.upper())
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     |     user = self.rule_repo.get_user_by_id(user_id)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -1179,7 +1179,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -1235,10 +1235,10 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
     result = rule_service.get_user_rules(user_id, status.upper())
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     user = self.rule_repo.get_user_by_id(user_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -1312,7 +1312,7 @@ ______ TestStaffListingEndpoints.test_get_user_staff_with_invalid_status _______
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 120, in test_get_user_staff_with_invalid_status
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 120, in test_get_user_staff_with_invalid_status
     |     response = client.get("/api/v1/staff/user/1?status=INVALID")
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 514, in get
@@ -1371,7 +1371,7 @@ ______ TestStaffListingEndpoints.test_get_user_staff_with_invalid_status _______
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -1427,10 +1427,10 @@ ______ TestStaffListingEndpoints.test_get_user_staff_with_invalid_status _______
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
     |     result = rule_service.get_user_rules(user_id, status.upper())
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     |     user = self.rule_repo.get_user_by_id(user_id)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -1439,7 +1439,7 @@ ______ TestStaffListingEndpoints.test_get_user_staff_with_invalid_status _______
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 120, in test_get_user_staff_with_invalid_status
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 120, in test_get_user_staff_with_invalid_status
     response = client.get("/api/v1/staff/user/1?status=INVALID")
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 514, in get
@@ -1498,7 +1498,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -1554,10 +1554,10 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
     result = rule_service.get_user_rules(user_id, status.upper())
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     user = self.rule_repo.get_user_by_id(user_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -1701,7 +1701,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -1757,10 +1757,10 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
     |     result = rule_service.get_user_rules(user_id, status.upper())
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     |     user = self.rule_repo.get_user_by_id(user_id)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -1780,7 +1780,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -1836,10 +1836,10 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 145, in get_user_staff
     result = rule_service.get_user_rules(user_id, status.upper())
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     user = self.rule_repo.get_user_by_id(user_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -1937,7 +1937,7 @@ ________ TestStaffListingEndpoints.test_get_pending_invitations_success ________
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 152, in test_get_pending_invitations_success
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 152, in test_get_pending_invitations_success
     |     response = client.get("/api/v1/staff/pending/1")
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 514, in get
@@ -1996,7 +1996,7 @@ ________ TestStaffListingEndpoints.test_get_pending_invitations_success ________
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -2052,10 +2052,10 @@ ________ TestStaffListingEndpoints.test_get_pending_invitations_success ________
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
     |     result = rule_service.get_pending_invitations(user_id)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
     |     user = self.rule_repo.get_user_by_id(user_id)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -2064,7 +2064,7 @@ ________ TestStaffListingEndpoints.test_get_pending_invitations_success ________
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 152, in test_get_pending_invitations_success
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 152, in test_get_pending_invitations_success
     response = client.get("/api/v1/staff/pending/1")
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 514, in get
@@ -2123,7 +2123,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -2179,10 +2179,10 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
     result = rule_service.get_pending_invitations(user_id)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
     user = self.rule_repo.get_user_by_id(user_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -2326,7 +2326,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -2382,10 +2382,10 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
     |     result = rule_service.get_pending_invitations(user_id)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
     |     user = self.rule_repo.get_user_by_id(user_id)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -2405,7 +2405,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -2461,10 +2461,10 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
     result = rule_service.get_pending_invitations(user_id)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
     user = self.rule_repo.get_user_by_id(user_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -2538,7 +2538,7 @@ ____ TestStaffListingEndpoints.test_get_pending_invitations_user_not_found _____
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 160, in test_get_pending_invitations_user_not_found
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 160, in test_get_pending_invitations_user_not_found
     |     response = client.get("/api/v1/staff/pending/999999")
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 514, in get
@@ -2597,7 +2597,7 @@ ____ TestStaffListingEndpoints.test_get_pending_invitations_user_not_found _____
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -2653,10 +2653,10 @@ ____ TestStaffListingEndpoints.test_get_pending_invitations_user_not_found _____
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
     |     result = rule_service.get_pending_invitations(user_id)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
     |     user = self.rule_repo.get_user_by_id(user_id)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -2665,7 +2665,7 @@ ____ TestStaffListingEndpoints.test_get_pending_invitations_user_not_found _____
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 160, in test_get_pending_invitations_user_not_found
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 160, in test_get_pending_invitations_user_not_found
     response = client.get("/api/v1/staff/pending/999999")
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 514, in get
@@ -2724,7 +2724,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -2780,10 +2780,10 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
     result = rule_service.get_pending_invitations(user_id)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
     user = self.rule_repo.get_user_by_id(user_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -2927,7 +2927,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -2983,10 +2983,10 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
     |     result = rule_service.get_pending_invitations(user_id)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
     |     user = self.rule_repo.get_user_by_id(user_id)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -3006,7 +3006,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -3062,10 +3062,10 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
     result = rule_service.get_pending_invitations(user_id)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
     user = self.rule_repo.get_user_by_id(user_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -3139,7 +3139,7 @@ _______________ TestStaffCrudEndpoints.test_create_staff_success _______________
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 175, in test_create_staff_success
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 175, in test_create_staff_success
     |     response = client.post("/api/v1/staff", json=sample_management_rule_data)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -3198,7 +3198,7 @@ _______________ TestStaffCrudEndpoints.test_create_staff_success _______________
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -3254,12 +3254,12 @@ _______________ TestStaffCrudEndpoints.test_create_staff_success _______________
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -3268,7 +3268,7 @@ _______________ TestStaffCrudEndpoints.test_create_staff_success _______________
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 175, in test_create_staff_success
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 175, in test_create_staff_success
     response = client.post("/api/v1/staff", json=sample_management_rule_data)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -3327,7 +3327,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -3383,12 +3383,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -3534,7 +3534,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -3590,12 +3590,12 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -3615,7 +3615,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -3671,12 +3671,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -3750,7 +3750,7 @@ ______________ TestStaffCrudEndpoints.test_create_staff_duplicate ______________
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 192, in test_create_staff_duplicate
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 192, in test_create_staff_duplicate
     |     response1 = client.post("/api/v1/staff", json=sample_management_rule_data)
     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -3809,7 +3809,7 @@ ______________ TestStaffCrudEndpoints.test_create_staff_duplicate ______________
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -3865,12 +3865,12 @@ ______________ TestStaffCrudEndpoints.test_create_staff_duplicate ______________
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -3879,7 +3879,7 @@ ______________ TestStaffCrudEndpoints.test_create_staff_duplicate ______________
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 192, in test_create_staff_duplicate
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 192, in test_create_staff_duplicate
     response1 = client.post("/api/v1/staff", json=sample_management_rule_data)
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -3938,7 +3938,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -3994,12 +3994,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -4145,7 +4145,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -4201,12 +4201,12 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -4226,7 +4226,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -4282,12 +4282,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -4361,7 +4361,7 @@ __________ TestStaffCrudEndpoints.test_answer_staff_invitation_accept __________
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 216, in test_answer_staff_invitation_accept
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 216, in test_answer_staff_invitation_accept
     |     create_response = client.post("/api/v1/staff", json=sample_management_rule_data)
     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -4420,7 +4420,7 @@ __________ TestStaffCrudEndpoints.test_answer_staff_invitation_accept __________
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -4476,12 +4476,12 @@ __________ TestStaffCrudEndpoints.test_answer_staff_invitation_accept __________
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -4490,7 +4490,7 @@ __________ TestStaffCrudEndpoints.test_answer_staff_invitation_accept __________
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 216, in test_answer_staff_invitation_accept
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 216, in test_answer_staff_invitation_accept
     create_response = client.post("/api/v1/staff", json=sample_management_rule_data)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -4549,7 +4549,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -4605,12 +4605,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -4756,7 +4756,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -4812,12 +4812,12 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -4837,7 +4837,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -4893,12 +4893,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -4972,7 +4972,7 @@ __________ TestStaffCrudEndpoints.test_answer_staff_invitation_reject __________
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 237, in test_answer_staff_invitation_reject
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 237, in test_answer_staff_invitation_reject
     |     create_response = client.post("/api/v1/staff", json=sample_management_rule_data)
     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -5031,7 +5031,7 @@ __________ TestStaffCrudEndpoints.test_answer_staff_invitation_reject __________
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -5087,12 +5087,12 @@ __________ TestStaffCrudEndpoints.test_answer_staff_invitation_reject __________
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -5101,7 +5101,7 @@ __________ TestStaffCrudEndpoints.test_answer_staff_invitation_reject __________
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 237, in test_answer_staff_invitation_reject
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 237, in test_answer_staff_invitation_reject
     create_response = client.post("/api/v1/staff", json=sample_management_rule_data)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -5160,7 +5160,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -5216,12 +5216,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -5367,7 +5367,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -5423,12 +5423,12 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -5448,7 +5448,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -5504,12 +5504,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -5583,7 +5583,7 @@ ____ TestStaffCrudEndpoints.test_answer_staff_invitation_already_processed _____
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 264, in test_answer_staff_invitation_already_processed
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 264, in test_answer_staff_invitation_already_processed
     |     create_response = client.post("/api/v1/staff", json=sample_management_rule_data)
     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -5642,7 +5642,7 @@ ____ TestStaffCrudEndpoints.test_answer_staff_invitation_already_processed _____
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -5698,12 +5698,12 @@ ____ TestStaffCrudEndpoints.test_answer_staff_invitation_already_processed _____
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -5712,7 +5712,7 @@ ____ TestStaffCrudEndpoints.test_answer_staff_invitation_already_processed _____
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 264, in test_answer_staff_invitation_already_processed
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 264, in test_answer_staff_invitation_already_processed
     create_response = client.post("/api/v1/staff", json=sample_management_rule_data)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -5771,7 +5771,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -5827,12 +5827,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -5978,7 +5978,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -6034,12 +6034,12 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -6059,7 +6059,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -6115,12 +6115,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -6194,7 +6194,7 @@ _______________ TestStaffCrudEndpoints.test_delete_staff_success _______________
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 285, in test_delete_staff_success
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 285, in test_delete_staff_success
     |     create_response = client.post("/api/v1/staff", json=sample_management_rule_data)
     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -6253,7 +6253,7 @@ _______________ TestStaffCrudEndpoints.test_delete_staff_success _______________
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -6309,12 +6309,12 @@ _______________ TestStaffCrudEndpoints.test_delete_staff_success _______________
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -6323,7 +6323,7 @@ _______________ TestStaffCrudEndpoints.test_delete_staff_success _______________
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 285, in test_delete_staff_success
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 285, in test_delete_staff_success
     create_response = client.post("/api/v1/staff", json=sample_management_rule_data)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -6382,7 +6382,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -6438,12 +6438,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -6589,7 +6589,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -6645,12 +6645,12 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -6670,7 +6670,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -6726,12 +6726,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -6805,7 +6805,7 @@ ____________ TestStaffCrudEndpoints.test_delete_staff_force_delete _____________
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 310, in test_delete_staff_force_delete
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 310, in test_delete_staff_force_delete
     |     create_response = client.post("/api/v1/staff", json=sample_management_rule_data)
     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -6864,7 +6864,7 @@ ____________ TestStaffCrudEndpoints.test_delete_staff_force_delete _____________
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -6920,12 +6920,12 @@ ____________ TestStaffCrudEndpoints.test_delete_staff_force_delete _____________
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -6934,7 +6934,7 @@ ____________ TestStaffCrudEndpoints.test_delete_staff_force_delete _____________
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 310, in test_delete_staff_force_delete
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 310, in test_delete_staff_force_delete
     create_response = client.post("/api/v1/staff", json=sample_management_rule_data)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -6993,7 +6993,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -7049,12 +7049,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -7200,7 +7200,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -7256,12 +7256,12 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -7281,7 +7281,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -7337,12 +7337,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -7430,7 +7430,7 @@ ________ TestStaffEdgeCases.test_get_user_staff_with_user_id_not_found _________
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 346, in test_get_user_staff_with_user_id_not_found
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 346, in test_get_user_staff_with_user_id_not_found
     |     response = client.get("/api/v1/staff/user/999999")
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 514, in get
@@ -7489,7 +7489,7 @@ ________ TestStaffEdgeCases.test_get_user_staff_with_user_id_not_found _________
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -7545,10 +7545,10 @@ ________ TestStaffEdgeCases.test_get_user_staff_with_user_id_not_found _________
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
     |     result = rule_service.get_user_rules(user_id)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     |     user = self.rule_repo.get_user_by_id(user_id)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -7557,7 +7557,7 @@ ________ TestStaffEdgeCases.test_get_user_staff_with_user_id_not_found _________
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 346, in test_get_user_staff_with_user_id_not_found
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 346, in test_get_user_staff_with_user_id_not_found
     response = client.get("/api/v1/staff/user/999999")
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 514, in get
@@ -7616,7 +7616,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -7672,10 +7672,10 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
     result = rule_service.get_user_rules(user_id)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     user = self.rule_repo.get_user_by_id(user_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -7819,7 +7819,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -7875,10 +7875,10 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
     |     result = rule_service.get_user_rules(user_id)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     |     user = self.rule_repo.get_user_by_id(user_id)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -7898,7 +7898,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -7954,10 +7954,10 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 147, in get_user_staff
     result = rule_service.get_user_rules(user_id)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 593, in get_user_rules
     user = self.rule_repo.get_user_by_id(user_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -8039,7 +8039,7 @@ ____ TestStaffEdgeCases.test_get_pending_invitations_with_user_id_not_found ____
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 364, in test_get_pending_invitations_with_user_id_not_found
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 364, in test_get_pending_invitations_with_user_id_not_found
     |     response = client.get("/api/v1/staff/pending/999999")
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 514, in get
@@ -8098,7 +8098,7 @@ ____ TestStaffEdgeCases.test_get_pending_invitations_with_user_id_not_found ____
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -8154,10 +8154,10 @@ ____ TestStaffEdgeCases.test_get_pending_invitations_with_user_id_not_found ____
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
     |     result = rule_service.get_pending_invitations(user_id)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
     |     user = self.rule_repo.get_user_by_id(user_id)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -8166,7 +8166,7 @@ ____ TestStaffEdgeCases.test_get_pending_invitations_with_user_id_not_found ____
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 364, in test_get_pending_invitations_with_user_id_not_found
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 364, in test_get_pending_invitations_with_user_id_not_found
     response = client.get("/api/v1/staff/pending/999999")
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 514, in get
@@ -8225,7 +8225,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -8281,10 +8281,10 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
     result = rule_service.get_pending_invitations(user_id)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
     user = self.rule_repo.get_user_by_id(user_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -8428,7 +8428,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -8484,10 +8484,10 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
     |     result = rule_service.get_pending_invitations(user_id)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
     |     user = self.rule_repo.get_user_by_id(user_id)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -8507,7 +8507,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -8563,10 +8563,10 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 232, in get_pending_invitations
     result = rule_service.get_pending_invitations(user_id)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 638, in get_pending_invitations
     user = self.rule_repo.get_user_by_id(user_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -8640,7 +8640,7 @@ _____ TestStaffStatusTransitions.test_status_transition_pending_to_active ______
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 379, in test_status_transition_pending_to_active
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 379, in test_status_transition_pending_to_active
     |     create_response = client.post("/api/v1/staff", json=sample_management_rule_data)
     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -8699,7 +8699,7 @@ _____ TestStaffStatusTransitions.test_status_transition_pending_to_active ______
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -8755,12 +8755,12 @@ _____ TestStaffStatusTransitions.test_status_transition_pending_to_active ______
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -8769,7 +8769,7 @@ _____ TestStaffStatusTransitions.test_status_transition_pending_to_active ______
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 379, in test_status_transition_pending_to_active
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 379, in test_status_transition_pending_to_active
     create_response = client.post("/api/v1/staff", json=sample_management_rule_data)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -8828,7 +8828,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -8884,12 +8884,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -9035,7 +9035,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -9091,12 +9091,12 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -9116,7 +9116,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -9172,12 +9172,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -9251,7 +9251,7 @@ ____ TestStaffStatusTransitions.test_status_transition_pending_to_rejected _____
     |   File "/home/omar/.local/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
     |     result = testfunction(**testargs)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 395, in test_status_transition_pending_to_rejected
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 395, in test_status_transition_pending_to_rejected
     |     create_response = client.post("/api/v1/staff", json=sample_management_rule_data)
     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -9310,7 +9310,7 @@ ____ TestStaffStatusTransitions.test_status_transition_pending_to_rejected _____
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -9366,12 +9366,12 @@ ____ TestStaffStatusTransitions.test_status_transition_pending_to_rejected _____
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -9380,7 +9380,7 @@ ____ TestStaffStatusTransitions.test_status_transition_pending_to_rejected _____
 During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/tests/integration/test_staff_router.py", line 395, in test_status_transition_pending_to_rejected
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/tests/integration/test_staff_router.py", line 395, in test_status_transition_pending_to_rejected
     create_response = client.post("/api/v1/staff", json=sample_management_rule_data)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/testclient.py", line 593, in post
@@ -9439,7 +9439,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -9495,12 +9495,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -9646,7 +9646,7 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     |     response = await call_next(request)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -9702,12 +9702,12 @@ ERROR    core.exceptions.handler:handler.py:86 Unhandled exception: 'ManagementR
     |   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     |     result = context.run(func, *args)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     |     result = rule_service.create_rule(rule)
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     |     self._validate_entities_exist(rule_data)
-    |   File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+    |   File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     |     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     | AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'
@@ -9727,7 +9727,7 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 187, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/server.py", line 125, in log_requests
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/server.py", line 125, in log_requests
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/omar/.local/lib/python3.12/site-packages/starlette/middleware/base.py", line 163, in call_next
@@ -9783,12 +9783,12 @@ Traceback (most recent call last):
   File "/home/omar/.local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 976, in run
     result = context.run(func, *args)
              ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/routers/business_routers/staff_router.py", line 284, in insert_staff_details
     result = rule_service.create_rule(rule)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 400, in create_rule
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 400, in create_rule
     self._validate_entities_exist(rule_data)
-  File "/home/omar/Projects/gluttex/gluttex-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
+  File "/home/omar/Projects/verdelia/verdelia-api/api_server/services/management_rule_service.py", line 126, in _validate_entities_exist
     user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'ManagementRuleRepository' object has no attribute 'get_user_by_id'

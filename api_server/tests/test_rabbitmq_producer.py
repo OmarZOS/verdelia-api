@@ -419,11 +419,11 @@
 #     system = SystemNotificationBuilder
 
 # class FlutterNotificationProducer:
-#     def __init__(self, rabbitmq_url: str = "amqp://dev_user:dev_pass@localhost:5672/gluttex"):
+#     def __init__(self, rabbitmq_url: str = "amqp://dev_user:dev_pass@localhost:5672/verdelia"):
 #         params = pika.ConnectionParameters(
 #                 host='localhost',
 #                 port=5672,
-#                 virtual_host='/gluttex',  # or your custom vhost
+#                 virtual_host='/verdelia',  # or your custom vhost
 #                 credentials=pika.PlainCredentials('dev_user', 'dev_pass')
 #             )
 
@@ -616,7 +616,7 @@
 #             params = pika.ConnectionParameters(
 #                 host='localhost',
 #                 port=5672,
-#                 virtual_host='/gluttex',  # or your custom vhost
+#                 virtual_host='/verdelia',  # or your custom vhost
 #                 credentials=pika.PlainCredentials('dev_user', 'dev_pass')
 #             )
 
@@ -634,7 +634,7 @@
 #             params = pika.ConnectionParameters(
 #                 host='localhost',
 #                 port=5672,
-#                 virtual_host='/gluttex',  # or your custom vhost
+#                 virtual_host='/verdelia',  # or your custom vhost
 #                 credentials=pika.PlainCredentials('dev_user', 'dev_pass')
 #             )
 
@@ -667,7 +667,7 @@
 #                 params = pika.ConnectionParameters(
 #                     host='localhost',
 #                     port=5672,
-#                     virtual_host='/gluttex',  # or your custom vhost
+#                     virtual_host='/verdelia',  # or your custom vhost
 #                     credentials=pika.PlainCredentials('dev_user', 'dev_pass')
 #                 )
 

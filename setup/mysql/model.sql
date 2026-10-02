@@ -8,31 +8,31 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
 -- -----------------------------------------------------
--- Schema gluttex
+-- Schema verdelia
 -- -----------------------------------------------------
-DROP SCHEMA IF EXISTS `gluttex` ;
+DROP SCHEMA IF EXISTS `verdelia` ;
 
 -- -----------------------------------------------------
--- Schema gluttex
+-- Schema verdelia
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `gluttex` ;
+CREATE SCHEMA IF NOT EXISTS `verdelia` ;
 -- -----------------------------------------------------
--- Schema gluttex
+-- Schema verdelia
 -- -----------------------------------------------------
-DROP SCHEMA IF EXISTS `gluttex` ;
+DROP SCHEMA IF EXISTS `verdelia` ;
 
 -- -----------------------------------------------------
--- Schema gluttex
+-- Schema verdelia
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `gluttex` ;
-USE `gluttex` ;
+CREATE SCHEMA IF NOT EXISTS `verdelia` ;
+USE `verdelia` ;
 
 -- -----------------------------------------------------
--- Table `gluttex`.`plan`
+-- Table `verdelia`.`plan`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`plan` ;
+DROP TABLE IF EXISTS `verdelia`.`plan` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`plan` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`plan` (
   `id_plan` INT NOT NULL AUTO_INCREMENT,
   `plan_name` VARCHAR(45) NULL DEFAULT NULL,
   `plan_price` DECIMAL(10,2) NULL DEFAULT NULL,
@@ -46,11 +46,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`naming_contribution`
+-- Table `verdelia`.`naming_contribution`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`naming_contribution` ;
+DROP TABLE IF EXISTS `verdelia`.`naming_contribution` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`naming_contribution` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`naming_contribution` (
   `id_naming_contribution` INT NOT NULL AUTO_INCREMENT,
   `naming_contribution_ar` VARCHAR(255) NULL,
   `naming_contribution_fr` VARCHAR(255) NULL,
@@ -67,11 +67,11 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`provided_service_category`
+-- Table `verdelia`.`provided_service_category`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`provided_service_category` ;
+DROP TABLE IF EXISTS `verdelia`.`provided_service_category` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`provided_service_category` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`provided_service_category` (
   `provided_service_category_id` INT NOT NULL AUTO_INCREMENT,
   `provided_service_category_name` VARCHAR(255) NULL,
   `provided_service_category_naming_ref` INT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`provided_service_category` (
   INDEX `idx_provided_service_category_active` (`provided_service_category_deleted_at` ASC) VISIBLE,
   CONSTRAINT `fk_provided_service_category_1`
     FOREIGN KEY (`provided_service_category_naming_ref`)
-    REFERENCES `gluttex`.`naming_contribution` (`id_naming_contribution`)
+    REFERENCES `verdelia`.`naming_contribution` (`id_naming_contribution`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -95,11 +95,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`staff_role`
+-- Table `verdelia`.`staff_role`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`staff_role` ;
+DROP TABLE IF EXISTS `verdelia`.`staff_role` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`staff_role` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`staff_role` (
   `id_staff_role` INT NOT NULL AUTO_INCREMENT,
   `staff_role_service_category_ref` INT NULL DEFAULT NULL,
   `staff_role_naming_ref` INT NULL,
@@ -110,23 +110,23 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`staff_role` (
   INDEX `fk_staff_role_2_idx` (`staff_role_naming_ref` ASC) VISIBLE,
   CONSTRAINT `fk_staff_role_1`
     FOREIGN KEY (`staff_role_service_category_ref`)
-    REFERENCES `gluttex`.`provided_service_category` (`provided_service_category_id`)
+    REFERENCES `verdelia`.`provided_service_category` (`provided_service_category_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_staff_role_2`
     FOREIGN KEY (`staff_role_naming_ref`)
-    REFERENCES `gluttex`.`naming_contribution` (`id_naming_contribution`)
+    REFERENCES `verdelia`.`naming_contribution` (`id_naming_contribution`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`person_details`
+-- Table `verdelia`.`person_details`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`person_details` ;
+DROP TABLE IF EXISTS `verdelia`.`person_details` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`person_details` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`person_details` (
   `id_person_details` INT NOT NULL AUTO_INCREMENT,
   `person_first_name` VARCHAR(255) NULL DEFAULT NULL,
   `person_last_name` VARCHAR(255) NULL DEFAULT NULL,
@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`person_details` (
   INDEX `fk_person_details_1_idx` (`person_job_ref` ASC) VISIBLE,
   CONSTRAINT `fk_person_details_1`
     FOREIGN KEY (`person_job_ref`)
-    REFERENCES `gluttex`.`staff_role` (`id_staff_role`)
+    REFERENCES `verdelia`.`staff_role` (`id_staff_role`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -156,11 +156,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`address`
+-- Table `verdelia`.`address`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`address` ;
+DROP TABLE IF EXISTS `verdelia`.`address` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`address` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`address` (
   `id_address` INT NOT NULL AUTO_INCREMENT,
   `address_street` VARCHAR(45) NULL DEFAULT NULL,
   `address_city` VARCHAR(45) NULL DEFAULT NULL,
@@ -173,11 +173,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`location`
+-- Table `verdelia`.`location`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`location` ;
+DROP TABLE IF EXISTS `verdelia`.`location` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`location` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`location` (
   `id_location` INT NOT NULL AUTO_INCREMENT,
   `location_position` POINT NOT NULL,
   `location_name` VARCHAR(45) NULL DEFAULT NULL,
@@ -188,18 +188,18 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`location` (
   SPATIAL INDEX `spatial` (`location_position`) VISIBLE,
   CONSTRAINT `fk_location_1`
     FOREIGN KEY (`location_address_id`)
-    REFERENCES `gluttex`.`address` (`id_address`))
+    REFERENCES `verdelia`.`address` (`id_address`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 1
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`care_giver`
+-- Table `verdelia`.`care_giver`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`care_giver` ;
+DROP TABLE IF EXISTS `verdelia`.`care_giver` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`care_giver` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`care_giver` (
   `id_care_giver` INT NOT NULL AUTO_INCREMENT,
   `staff_role_id` INT NULL,
   `verified_care_giver` TINYINT NULL,
@@ -209,18 +209,18 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`care_giver` (
   INDEX `fk_doctor_staff_role1_idx` (`staff_role_id` ASC) VISIBLE,
   CONSTRAINT `fk_care_giver_staff_role1`
     FOREIGN KEY (`staff_role_id`)
-    REFERENCES `gluttex`.`staff_role` (`id_staff_role`)
+    REFERENCES `verdelia`.`staff_role` (`id_staff_role`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`person`
+-- Table `verdelia`.`person`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`person` ;
+DROP TABLE IF EXISTS `verdelia`.`person` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`person` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`person` (
   `id_person` INT NOT NULL AUTO_INCREMENT,
   `person_details_id` INT NULL DEFAULT NULL,
   `person_blood_type` ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-') NULL DEFAULT NULL,
@@ -232,15 +232,15 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`person` (
   INDEX `fk_person_doctor1_idx` (`doctor_id` ASC) VISIBLE,
   CONSTRAINT `fk_person_1`
     FOREIGN KEY (`person_details_id`)
-    REFERENCES `gluttex`.`person_details` (`id_person_details`)
+    REFERENCES `verdelia`.`person_details` (`id_person_details`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fk_person_3`
     FOREIGN KEY (`person_location_id`)
-    REFERENCES `gluttex`.`location` (`id_location`),
+    REFERENCES `verdelia`.`location` (`id_location`),
   CONSTRAINT `fk_person_doctor1`
     FOREIGN KEY (`doctor_id`)
-    REFERENCES `gluttex`.`care_giver` (`id_care_giver`)
+    REFERENCES `verdelia`.`care_giver` (`id_care_giver`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -249,11 +249,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`wallet`
+-- Table `verdelia`.`wallet`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`wallet` ;
+DROP TABLE IF EXISTS `verdelia`.`wallet` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`wallet` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`wallet` (
   `id_wallet` INT NOT NULL AUTO_INCREMENT,
   `wallet_type` ENUM('user', 'provider', 'organization', 'system', 'virtual', 'business') NULL DEFAULT 'user',
   `wallet_currency` ENUM('DZD', 'USD', 'EUR') NULL DEFAULT 'DZD',
@@ -265,11 +265,11 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`app_user`
+-- Table `verdelia`.`app_user`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`app_user` ;
+DROP TABLE IF EXISTS `verdelia`.`app_user` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`app_user` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`app_user` (
   `id_app_user` INT NOT NULL AUTO_INCREMENT,
   `app_user_name` VARCHAR(100) NULL DEFAULT NULL,
   `app_user_password` VARCHAR(256) NULL DEFAULT NULL,
@@ -283,7 +283,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`app_user` (
   `app_user_subscription_ref` INT NULL DEFAULT NULL,
   `app_user_email` VARCHAR(255) NULL,
   `app_user_wallet_id` INT NULL,
-  `app_user_login_option` ENUM('google', 'gluttex') NULL,
+  `app_user_login_option` ENUM('google', 'verdelia') NULL,
   `verified_app_user` TINYINT NULL,
   PRIMARY KEY (`id_app_user`),
   INDEX `fk_app_user_3_idx` (`app_user_person_id` ASC) VISIBLE,
@@ -291,15 +291,15 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`app_user` (
   INDEX `fk_app_user_4_idx` (`app_user_wallet_id` ASC) VISIBLE,
   CONSTRAINT `fk_app_user_2`
     FOREIGN KEY (`app_user_subscription_ref`)
-    REFERENCES `gluttex`.`plan` (`id_plan`),
+    REFERENCES `verdelia`.`plan` (`id_plan`),
   CONSTRAINT `fk_app_user_3`
     FOREIGN KEY (`app_user_person_id`)
-    REFERENCES `gluttex`.`person` (`id_person`)
+    REFERENCES `verdelia`.`person` (`id_person`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fk_app_user_4`
     FOREIGN KEY (`app_user_wallet_id`)
-    REFERENCES `gluttex`.`wallet` (`id_wallet`)
+    REFERENCES `verdelia`.`wallet` (`id_wallet`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -308,11 +308,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`product_provider_type`
+-- Table `verdelia`.`product_provider_type`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`product_provider_type` ;
+DROP TABLE IF EXISTS `verdelia`.`product_provider_type` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`product_provider_type` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`product_provider_type` (
   `id_product_provider_type` INT NOT NULL AUTO_INCREMENT,
   `product_provider_type_naming_ref` INT NULL DEFAULT NULL,
   `product_provider_type_icon_url` VARCHAR(255) NULL,
@@ -321,7 +321,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`product_provider_type` (
   INDEX `fk_product_provider_type_1_idx` (`product_provider_type_naming_ref` ASC) VISIBLE,
   CONSTRAINT `fk_product_provider_type_1`
     FOREIGN KEY (`product_provider_type_naming_ref`)
-    REFERENCES `gluttex`.`naming_contribution` (`id_naming_contribution`)
+    REFERENCES `verdelia`.`naming_contribution` (`id_naming_contribution`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -330,11 +330,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`provider_organisation`
+-- Table `verdelia`.`provider_organisation`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`provider_organisation` ;
+DROP TABLE IF EXISTS `verdelia`.`provider_organisation` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`provider_organisation` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`provider_organisation` (
   `idprovider_organisation` INT NOT NULL AUTO_INCREMENT,
   `provider_organisation_naming` INT NULL DEFAULT NULL,
   `provider_organisation_wallet_id` INT NULL,
@@ -349,17 +349,17 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`provider_organisation` (
   INDEX `fk_provider_organisation_app_user1_idx` (`app_user_id` ASC) VISIBLE,
   CONSTRAINT `fk_provider_organisation_1`
     FOREIGN KEY (`provider_organisation_wallet_id`)
-    REFERENCES `gluttex`.`wallet` (`id_wallet`)
+    REFERENCES `verdelia`.`wallet` (`id_wallet`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_provider_organisation_2`
     FOREIGN KEY (`provider_organisation_naming`)
-    REFERENCES `gluttex`.`naming_contribution` (`id_naming_contribution`)
+    REFERENCES `verdelia`.`naming_contribution` (`id_naming_contribution`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_provider_organisation_app_user1`
     FOREIGN KEY (`app_user_id`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    REFERENCES `verdelia`.`app_user` (`id_app_user`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -368,11 +368,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`provider_details`
+-- Table `verdelia`.`provider_details`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`provider_details` ;
+DROP TABLE IF EXISTS `verdelia`.`provider_details` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`provider_details` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`provider_details` (
   `idprovider_details_id` INT NOT NULL AUTO_INCREMENT,
   `provider_naming_ref` INT NULL DEFAULT NULL,
   `provider_contact_info` TEXT NULL DEFAULT NULL,
@@ -382,7 +382,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`provider_details` (
   INDEX `fk_provider_details_1_idx` (`provider_naming_ref` ASC) VISIBLE,
   CONSTRAINT `fk_provider_details_1`
     FOREIGN KEY (`provider_naming_ref`)
-    REFERENCES `gluttex`.`naming_contribution` (`id_naming_contribution`)
+    REFERENCES `verdelia`.`naming_contribution` (`id_naming_contribution`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -391,11 +391,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`product_provider`
+-- Table `verdelia`.`product_provider`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`product_provider` ;
+DROP TABLE IF EXISTS `verdelia`.`product_provider` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`product_provider` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`product_provider` (
   `id_product_provider` INT NOT NULL AUTO_INCREMENT,
   `product_provider_details_id` INT NULL DEFAULT NULL,
   `product_provider_type_id` INT NULL DEFAULT NULL,
@@ -413,28 +413,28 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`product_provider` (
   INDEX `fk_product_provider_6_idx` (`product_provider_wallet_id` ASC) VISIBLE,
   CONSTRAINT `fk_product_provider_1`
     FOREIGN KEY (`product_provider_type_id`)
-    REFERENCES `gluttex`.`product_provider_type` (`id_product_provider_type`)
+    REFERENCES `verdelia`.`product_provider_type` (`id_product_provider_type`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fk_product_provider_2`
     FOREIGN KEY (`product_provider_org_id`)
-    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`)
+    REFERENCES `verdelia`.`provider_organisation` (`idprovider_organisation`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fk_product_provider_3`
     FOREIGN KEY (`product_provider_details_id`)
-    REFERENCES `gluttex`.`provider_details` (`idprovider_details_id`)
+    REFERENCES `verdelia`.`provider_details` (`idprovider_details_id`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fk_product_provider_4`
     FOREIGN KEY (`product_provider_location_id`)
-    REFERENCES `gluttex`.`location` (`id_location`),
+    REFERENCES `verdelia`.`location` (`id_location`),
   CONSTRAINT `fk_product_provider_5`
     FOREIGN KEY (`product_provider_owner`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`),
+    REFERENCES `verdelia`.`app_user` (`id_app_user`),
   CONSTRAINT `fk_product_provider_6`
     FOREIGN KEY (`product_provider_wallet_id`)
-    REFERENCES `gluttex`.`wallet` (`id_wallet`)
+    REFERENCES `verdelia`.`wallet` (`id_wallet`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -443,11 +443,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`invoice`
+-- Table `verdelia`.`invoice`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`invoice` ;
+DROP TABLE IF EXISTS `verdelia`.`invoice` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`invoice` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`invoice` (
   `invoice_id` INT NOT NULL AUTO_INCREMENT,
   `invoice_number` VARCHAR(100) NULL,
   `invoice_total_amount` DECIMAL(15,4) NULL,
@@ -466,11 +466,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`additional_fee`
+-- Table `verdelia`.`additional_fee`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`additional_fee` ;
+DROP TABLE IF EXISTS `verdelia`.`additional_fee` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`additional_fee` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`additional_fee` (
   `additional_fee_id` INT NOT NULL AUTO_INCREMENT,
   `additional_fee_name` VARCHAR(255) NULL,
   `additional_fee_amount` DECIMAL(15,4) NULL,
@@ -487,17 +487,17 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`additional_fee` (
   INDEX `fk_additional_fee_3_idx` (`additional_fee_invoice` ASC) VISIBLE,
   CONSTRAINT `fk_additional_fee_1`
     FOREIGN KEY (`additional_fee_user_id`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    REFERENCES `verdelia`.`app_user` (`id_app_user`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_additional_fee_2`
     FOREIGN KEY (`additional_fee_on_provider_id`)
-    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    REFERENCES `verdelia`.`product_provider` (`id_product_provider`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_additional_fee_3`
     FOREIGN KEY (`additional_fee_invoice`)
-    REFERENCES `gluttex`.`invoice` (`invoice_id`)
+    REFERENCES `verdelia`.`invoice` (`invoice_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -505,11 +505,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`cart`
+-- Table `verdelia`.`cart`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`cart` ;
+DROP TABLE IF EXISTS `verdelia`.`cart` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`cart` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`cart` (
   `cart_id` INT NOT NULL AUTO_INCREMENT,
   `cart_product_provider_id` INT NULL COMMENT 'Provider owning the cart',
   `cart_selling_user` INT NULL COMMENT 'Customer / patient / client id',
@@ -530,27 +530,27 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`cart` (
   INDEX `fk_cart_5_idx` (`cart_invoice` ASC) VISIBLE,
   CONSTRAINT `cart_ibfk_1`
     FOREIGN KEY (`cart_product_provider_id`)
-    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    REFERENCES `verdelia`.`product_provider` (`id_product_provider`)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
   CONSTRAINT `fk_cart_1`
     FOREIGN KEY (`cart_selling_user`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    REFERENCES `verdelia`.`app_user` (`id_app_user`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_cart_2`
     FOREIGN KEY (`cart_client_user`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    REFERENCES `verdelia`.`app_user` (`id_app_user`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_cart_3`
     FOREIGN KEY (`cart_person_ref`)
-    REFERENCES `gluttex`.`person` (`id_person`)
+    REFERENCES `verdelia`.`person` (`id_person`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_cart_5`
     FOREIGN KEY (`cart_invoice`)
-    REFERENCES `gluttex`.`invoice` (`invoice_id`)
+    REFERENCES `verdelia`.`invoice` (`invoice_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -558,11 +558,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`comment`
+-- Table `verdelia`.`comment`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`comment` ;
+DROP TABLE IF EXISTS `verdelia`.`comment` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`comment` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`comment` (
   `idcomment` INT NOT NULL AUTO_INCREMENT,
   `comment_owner` INT NULL DEFAULT NULL,
   `comment_content` TEXT NULL DEFAULT NULL,
@@ -575,20 +575,20 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`comment` (
   INDEX `fk_comment_2_idx` (`comment_owner` ASC) VISIBLE,
   CONSTRAINT `fk_comment_1`
     FOREIGN KEY (`replying_to`)
-    REFERENCES `gluttex`.`comment` (`idcomment`),
+    REFERENCES `verdelia`.`comment` (`idcomment`),
   CONSTRAINT `fk_comment_2`
     FOREIGN KEY (`comment_owner`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`))
+    REFERENCES `verdelia`.`app_user` (`id_app_user`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`comment_reaction`
+-- Table `verdelia`.`comment_reaction`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`comment_reaction` ;
+DROP TABLE IF EXISTS `verdelia`.`comment_reaction` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`comment_reaction` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`comment_reaction` (
   `id_comment_reaction` INT NOT NULL AUTO_INCREMENT,
   `comment_reacting_user` INT NULL DEFAULT NULL,
   `comment_reaction` ENUM('like', 'dislike', 'love', 'helpful', 'not_helpful', 'star') NULL DEFAULT 'like',
@@ -598,21 +598,21 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`comment_reaction` (
   INDEX `fk_product_reaction_30_idx` (`reacted_on_comment` ASC) VISIBLE,
   CONSTRAINT `fk_product_reaction_11`
     FOREIGN KEY (`comment_reacting_user`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    REFERENCES `verdelia`.`app_user` (`id_app_user`)
     ON UPDATE RESTRICT,
   CONSTRAINT `fk_product_reaction_30`
     FOREIGN KEY (`reacted_on_comment`)
-    REFERENCES `gluttex`.`comment` (`idcomment`))
+    REFERENCES `verdelia`.`comment` (`idcomment`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`ingredient`
+-- Table `verdelia`.`ingredient`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`ingredient` ;
+DROP TABLE IF EXISTS `verdelia`.`ingredient` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`ingredient` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`ingredient` (
   `id_ingredient` INT NOT NULL AUTO_INCREMENT,
   `ingredient_quantifier` ENUM('g', 'kg', 'mg', 'L', 'mL', 'pc', 'pkg', 'box', 'bag', 'slice', 'cup') NULL DEFAULT 'pc',
   `ingredient_naming_contribution` INT NULL,
@@ -624,12 +624,12 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`ingredient` (
   INDEX `fk_ingredient_2_idx` (`ingredient_user_id` ASC) VISIBLE,
   CONSTRAINT `fk_ingredient_1`
     FOREIGN KEY (`ingredient_naming_contribution`)
-    REFERENCES `gluttex`.`naming_contribution` (`id_naming_contribution`)
+    REFERENCES `verdelia`.`naming_contribution` (`id_naming_contribution`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_ingredient_2`
     FOREIGN KEY (`ingredient_user_id`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    REFERENCES `verdelia`.`app_user` (`id_app_user`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -638,11 +638,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`product_category`
+-- Table `verdelia`.`product_category`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`product_category` ;
+DROP TABLE IF EXISTS `verdelia`.`product_category` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`product_category` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`product_category` (
   `id_product_category` INT NOT NULL AUTO_INCREMENT,
   `product_category_naming_ref` INT NULL,
   `product_category_icon` VARCHAR(255) NULL,
@@ -651,7 +651,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`product_category` (
   INDEX `fk_product_category_1_idx` (`product_category_naming_ref` ASC) VISIBLE,
   CONSTRAINT `fk_product_category_1`
     FOREIGN KEY (`product_category_naming_ref`)
-    REFERENCES `gluttex`.`naming_contribution` (`id_naming_contribution`)
+    REFERENCES `verdelia`.`naming_contribution` (`id_naming_contribution`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -660,11 +660,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`iproduct`
+-- Table `verdelia`.`iproduct`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`iproduct` ;
+DROP TABLE IF EXISTS `verdelia`.`iproduct` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`iproduct` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`iproduct` (
   `id_iproduct` INT NOT NULL AUTO_INCREMENT,
   `iproduct_barcode` VARCHAR(45) NULL DEFAULT NULL,
   `iproduct_brand` VARCHAR(255) NULL DEFAULT NULL,
@@ -686,12 +686,12 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`iproduct` (
   INDEX `fk_iproduct_2_idx` (`iproduct_naming_ref` ASC) VISIBLE,
   CONSTRAINT `fk_iproduct_1`
     FOREIGN KEY (`iproduct_category_id`)
-    REFERENCES `gluttex`.`product_category` (`id_product_category`)
+    REFERENCES `verdelia`.`product_category` (`id_product_category`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fk_iproduct_2`
     FOREIGN KEY (`iproduct_naming_ref`)
-    REFERENCES `gluttex`.`naming_contribution` (`id_naming_contribution`)
+    REFERENCES `verdelia`.`naming_contribution` (`id_naming_contribution`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -700,11 +700,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`location_image`
+-- Table `verdelia`.`location_image`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`location_image` ;
+DROP TABLE IF EXISTS `verdelia`.`location_image` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`location_image` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`location_image` (
   `id_location_image` INT NOT NULL AUTO_INCREMENT,
   `location_image_url` VARCHAR(255) NULL DEFAULT NULL,
   `image_location_ref` INT NULL DEFAULT NULL,
@@ -712,17 +712,17 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`location_image` (
   INDEX `fk_location_image_1_idx` (`image_location_ref` ASC) VISIBLE,
   CONSTRAINT `fk_location_image_1`
     FOREIGN KEY (`image_location_ref`)
-    REFERENCES `gluttex`.`location` (`id_location`))
+    REFERENCES `verdelia`.`location` (`id_location`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`management_rule`
+-- Table `verdelia`.`management_rule`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`management_rule` ;
+DROP TABLE IF EXISTS `verdelia`.`management_rule` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`management_rule` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`management_rule` (
   `id_management_rule` INT NOT NULL AUTO_INCREMENT,
   `rule_ref_org` INT NULL DEFAULT NULL,
   `rule_ref_provider` INT NULL DEFAULT NULL,
@@ -736,15 +736,15 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`management_rule` (
   INDEX `fk_management_rule_3_idx` (`rule_ref_user` ASC) VISIBLE,
   CONSTRAINT `fk_management_rule_1`
     FOREIGN KEY (`rule_ref_org`)
-    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`)
+    REFERENCES `verdelia`.`provider_organisation` (`idprovider_organisation`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fk_management_rule_2`
     FOREIGN KEY (`rule_ref_provider`)
-    REFERENCES `gluttex`.`product_provider` (`id_product_provider`),
+    REFERENCES `verdelia`.`product_provider` (`id_product_provider`),
   CONSTRAINT `fk_management_rule_3`
     FOREIGN KEY (`rule_ref_user`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    REFERENCES `verdelia`.`app_user` (`id_app_user`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT)
 ENGINE = InnoDB
@@ -753,11 +753,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`notification`
+-- Table `verdelia`.`notification`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`notification` ;
+DROP TABLE IF EXISTS `verdelia`.`notification` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`notification` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`notification` (
   `id_notification` INT NOT NULL AUTO_INCREMENT,
   `notification_code` ENUM('order_placed', 'order_confirmed', 'order_processing', 'order_shipped', 'order_delivered', 'order_cancelled', 'order_refunded', 'order_status_updated', 'payment_received', 'payment_failed', 'payment_refunded', 'payment_pending', 'invoice_created', 'invoice_paid', 'invoice_overdue', 'invoice_cancelled', 'deposit_received', 'deposit_confirmed', 'cart_abandoned', 'cart_reminder', 'cart_created', 'cart_updated', 'product_added', 'product_updated', 'product_deleted', 'product_stock_low', 'product_stock_restocked', 'product_price_changed', 'product_reviewed', 'product_rating', 'product_featured', 'product_discount', 'product_back_in_stock', 'product_available', 'product_out_of_stock', 'supplier_created', 'supplier_updated', 'supplier_deleted', 'supplier_verified', 'supplier_suspended', 'supplier_approved', 'provider_created', 'provider_updated', 'provider_deleted', 'provider_verified', 'provider_suspended', 'provider_approved', 'role_invitation', 'role_invitation_accepted', 'role_invitation_rejected', 'role_invitation_expired', 'role_assigned', 'role_removed', 'role_updated', 'role_changed', 'permission_granted', 'permission_revoked', 'user_role_changed', 'recipe_added', 'recipe_updated', 'recipe_deleted', 'recipe_liked', 'recipe_commented', 'recipe_featured', 'recipe_shared', 'recipe_saved', 'user_registered', 'user_verified', 'user_password_changed', 'user_profile_updated', 'user_logged_in', 'user_logged_out', 'user_suspended', 'user_reactivated', 'user_deleted', 'user_email_verified', 'user_phone_verified', 'user_account_approved', 'user_account_rejected', 'user_account_pending', 'subscription_created', 'subscription_renewed', 'subscription_expired', 'subscription_cancelled', 'subscription_payment_failed', 'subscription_upgraded', 'subscription_downgraded', 'subscription_trial_ending', 'subscription_payment_success', 'delivery_created', 'delivery_confirmed', 'delivery_shipped', 'delivery_in_transit', 'delivery_out_for_delivery', 'delivery_delivered', 'delivery_failed', 'delivery_cancelled', 'delivery_returned', 'delivery_refunded', 'delivery_status_updated', 'delivery_scheduled', 'delivery_delayed', 'service_created', 'service_updated', 'service_deleted', 'service_scheduled', 'service_completed', 'service_cancelled', 'service_reminder', 'service_rescheduled', 'service_reviewed', 'service_rating', 'service_confirmed', 'service_started', 'service_finished', 'comment_added', 'comment_replied', 'comment_mentioned', 'comment_liked', 'comment_deleted', 'comment_reported', 'comment_approved', 'comment_spam', 'reaction_received', 'reaction_liked', 'reaction_loved', 'reaction_rated', 'reaction_disliked', 'report_created', 'report_processed', 'report_resolved', 'report_closed', 'report_rejected', 'report_escalated', 'wallet_credited', 'wallet_debited', 'wallet_balance_low', 'wallet_balance_updated', 'wallet_created', 'wallet_activated', 'wallet_suspended', 'wallet_closed', 'wallet_pending_verification', 'wallet_verified', 'wallet_transaction_completed', 'money_transaction_initiated', 'money_transaction_completed', 'money_transaction_failed', 'money_transaction_reversed', 'money_transaction_cancelled', 'money_transaction_refunded', 'money_transaction_pending', 'org_invitation', 'org_invitation_accepted', 'org_invitation_rejected', 'org_member_added', 'org_member_removed', 'org_member_left', 'org_created', 'org_updated', 'org_deleted', 'org_activated', 'org_suspended', 'team_invitation', 'team_invitation_accepted', 'team_invitation_rejected', 'team_member_added', 'team_member_removed', 'team_created', 'team_updated', 'team_deleted', 'welcome', 'onboarding_complete', 'profile_updated', 'account_created', 'account_suspended', 'account_reactivated', 'account_deleted', 'settings_updated', 'preferences_updated', 'security_alert', 'security_alert_unusual_login', 'security_alert_password_change', 'security_alert_two_factor', 'security_alert_device_recognized', 'security_alert_device_unknown', 'system_announcement', 'maintenance_scheduled', 'maintenance_completed', 'new_version_available', 'feature_available', 'newsletter', 'promotional_offer', 'discount_available', 'coupon_received', 'loyalty_points_earned', 'loyalty_points_used', 'birthday_greeting', 'milestone_achieved', 'feedback_request', 'survey_request', 'upcoming_event', 'event_reminder', 'event_cancelled', 'event_postponed', 'notification_preference_updated', 'notification_settings_changed', 'unread_messages', 'new_message_received', 'message_read', 'message_sent', 'message_failed', 'conversation_started', 'conversation_ended', 'conversation_updated', 'connection_request', 'connection_approved', 'connection_rejected', 'connection_removed', 'connection_suggested', 'follow_request', 'follow_request_accepted', 'follow_request_rejected', 'follow_started', 'follow_ended', 'share_received', 'share_accepted', 'share_rejected', 'share_expired', 'review_requested', 'review_submitted', 'review_updated', 'review_deleted', 'review_responded', 'appointment_scheduled', 'appointment_confirmed', 'appointment_rescheduled', 'appointment_cancelled', 'appointment_reminder', 'appointment_completed', 'appointment_no_show', 'task_assigned', 'task_updated', 'task_completed', 'task_overdue', 'task_deleted', 'task_reassigned', 'document_uploaded', 'document_shared', 'document_updated', 'document_deleted', 'document_expired', 'document_approved', 'document_rejected', 'document_signed', 'compliance_alert', 'compliance_approved', 'compliance_rejected', 'compliance_updated', 'compliance_reminder', 'compliance_due', 'compliance_overdue', 'backup_completed', 'backup_failed', 'backup_restored', 'backup_scheduled', 'integration_connected', 'integration_disconnected', 'integration_error', 'integration_success', 'integration_sync_completed', 'integration_sync_failed') NULL DEFAULT NULL,
   `notification_params` TEXT NULL DEFAULT NULL,
@@ -768,18 +768,18 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`notification` (
   INDEX `fk_notification_1_idx` (`notification_user_ref` ASC) VISIBLE,
   CONSTRAINT `fk_notification_1`
     FOREIGN KEY (`notification_user_ref`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`))
+    REFERENCES `verdelia`.`app_user` (`id_app_user`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 1
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`product`
+-- Table `verdelia`.`product`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`product` ;
+DROP TABLE IF EXISTS `verdelia`.`product` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`product` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`product` (
   `id_product` INT NOT NULL AUTO_INCREMENT,
   `product_name` VARCHAR(45) NULL DEFAULT NULL,
   `product_brand` VARCHAR(45) NULL DEFAULT NULL,
@@ -804,33 +804,33 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`product` (
   INDEX `fk_product_4_idx` (`product_origin_id` ASC) VISIBLE,
   CONSTRAINT `fk_product_1`
     FOREIGN KEY (`product_provider_id`)
-    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    REFERENCES `verdelia`.`product_provider` (`id_product_provider`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fk_product_2`
     FOREIGN KEY (`product_category_id`)
-    REFERENCES `gluttex`.`product_category` (`id_product_category`)
+    REFERENCES `verdelia`.`product_category` (`id_product_category`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fk_product_3`
     FOREIGN KEY (`product_owner`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    REFERENCES `verdelia`.`app_user` (`id_app_user`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fk_product_4`
     FOREIGN KEY (`product_origin_id`)
-    REFERENCES `gluttex`.`iproduct` (`id_iproduct`))
+    REFERENCES `verdelia`.`iproduct` (`id_iproduct`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 1
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`placed_order`
+-- Table `verdelia`.`placed_order`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`placed_order` ;
+DROP TABLE IF EXISTS `verdelia`.`placed_order` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`placed_order` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`placed_order` (
   `id_placed_order` INT NOT NULL AUTO_INCREMENT,
   `order_discount` DOUBLE NULL DEFAULT NULL,
   `total_price` DOUBLE NULL DEFAULT NULL,
@@ -847,15 +847,15 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`placed_order` (
   INDEX `fk_placed_order_3_idx` (`placed_order_invoice` ASC) VISIBLE,
   CONSTRAINT `fk_placed_order_1`
     FOREIGN KEY (`ordering_user_id`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    REFERENCES `verdelia`.`app_user` (`id_app_user`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fk_placed_order_2`
     FOREIGN KEY (`placed_order_location_ref`)
-    REFERENCES `gluttex`.`location` (`id_location`),
+    REFERENCES `verdelia`.`location` (`id_location`),
   CONSTRAINT `fk_placed_order_3`
     FOREIGN KEY (`placed_order_invoice`)
-    REFERENCES `gluttex`.`invoice` (`invoice_id`)
+    REFERENCES `verdelia`.`invoice` (`invoice_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -864,11 +864,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`ordered_item`
+-- Table `verdelia`.`ordered_item`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`ordered_item` ;
+DROP TABLE IF EXISTS `verdelia`.`ordered_item` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`ordered_item` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`ordered_item` (
   `id_ordered_item` INT NOT NULL AUTO_INCREMENT,
   `ordered_product_id` INT NULL DEFAULT NULL,
   `ordered_quantity` INT NULL DEFAULT 0,
@@ -888,15 +888,15 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`ordered_item` (
   INDEX `fk_ordered_item_2_idx` (`ordered_item_cart_ref` ASC) VISIBLE,
   CONSTRAINT `fk_ordered_item_1`
     FOREIGN KEY (`ordered_product_id`)
-    REFERENCES `gluttex`.`product` (`id_product`)
+    REFERENCES `verdelia`.`product` (`id_product`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fk_ordered_item_3`
     FOREIGN KEY (`order_ref`)
-    REFERENCES `gluttex`.`placed_order` (`id_placed_order`),
+    REFERENCES `verdelia`.`placed_order` (`id_placed_order`),
   CONSTRAINT `fk_ordered_item_2`
     FOREIGN KEY (`ordered_item_cart_ref`)
-    REFERENCES `gluttex`.`cart` (`cart_id`)
+    REFERENCES `verdelia`.`cart` (`cart_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -905,11 +905,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`provided_service`
+-- Table `verdelia`.`provided_service`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`provided_service` ;
+DROP TABLE IF EXISTS `verdelia`.`provided_service` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`provided_service` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`provided_service` (
   `provided_service_id` INT NOT NULL AUTO_INCREMENT,
   `provided_service_name` VARCHAR(255) NULL,
   `provided_service_description` TEXT NULL DEFAULT NULL,
@@ -932,12 +932,12 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`provided_service` (
   INDEX `idx_provided_service_created_at` (`provided_service_created_at` ASC) VISIBLE,
   CONSTRAINT `provided_service_ibfk_1`
     FOREIGN KEY (`provided_service_category_id`)
-    REFERENCES `gluttex`.`provided_service_category` (`provided_service_category_id`)
+    REFERENCES `verdelia`.`provided_service_category` (`provided_service_category_id`)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
   CONSTRAINT `provided_service_ibfk_2`
     FOREIGN KEY (`provided_service_product_provider_id`)
-    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    REFERENCES `verdelia`.`product_provider` (`id_product_provider`)
     ON DELETE RESTRICT
     ON UPDATE CASCADE)
 ENGINE = InnoDB
@@ -945,11 +945,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`ordered_service`
+-- Table `verdelia`.`ordered_service`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`ordered_service` ;
+DROP TABLE IF EXISTS `verdelia`.`ordered_service` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`ordered_service` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`ordered_service` (
   `ordered_service_id` INT NOT NULL AUTO_INCREMENT,
   `ordered_service_cart_id` INT NULL,
   `ordered_service_service_id` INT NULL COMMENT 'References provided_service',
@@ -967,12 +967,12 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`ordered_service` (
   INDEX `idx_service` (`ordered_service_service_id` ASC) VISIBLE,
   CONSTRAINT `ordered_service_ibfk_1`
     FOREIGN KEY (`ordered_service_cart_id`)
-    REFERENCES `gluttex`.`cart` (`cart_id`)
+    REFERENCES `verdelia`.`cart` (`cart_id`)
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT `ordered_service_ibfk_2`
     FOREIGN KEY (`ordered_service_service_id`)
-    REFERENCES `gluttex`.`provided_service` (`provided_service_id`)
+    REFERENCES `verdelia`.`provided_service` (`provided_service_id`)
     ON DELETE RESTRICT
     ON UPDATE CASCADE)
 ENGINE = InnoDB
@@ -980,11 +980,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`organisation_image`
+-- Table `verdelia`.`organisation_image`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`organisation_image` ;
+DROP TABLE IF EXISTS `verdelia`.`organisation_image` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`organisation_image` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`organisation_image` (
   `id_org_image` INT NOT NULL AUTO_INCREMENT,
   `org_image_url` VARCHAR(255) NULL DEFAULT NULL,
   `org_ref_id` INT NULL DEFAULT NULL,
@@ -992,18 +992,18 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`organisation_image` (
   INDEX `fk_organisation_image_1_idx` (`org_ref_id` ASC) VISIBLE,
   CONSTRAINT `fk_organisation_image_1`
     FOREIGN KEY (`org_ref_id`)
-    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`))
+    REFERENCES `verdelia`.`provider_organisation` (`idprovider_organisation`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 1
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`patient`
+-- Table `verdelia`.`patient`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`patient` ;
+DROP TABLE IF EXISTS `verdelia`.`patient` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`patient` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`patient` (
   `id_patient` INT NOT NULL AUTO_INCREMENT,
   `patient_person_id` INT NULL DEFAULT NULL,
   `patient_disease_severity` ENUM('mild', 'moderate', 'severe', 'critical') NULL DEFAULT 'mild',
@@ -1011,17 +1011,17 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`patient` (
   INDEX `fk_patient_1_idx` (`patient_person_id` ASC) VISIBLE,
   CONSTRAINT `fk_patient_1`
     FOREIGN KEY (`patient_person_id`)
-    REFERENCES `gluttex`.`person` (`id_person`))
+    REFERENCES `verdelia`.`person` (`id_person`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`payment`
+-- Table `verdelia`.`payment`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`payment` ;
+DROP TABLE IF EXISTS `verdelia`.`payment` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`payment` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`payment` (
   `payment_id` INT NOT NULL AUTO_INCREMENT,
   `payment_invoice_id` INT NULL,
   `payment_amount` DECIMAL(15,4) NULL,
@@ -1037,7 +1037,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`payment` (
   INDEX `idx_status` (`payment_status` ASC) VISIBLE,
   CONSTRAINT `payment_ibfk_1`
     FOREIGN KEY (`payment_invoice_id`)
-    REFERENCES `gluttex`.`invoice` (`invoice_id`)
+    REFERENCES `verdelia`.`invoice` (`invoice_id`)
     ON DELETE RESTRICT
     ON UPDATE CASCADE)
 ENGINE = InnoDB
@@ -1045,11 +1045,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`symptom`
+-- Table `verdelia`.`symptom`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`symptom` ;
+DROP TABLE IF EXISTS `verdelia`.`symptom` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`symptom` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`symptom` (
   `id_symptom` INT NOT NULL AUTO_INCREMENT,
   `symptom_naming_ref` INT NULL DEFAULT NULL,
   `symptom_icon_url` VARCHAR(255) NULL,
@@ -1057,7 +1057,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`symptom` (
   INDEX `fk_symptom_1_idx` (`symptom_naming_ref` ASC) VISIBLE,
   CONSTRAINT `fk_symptom_1`
     FOREIGN KEY (`symptom_naming_ref`)
-    REFERENCES `gluttex`.`naming_contribution` (`id_naming_contribution`)
+    REFERENCES `verdelia`.`naming_contribution` (`id_naming_contribution`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -1065,11 +1065,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`symptoms_occurence`
+-- Table `verdelia`.`symptoms_occurence`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`symptoms_occurence` ;
+DROP TABLE IF EXISTS `verdelia`.`symptoms_occurence` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`symptoms_occurence` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`symptoms_occurence` (
   `id_symptoms_occurence` INT NOT NULL AUTO_INCREMENT,
   `symptoms_occurence_submission_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   `symptoms_occurence_reason` VARCHAR(300) NULL DEFAULT NULL,
@@ -1079,7 +1079,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`symptoms_occurence` (
   INDEX `fk_symptoms_causality_1_idx` (`symptoms_occurence_ref_patient` ASC) VISIBLE,
   CONSTRAINT `fk_symptoms_causality_1`
     FOREIGN KEY (`symptoms_occurence_ref_patient`)
-    REFERENCES `gluttex`.`patient` (`id_patient`)
+    REFERENCES `verdelia`.`patient` (`id_patient`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT)
 ENGINE = InnoDB
@@ -1087,11 +1087,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`presented_symptom`
+-- Table `verdelia`.`presented_symptom`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`presented_symptom` ;
+DROP TABLE IF EXISTS `verdelia`.`presented_symptom` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`presented_symptom` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`presented_symptom` (
   `id_presented_symptom` INT NOT NULL AUTO_INCREMENT,
   `presented_symptom_ref_symptoms_occurence` INT NULL DEFAULT NULL,
   `presented_symptom_ref_symptom` INT NULL DEFAULT NULL,
@@ -1100,20 +1100,20 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`presented_symptom` (
   INDEX `fk_presented_symptom_2_idx` (`presented_symptom_ref_symptoms_occurence` ASC) VISIBLE,
   CONSTRAINT `fk_presented_symptom_1`
     FOREIGN KEY (`presented_symptom_ref_symptom`)
-    REFERENCES `gluttex`.`symptom` (`id_symptom`),
+    REFERENCES `verdelia`.`symptom` (`id_symptom`),
   CONSTRAINT `fk_presented_symptom_2`
     FOREIGN KEY (`presented_symptom_ref_symptoms_occurence`)
-    REFERENCES `gluttex`.`symptoms_occurence` (`id_symptoms_occurence`))
+    REFERENCES `verdelia`.`symptoms_occurence` (`id_symptoms_occurence`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`product_image`
+-- Table `verdelia`.`product_image`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`product_image` ;
+DROP TABLE IF EXISTS `verdelia`.`product_image` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`product_image` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`product_image` (
   `id_product_image` INT NOT NULL AUTO_INCREMENT,
   `product_image_url` VARCHAR(255) NULL DEFAULT NULL,
   `product_ref_id` INT NULL DEFAULT NULL,
@@ -1121,18 +1121,18 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`product_image` (
   INDEX `fk_product_image_1_idx` (`product_ref_id` ASC) VISIBLE,
   CONSTRAINT `fk_product_image_1`
     FOREIGN KEY (`product_ref_id`)
-    REFERENCES `gluttex`.`product` (`id_product`))
+    REFERENCES `verdelia`.`product` (`id_product`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 1
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`product_reaction`
+-- Table `verdelia`.`product_reaction`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`product_reaction` ;
+DROP TABLE IF EXISTS `verdelia`.`product_reaction` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`product_reaction` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`product_reaction` (
   `id_product_reaction` INT NOT NULL AUTO_INCREMENT,
   `product_reacting_user` INT NULL DEFAULT NULL,
   `product_reaction` ENUM('like', 'dislike', 'love', 'helpful', 'not_helpful', 'star') NULL DEFAULT 'like',
@@ -1143,21 +1143,21 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`product_reaction` (
   INDEX `fk_product_reaction_3_idx` (`reacted_on_product` ASC) VISIBLE,
   CONSTRAINT `fk_product_reaction_1`
     FOREIGN KEY (`product_reacting_user`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`),
+    REFERENCES `verdelia`.`app_user` (`id_app_user`),
   CONSTRAINT `fk_product_reaction_3`
     FOREIGN KEY (`reacted_on_product`)
-    REFERENCES `gluttex`.`product` (`id_product`))
+    REFERENCES `verdelia`.`product` (`id_product`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 1
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`provider_image`
+-- Table `verdelia`.`provider_image`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`provider_image` ;
+DROP TABLE IF EXISTS `verdelia`.`provider_image` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`provider_image` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`provider_image` (
   `id_provider_image` INT NOT NULL AUTO_INCREMENT,
   `provider_image_url` VARCHAR(255) NULL DEFAULT NULL,
   `provider_ref_id` INT NULL DEFAULT NULL,
@@ -1165,18 +1165,18 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`provider_image` (
   INDEX `fk_provider_image_1_idx` (`provider_ref_id` ASC) VISIBLE,
   CONSTRAINT `fk_provider_image_1`
     FOREIGN KEY (`provider_ref_id`)
-    REFERENCES `gluttex`.`product_provider` (`id_product_provider`))
+    REFERENCES `verdelia`.`product_provider` (`id_product_provider`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 1
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`provider_reaction`
+-- Table `verdelia`.`provider_reaction`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`provider_reaction` ;
+DROP TABLE IF EXISTS `verdelia`.`provider_reaction` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`provider_reaction` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`provider_reaction` (
   `id_provider_reaction` INT NOT NULL AUTO_INCREMENT,
   `provider_reacting_user` INT NULL DEFAULT NULL,
   `provider_reaction` ENUM('like', 'dislike', 'love', 'helpful', 'not_helpful', 'star') NULL DEFAULT 'like',
@@ -1187,20 +1187,20 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`provider_reaction` (
   INDEX `fk_product_reaction_31_idx` (`reacted_on_provider` ASC) VISIBLE,
   CONSTRAINT `fk_product_reaction_12`
     FOREIGN KEY (`provider_reacting_user`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`),
+    REFERENCES `verdelia`.`app_user` (`id_app_user`),
   CONSTRAINT `fk_product_reaction_31`
     FOREIGN KEY (`reacted_on_provider`)
-    REFERENCES `gluttex`.`product_provider` (`id_product_provider`))
+    REFERENCES `verdelia`.`product_provider` (`id_product_provider`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`recipe_category`
+-- Table `verdelia`.`recipe_category`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`recipe_category` ;
+DROP TABLE IF EXISTS `verdelia`.`recipe_category` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_category` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`recipe_category` (
   `id_recipe_category` INT NOT NULL AUTO_INCREMENT,
   `recipe_category_naming` INT NULL DEFAULT NULL,
   `recipe_category_icon_url` VARCHAR(255) NULL,
@@ -1209,7 +1209,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_category` (
   INDEX `fk_recipe_category_1_idx` (`recipe_category_naming` ASC) VISIBLE,
   CONSTRAINT `fk_recipe_category_1`
     FOREIGN KEY (`recipe_category_naming`)
-    REFERENCES `gluttex`.`naming_contribution` (`id_naming_contribution`)
+    REFERENCES `verdelia`.`naming_contribution` (`id_naming_contribution`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -1218,11 +1218,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`recipe`
+-- Table `verdelia`.`recipe`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`recipe` ;
+DROP TABLE IF EXISTS `verdelia`.`recipe` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`recipe` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`recipe` (
   `id_recipe` INT NOT NULL AUTO_INCREMENT,
   `recipe_owner_id` INT NULL DEFAULT NULL,
   `recipe_category_id` INT NULL DEFAULT NULL,
@@ -1237,21 +1237,21 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`recipe` (
   INDEX `fk_recipe_2_idx` (`recipe_category_id` ASC) VISIBLE,
   CONSTRAINT `fk_recipe_1`
     FOREIGN KEY (`recipe_owner_id`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`),
+    REFERENCES `verdelia`.`app_user` (`id_app_user`),
   CONSTRAINT `fk_recipe_2`
     FOREIGN KEY (`recipe_category_id`)
-    REFERENCES `gluttex`.`recipe_category` (`id_recipe_category`))
+    REFERENCES `verdelia`.`recipe_category` (`id_recipe_category`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 1
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`recipe_contains_ingredient`
+-- Table `verdelia`.`recipe_contains_ingredient`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`recipe_contains_ingredient` ;
+DROP TABLE IF EXISTS `verdelia`.`recipe_contains_ingredient` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_contains_ingredient` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`recipe_contains_ingredient` (
   `idrecipe_contains_ingredient_id` INT NOT NULL AUTO_INCREMENT,
   `containing_recipe_id` INT NULL DEFAULT NULL,
   `contained_ingredient_id` INT NULL DEFAULT NULL,
@@ -1261,23 +1261,23 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_contains_ingredient` (
   INDEX `fk_recipe_contains_ingredient_2_idx` (`contained_ingredient_id` ASC) VISIBLE,
   CONSTRAINT `fk_recipe_contains_ingredient_1`
     FOREIGN KEY (`containing_recipe_id`)
-    REFERENCES `gluttex`.`recipe` (`id_recipe`)
+    REFERENCES `verdelia`.`recipe` (`id_recipe`)
     ON DELETE RESTRICT
     ON UPDATE RESTRICT,
   CONSTRAINT `fk_recipe_contains_ingredient_2`
     FOREIGN KEY (`contained_ingredient_id`)
-    REFERENCES `gluttex`.`ingredient` (`id_ingredient`))
+    REFERENCES `verdelia`.`ingredient` (`id_ingredient`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 1
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`recipe_image`
+-- Table `verdelia`.`recipe_image`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`recipe_image` ;
+DROP TABLE IF EXISTS `verdelia`.`recipe_image` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_image` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`recipe_image` (
   `id_recipe_image` INT NOT NULL AUTO_INCREMENT,
   `recipe_image_url` VARCHAR(255) NULL DEFAULT NULL,
   `recipe_ref_id` INT NULL DEFAULT NULL,
@@ -1285,18 +1285,18 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_image` (
   INDEX `fk_recipe_image_1_idx` (`recipe_ref_id` ASC) VISIBLE,
   CONSTRAINT `fk_recipe_image_1`
     FOREIGN KEY (`recipe_ref_id`)
-    REFERENCES `gluttex`.`recipe` (`id_recipe`))
+    REFERENCES `verdelia`.`recipe` (`id_recipe`))
 ENGINE = InnoDB
 AUTO_INCREMENT = 1
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`recipe_reaction`
+-- Table `verdelia`.`recipe_reaction`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`recipe_reaction` ;
+DROP TABLE IF EXISTS `verdelia`.`recipe_reaction` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_reaction` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`recipe_reaction` (
   `id_recipe_reaction` INT NOT NULL AUTO_INCREMENT,
   `recipe_reacting_user` INT NULL DEFAULT NULL,
   `recipe_reaction` ENUM('like', 'dislike', 'love', 'helpful', 'not_helpful', 'star') NULL DEFAULT 'like',
@@ -1306,20 +1306,20 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_reaction` (
   INDEX `fk_recipe_reaction_1_idx` (`reacted_on_recipe` ASC) VISIBLE,
   CONSTRAINT `fk_product_reaction_10`
     FOREIGN KEY (`recipe_reacting_user`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`),
+    REFERENCES `verdelia`.`app_user` (`id_app_user`),
   CONSTRAINT `fk_recipe_reaction_1`
     FOREIGN KEY (`reacted_on_recipe`)
-    REFERENCES `gluttex`.`recipe` (`id_recipe`))
+    REFERENCES `verdelia`.`recipe` (`id_recipe`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`report`
+-- Table `verdelia`.`report`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`report` ;
+DROP TABLE IF EXISTS `verdelia`.`report` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`report` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`report` (
   `id_report` INT NOT NULL AUTO_INCREMENT,
   `report_text` TEXT NULL DEFAULT NULL,
   `report_owner` INT NULL DEFAULT NULL,
@@ -1330,17 +1330,17 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`report` (
   INDEX `fk_report_1_idx` (`report_owner` ASC) VISIBLE,
   CONSTRAINT `fk_report_1`
     FOREIGN KEY (`report_owner`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`))
+    REFERENCES `verdelia`.`app_user` (`id_app_user`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`serology_indicator`
+-- Table `verdelia`.`serology_indicator`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`serology_indicator` ;
+DROP TABLE IF EXISTS `verdelia`.`serology_indicator` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`serology_indicator` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`serology_indicator` (
   `id_serology_indicator` INT NOT NULL AUTO_INCREMENT,
   `serology_indicator_name` VARCHAR(45) NULL DEFAULT NULL,
   `serology_indicator_desc` VARCHAR(300) NULL DEFAULT NULL,
@@ -1350,11 +1350,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`serology`
+-- Table `verdelia`.`serology`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`serology` ;
+DROP TABLE IF EXISTS `verdelia`.`serology` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`serology` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`serology` (
   `id_serology` INT NOT NULL AUTO_INCREMENT,
   `indicator_id` INT NULL DEFAULT NULL,
   `serology_date` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1365,20 +1365,20 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`serology` (
   INDEX `fk_serology_1_idx` (`indicator_id` ASC) VISIBLE,
   CONSTRAINT `fk_diagnosis_1`
     FOREIGN KEY (`patient_id`)
-    REFERENCES `gluttex`.`patient` (`id_patient`),
+    REFERENCES `verdelia`.`patient` (`id_patient`),
   CONSTRAINT `fk_serology_1`
     FOREIGN KEY (`indicator_id`)
-    REFERENCES `gluttex`.`serology_indicator` (`id_serology_indicator`))
+    REFERENCES `verdelia`.`serology_indicator` (`id_serology_indicator`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`service_package`
+-- Table `verdelia`.`service_package`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`service_package` ;
+DROP TABLE IF EXISTS `verdelia`.`service_package` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`service_package` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`service_package` (
   `service_package_id` INT NOT NULL AUTO_INCREMENT,
   `service_package_name` VARCHAR(255) NULL,
   `service_package_description` TEXT NULL DEFAULT NULL,
@@ -1396,7 +1396,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`service_package` (
   INDEX `idx_service_package_validity` (`service_package_valid_from` ASC, `service_package_valid_to` ASC) VISIBLE,
   CONSTRAINT `service_package_ibfk_1`
     FOREIGN KEY (`service_package_product_provider_id`)
-    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    REFERENCES `verdelia`.`product_provider` (`id_product_provider`)
     ON DELETE RESTRICT
     ON UPDATE CASCADE)
 ENGINE = InnoDB
@@ -1404,11 +1404,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`service_package_item`
+-- Table `verdelia`.`service_package_item`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`service_package_item` ;
+DROP TABLE IF EXISTS `verdelia`.`service_package_item` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`service_package_item` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`service_package_item` (
   `service_package_item_id` INT NOT NULL AUTO_INCREMENT,
   `service_package_item_package_id` INT NULL,
   `service_package_item_service_id` INT NULL,
@@ -1420,12 +1420,12 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`service_package_item` (
   INDEX `idx_service_package_item_service` (`service_package_item_service_id` ASC) VISIBLE,
   CONSTRAINT `service_package_item_ibfk_1`
     FOREIGN KEY (`service_package_item_package_id`)
-    REFERENCES `gluttex`.`service_package` (`service_package_id`)
+    REFERENCES `verdelia`.`service_package` (`service_package_id`)
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT `service_package_item_ibfk_2`
     FOREIGN KEY (`service_package_item_service_id`)
-    REFERENCES `gluttex`.`provided_service` (`provided_service_id`)
+    REFERENCES `verdelia`.`provided_service` (`provided_service_id`)
     ON DELETE CASCADE
     ON UPDATE CASCADE)
 ENGINE = InnoDB
@@ -1433,11 +1433,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`service_resource_requirement`
+-- Table `verdelia`.`service_resource_requirement`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`service_resource_requirement` ;
+DROP TABLE IF EXISTS `verdelia`.`service_resource_requirement` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`service_resource_requirement` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`service_resource_requirement` (
   `service_resource_requirement_id` INT NOT NULL AUTO_INCREMENT,
   `service_resource_requirement_service_id` INT NULL,
   `service_resource_requirement_name` VARCHAR(255) NULL,
@@ -1456,12 +1456,12 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`service_resource_requirement` (
   INDEX `fk_service_resource_requirement_1_idx` (`service_resource_requirement_product_ref` ASC) VISIBLE,
   CONSTRAINT `service_resource_requirement_ibfk_1`
     FOREIGN KEY (`service_resource_requirement_service_id`)
-    REFERENCES `gluttex`.`provided_service` (`provided_service_id`)
+    REFERENCES `verdelia`.`provided_service` (`provided_service_id`)
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT `fk_service_resource_requirement_1`
     FOREIGN KEY (`service_resource_requirement_product_ref`)
-    REFERENCES `gluttex`.`product` (`id_product`)
+    REFERENCES `verdelia`.`product` (`id_product`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -1469,11 +1469,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`service_staff_requirement`
+-- Table `verdelia`.`service_staff_requirement`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`service_staff_requirement` ;
+DROP TABLE IF EXISTS `verdelia`.`service_staff_requirement` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`service_staff_requirement` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`service_staff_requirement` (
   `service_staff_requirement_id` INT NOT NULL AUTO_INCREMENT,
   `service_staff_requirement_service_id` INT NULL,
   `service_staff_requirement_role` INT NULL,
@@ -1489,12 +1489,12 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`service_staff_requirement` (
   INDEX `idx_service_staff_requirement_role` (`service_staff_requirement_role` ASC) VISIBLE,
   CONSTRAINT `service_staff_requirement_ibfk_1`
     FOREIGN KEY (`service_staff_requirement_service_id`)
-    REFERENCES `gluttex`.`provided_service` (`provided_service_id`)
+    REFERENCES `verdelia`.`provided_service` (`provided_service_id`)
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT `fk_service_staff_requirement_1`
     FOREIGN KEY (`service_staff_requirement_role`)
-    REFERENCES `gluttex`.`staff_role` (`id_staff_role`)
+    REFERENCES `verdelia`.`staff_role` (`id_staff_role`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -1502,11 +1502,11 @@ DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`service_contribution`
+-- Table `verdelia`.`service_contribution`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`service_contribution` ;
+DROP TABLE IF EXISTS `verdelia`.`service_contribution` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`service_contribution` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`service_contribution` (
   `id_service_contribution` INT NOT NULL AUTO_INCREMENT,
   `service_contribution_duration` VARCHAR(45) NULL,
   `service_contribution_price` FLOAT NULL,
@@ -1525,38 +1525,38 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`service_contribution` (
   INDEX `fk_service_contribution_6_idx` (`service_contribution_provider_ref` ASC) VISIBLE,
   CONSTRAINT `fk_service_contribution_2`
     FOREIGN KEY (`service_contribution_org_ref`)
-    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`)
+    REFERENCES `verdelia`.`provider_organisation` (`idprovider_organisation`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_service_contribution_3`
     FOREIGN KEY (`service_contribution_user_ref`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    REFERENCES `verdelia`.`app_user` (`id_app_user`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_service_contribution_4`
     FOREIGN KEY (`service_contribution_person_ref`)
-    REFERENCES `gluttex`.`person` (`id_person`)
+    REFERENCES `verdelia`.`person` (`id_person`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_service_contribution_5`
     FOREIGN KEY (`service_ref`)
-    REFERENCES `gluttex`.`provided_service` (`provided_service_id`)
+    REFERENCES `verdelia`.`provided_service` (`provided_service_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_service_contribution_6`
     FOREIGN KEY (`service_contribution_provider_ref`)
-    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    REFERENCES `verdelia`.`product_provider` (`id_product_provider`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`delivery_broker`
+-- Table `verdelia`.`delivery_broker`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`delivery_broker` ;
+DROP TABLE IF EXISTS `verdelia`.`delivery_broker` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`delivery_broker` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`delivery_broker` (
   `id_delivery_broker` INT NOT NULL,
   `delivery_broker_name` VARCHAR(255) NULL,
   `delivery_broker_label` VARCHAR(255) NULL,
@@ -1569,18 +1569,18 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`delivery_broker` (
   INDEX `fk_delivery_broker_1_idx` (`delivery_broker_wallet_id` ASC) VISIBLE,
   CONSTRAINT `fk_delivery_broker_1`
     FOREIGN KEY (`delivery_broker_wallet_id`)
-    REFERENCES `gluttex`.`wallet` (`id_wallet`)
+    REFERENCES `verdelia`.`wallet` (`id_wallet`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`delivery`
+-- Table `verdelia`.`delivery`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`delivery` ;
+DROP TABLE IF EXISTS `verdelia`.`delivery` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`delivery` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`delivery` (
   `id_delivery` INT NOT NULL AUTO_INCREMENT,
   `recipient_person` INT NULL,
   `recipient_provider` INT NULL,
@@ -1611,38 +1611,38 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`delivery` (
   INDEX `fk_delivery_7_idx` (`delivery_invoice_ref` ASC) VISIBLE,
   CONSTRAINT `fk_delivery_1`
     FOREIGN KEY (`delivery_address_id`)
-    REFERENCES `gluttex`.`address` (`id_address`)
+    REFERENCES `verdelia`.`address` (`id_address`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_delivery_2`
     FOREIGN KEY (`delivery_current_address_id`)
-    REFERENCES `gluttex`.`address` (`id_address`)
+    REFERENCES `verdelia`.`address` (`id_address`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_delivery_4`
     FOREIGN KEY (`delivery_provider_id`)
-    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    REFERENCES `verdelia`.`product_provider` (`id_product_provider`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_delivery_5`
     FOREIGN KEY (`delivery_broker_id`)
-    REFERENCES `gluttex`.`delivery_broker` (`id_delivery_broker`)
+    REFERENCES `verdelia`.`delivery_broker` (`id_delivery_broker`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_delivery_7`
     FOREIGN KEY (`delivery_invoice_ref`)
-    REFERENCES `gluttex`.`invoice` (`invoice_id`)
+    REFERENCES `verdelia`.`invoice` (`invoice_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`conversation`
+-- Table `verdelia`.`conversation`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`conversation` ;
+DROP TABLE IF EXISTS `verdelia`.`conversation` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`conversation` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`conversation` (
   `id_conversation` INT NOT NULL AUTO_INCREMENT,
   `conversation_created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   `conversation_org_id` INT NULL DEFAULT NULL,
@@ -1657,33 +1657,33 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`conversation` (
   INDEX `fk_message_4_idx` (`conversation_org_id` ASC) VISIBLE,
   CONSTRAINT `fk_message_1`
     FOREIGN KEY (`conversation_sender_user_id`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    REFERENCES `verdelia`.`app_user` (`id_app_user`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_message_2`
     FOREIGN KEY (`conversation_destination_user_id`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    REFERENCES `verdelia`.`app_user` (`id_app_user`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_message_3`
     FOREIGN KEY (`conversation_provider_id`)
-    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    REFERENCES `verdelia`.`product_provider` (`id_product_provider`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_message_4`
     FOREIGN KEY (`conversation_org_id`)
-    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`)
+    REFERENCES `verdelia`.`provider_organisation` (`idprovider_organisation`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`money_transaction`
+-- Table `verdelia`.`money_transaction`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`money_transaction` ;
+DROP TABLE IF EXISTS `verdelia`.`money_transaction` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`money_transaction` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`money_transaction` (
   `id_money_transaction` INT NOT NULL AUTO_INCREMENT,
   `money_transaction_document_url` VARCHAR(255) NULL,
   `money_transaction_amount` DECIMAL(20,8) NULL DEFAULT 0.0,
@@ -1700,28 +1700,28 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`money_transaction` (
   INDEX `fk_money_transaction_3_idx` (`money_transaction_for_payment` ASC) VISIBLE,
   CONSTRAINT `fk_money_transaction_1`
     FOREIGN KEY (`money_transaction_wallet_source_id`)
-    REFERENCES `gluttex`.`wallet` (`id_wallet`)
+    REFERENCES `verdelia`.`wallet` (`id_wallet`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_money_transaction_2`
     FOREIGN KEY (`money_transaction_wallet_destination_id`)
-    REFERENCES `gluttex`.`wallet` (`id_wallet`)
+    REFERENCES `verdelia`.`wallet` (`id_wallet`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_money_transaction_3`
     FOREIGN KEY (`money_transaction_for_payment`)
-    REFERENCES `gluttex`.`payment` (`payment_id`)
+    REFERENCES `verdelia`.`payment` (`payment_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`message`
+-- Table `verdelia`.`message`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`message` ;
+DROP TABLE IF EXISTS `verdelia`.`message` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`message` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`message` (
   `id_message` INT NOT NULL AUTO_INCREMENT,
   `message_content` VARCHAR(255) NULL,
   `message_attached_url` VARCHAR(255) NULL,
@@ -1735,18 +1735,18 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`message` (
   INDEX `fk_message_1_idx` (`message_conversation_id` ASC) VISIBLE,
   CONSTRAINT `fk_message_convo`
     FOREIGN KEY (`message_conversation_id`)
-    REFERENCES `gluttex`.`conversation` (`id_conversation`)
+    REFERENCES `verdelia`.`conversation` (`id_conversation`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`ledger_entry`
+-- Table `verdelia`.`ledger_entry`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`ledger_entry` ;
+DROP TABLE IF EXISTS `verdelia`.`ledger_entry` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`ledger_entry` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`ledger_entry` (
   `id_ledger_entry` INT NOT NULL AUTO_INCREMENT,
   `wallet_id` INT NOT NULL,
   `money_transaction_id` INT NOT NULL,
@@ -1757,23 +1757,23 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`ledger_entry` (
   INDEX `fk_ledger_entry_money_transaction1_idx` (`money_transaction_id` ASC) VISIBLE,
   CONSTRAINT `fk_ledger_entry_wallet1`
     FOREIGN KEY (`wallet_id`)
-    REFERENCES `gluttex`.`wallet` (`id_wallet`)
+    REFERENCES `verdelia`.`wallet` (`id_wallet`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_ledger_entry_money_transaction1`
     FOREIGN KEY (`money_transaction_id`)
-    REFERENCES `gluttex`.`money_transaction` (`id_money_transaction`)
+    REFERENCES `verdelia`.`money_transaction` (`id_money_transaction`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`product_consumption`
+-- Table `verdelia`.`product_consumption`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`product_consumption` ;
+DROP TABLE IF EXISTS `verdelia`.`product_consumption` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`product_consumption` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`product_consumption` (
   `id_product_consumption` INT NOT NULL AUTO_INCREMENT,
   `resource_req_ref` INT NULL,
   `consuming_service_id` INT NULL,
@@ -1785,28 +1785,28 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`product_consumption` (
   PRIMARY KEY (`id_product_consumption`),
   CONSTRAINT `fk_product_consumption_service_resource_requirement1`
     FOREIGN KEY (`resource_req_ref`)
-    REFERENCES `gluttex`.`service_resource_requirement` (`service_resource_requirement_id`)
+    REFERENCES `verdelia`.`service_resource_requirement` (`service_resource_requirement_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_product_consumption_ordered_service1`
     FOREIGN KEY (`consuming_service_id`)
-    REFERENCES `gluttex`.`ordered_service` (`ordered_service_id`)
+    REFERENCES `verdelia`.`ordered_service` (`ordered_service_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_product_consumption_product1`
     FOREIGN KEY (`consumed_product_id`)
-    REFERENCES `gluttex`.`product` (`id_product`)
+    REFERENCES `verdelia`.`product` (`id_product`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`diagnosis`
+-- Table `verdelia`.`diagnosis`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`diagnosis` ;
+DROP TABLE IF EXISTS `verdelia`.`diagnosis` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`diagnosis` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`diagnosis` (
   `id_diagnosis` INT NOT NULL AUTO_INCREMENT,
   `patient_id` INT NULL,
   `doctor_id` INT NULL,
@@ -1816,41 +1816,41 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`diagnosis` (
   INDEX `fk_diagnosis_doctor1_idx` (`doctor_id` ASC) VISIBLE,
   CONSTRAINT `fk_diagnosis_patient1`
     FOREIGN KEY (`patient_id`)
-    REFERENCES `gluttex`.`patient` (`id_patient`)
+    REFERENCES `verdelia`.`patient` (`id_patient`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_diagnosis_doctor1`
     FOREIGN KEY (`doctor_id`)
-    REFERENCES `gluttex`.`care_giver` (`id_care_giver`)
+    REFERENCES `verdelia`.`care_giver` (`id_care_giver`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`prescription`
+-- Table `verdelia`.`prescription`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`prescription` ;
+DROP TABLE IF EXISTS `verdelia`.`prescription` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`prescription` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`prescription` (
   `id_prescription` INT NOT NULL AUTO_INCREMENT,
   `diagnosis_id` INT NULL,
   PRIMARY KEY (`id_prescription`),
   INDEX `fk_prescription_diagnosis1_idx` (`diagnosis_id` ASC) VISIBLE,
   CONSTRAINT `fk_prescription_diagnosis1`
     FOREIGN KEY (`diagnosis_id`)
-    REFERENCES `gluttex`.`diagnosis` (`id_diagnosis`)
+    REFERENCES `verdelia`.`diagnosis` (`id_diagnosis`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`prescribed_item`
+-- Table `verdelia`.`prescribed_item`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`prescribed_item` ;
+DROP TABLE IF EXISTS `verdelia`.`prescribed_item` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`prescribed_item` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`prescribed_item` (
   `prescription_id` INT NOT NULL,
   `iproduct_id` INT NOT NULL,
   `prescribed_amount` DOUBLE NULL,
@@ -1860,27 +1860,27 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`prescribed_item` (
   PRIMARY KEY (`prescription_id`, `iproduct_id`),
   CONSTRAINT `fk_table1_prescription1`
     FOREIGN KEY (`prescription_id`)
-    REFERENCES `gluttex`.`prescription` (`id_prescription`)
+    REFERENCES `verdelia`.`prescription` (`id_prescription`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_table1_iproduct1`
     FOREIGN KEY (`iproduct_id`)
-    REFERENCES `gluttex`.`iproduct` (`id_iproduct`)
+    REFERENCES `verdelia`.`iproduct` (`id_iproduct`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
-USE `gluttex` ;
-USE `gluttex` ;
+USE `verdelia` ;
+USE `verdelia` ;
 
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`role_invitation`
+-- Table `verdelia`.`role_invitation`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`role_invitation` ;
+DROP TABLE IF EXISTS `verdelia`.`role_invitation` ;
 
-CREATE TABLE IF NOT EXISTS `gluttex`.`role_invitation` (
+CREATE TABLE IF NOT EXISTS `verdelia`.`role_invitation` (
   `id_role_invitation` INT NOT NULL AUTO_INCREMENT,
   `notification_id` INT NULL,
   `provider_id` INT NOT NULL,
@@ -1897,49 +1897,49 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`role_invitation` (
   INDEX `fk_role_invitation_management_rule1_idx` (`rule_id` ASC) VISIBLE,
   CONSTRAINT `fk_role_invitation_notification1`
     FOREIGN KEY (`notification_id`)
-    REFERENCES `gluttex`.`notification` (`id_notification`)
+    REFERENCES `verdelia`.`notification` (`id_notification`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_role_invitation_product_provider1`
     FOREIGN KEY (`provider_id`)
-    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    REFERENCES `verdelia`.`product_provider` (`id_product_provider`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_role_invitation_app_user1`
     FOREIGN KEY (`app_user_id`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    REFERENCES `verdelia`.`app_user` (`id_app_user`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_role_invitation_provider_organisation1`
     FOREIGN KEY (`organisation_id`)
-    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`)
+    REFERENCES `verdelia`.`provider_organisation` (`idprovider_organisation`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_role_invitation_management_rule1`
     FOREIGN KEY (`rule_id`)
-    REFERENCES `gluttex`.`management_rule` (`id_management_rule`)
+    REFERENCES `verdelia`.`management_rule` (`id_management_rule`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
-USE `gluttex` ;
-USE `gluttex` ;
+USE `verdelia` ;
+USE `verdelia` ;
 
 
 -- -----------------------------------------------------
--- Placeholder table for view `gluttex`.`financial_documents_status`
+-- Placeholder table for view `verdelia`.`financial_documents_status`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`financial_documents_status` (`id` INT);
+CREATE TABLE IF NOT EXISTS `verdelia`.`financial_documents_status` (`id` INT);
 
 -- -----------------------------------------------------
 -- procedure create_wallet
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`create_wallet`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`create_wallet`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE create_wallet(
     IN p_wallet_type ENUM('user','provider','organization','system','virtual','business'),
     IN p_wallet_currency ENUM('DZD','USD','EUR'),
@@ -1988,11 +1988,11 @@ DELIMITER ;
 -- function get_wallet_balance
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP function IF EXISTS `gluttex`.`get_wallet_balance`;
+USE `verdelia`;
+DROP function IF EXISTS `verdelia`.`get_wallet_balance`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE FUNCTION get_wallet_balance(p_wallet_id INT)
 RETURNS DOUBLE
 DETERMINISTIC
@@ -2013,11 +2013,11 @@ DELIMITER ;
 -- function is_wallet_valid
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP function IF EXISTS `gluttex`.`is_wallet_valid`;
+USE `verdelia`;
+DROP function IF EXISTS `verdelia`.`is_wallet_valid`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE FUNCTION is_wallet_valid(p_wallet_id INT)
 RETURNS BOOLEAN
 DETERMINISTIC
@@ -2041,11 +2041,11 @@ DELIMITER ;
 -- procedure process_payment
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`process_payment`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`process_payment`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE process_payment(
     IN p_payment_invoice_id INT,
     IN p_payment_amount DECIMAL(15,4),
@@ -2131,11 +2131,11 @@ DELIMITER ;
 -- procedure create_money_transaction
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`create_money_transaction`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`create_money_transaction`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE create_money_transaction(
     IN p_source_wallet_id INT,
     IN p_destination_wallet_id INT,
@@ -2236,11 +2236,11 @@ DELIMITER ;
 -- procedure process_refund
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`process_refund`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`process_refund`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE process_refund(
     IN p_original_transaction_id INT,
     IN p_refund_amount DOUBLE,
@@ -2332,11 +2332,11 @@ DELIMITER ;
 -- procedure transfer_between_wallets
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`transfer_between_wallets`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`transfer_between_wallets`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE transfer_between_wallets(
     IN p_from_wallet INT,
     IN p_to_wallet INT,
@@ -2360,11 +2360,11 @@ DELIMITER ;
 -- procedure deposit_to_wallet
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`deposit_to_wallet`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`deposit_to_wallet`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE deposit_to_wallet(
     IN p_wallet_id INT,
     IN p_amount DOUBLE,
@@ -2392,11 +2392,11 @@ DELIMITER ;
 -- procedure withdraw_from_wallet
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`withdraw_from_wallet`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`withdraw_from_wallet`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE withdraw_from_wallet(
     IN p_wallet_id INT,
     IN p_amount DOUBLE,
@@ -2423,11 +2423,11 @@ DELIMITER ;
 -- procedure get_wallet_transactions
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`get_wallet_transactions`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`get_wallet_transactions`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE get_wallet_transactions(
     IN p_wallet_id INT,
     IN p_limit INT,
@@ -2469,11 +2469,11 @@ DELIMITER ;
 -- procedure get_wallet_summary
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`get_wallet_summary`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`get_wallet_summary`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE get_wallet_summary(
     IN p_wallet_id INT
 )
@@ -2543,11 +2543,11 @@ DELIMITER ;
 -- procedure reverse_transaction
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`reverse_transaction`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`reverse_transaction`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE reverse_transaction(
     IN p_transaction_id INT,
     IN p_reason VARCHAR(255)
@@ -2629,11 +2629,11 @@ DELIMITER ;
 -- function get_invoice_payment_status
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP function IF EXISTS `gluttex`.`get_invoice_payment_status`;
+USE `verdelia`;
+DROP function IF EXISTS `verdelia`.`get_invoice_payment_status`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE FUNCTION get_invoice_payment_status(p_invoice_id INT)
 RETURNS VARCHAR(50)
 DETERMINISTIC
@@ -2669,11 +2669,11 @@ DELIMITER ;
 -- procedure process_cart_payment
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`process_cart_payment`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`process_cart_payment`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE process_cart_payment(
     IN p_cart_id INT,
     IN p_payment_method ENUM('cash','card','bank_transfer','mobile_money','crypto','deposit','wallet','check'),
@@ -2727,11 +2727,11 @@ DELIMITER ;
 -- procedure create_ordered_service
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`create_ordered_service`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`create_ordered_service`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE  create_ordered_service(
     IN p_cart_id INT,
     IN p_service_id INT,
@@ -2877,11 +2877,11 @@ DELIMITER ;
 -- procedure cancel_ordered_service
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`cancel_ordered_service`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`cancel_ordered_service`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE cancel_ordered_service(
     IN p_ordered_service_id INT,
     IN p_cancellation_reason VARCHAR(255),
@@ -2963,11 +2963,11 @@ DELIMITER ;
 -- procedure restore_service_resources
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`restore_service_resources`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`restore_service_resources`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE restore_service_resources(
     IN p_ordered_service_id INT
 )
@@ -3025,11 +3025,11 @@ DELIMITER ;
 -- procedure create_ordered_item
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`create_ordered_item`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`create_ordered_item`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE create_ordered_item(
     IN p_cart_id INT,
     IN p_product_id INT,
@@ -3158,11 +3158,11 @@ DELIMITER ;
 -- procedure cancel_ordered_item
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`cancel_ordered_item`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`cancel_ordered_item`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE cancel_ordered_item(
     IN p_ordered_item_id INT,
     IN p_cancellation_reason VARCHAR(255),
@@ -3262,11 +3262,11 @@ DELIMITER ;
 -- procedure restore_ordered_item_stock
 -- -----------------------------------------------------
 
-USE `gluttex`;
-DROP procedure IF EXISTS `gluttex`.`restore_ordered_item_stock`;
+USE `verdelia`;
+DROP procedure IF EXISTS `verdelia`.`restore_ordered_item_stock`;
 
 DELIMITER $$
-USE `gluttex`$$
+USE `verdelia`$$
 CREATE PROCEDURE restore_ordered_item_stock(
     IN p_ordered_item_id INT
 )
@@ -3294,11 +3294,11 @@ END$$
 DELIMITER ;
 
 -- -----------------------------------------------------
--- View `gluttex`.`financial_documents_status`
+-- View `verdelia`.`financial_documents_status`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `gluttex`.`financial_documents_status`;
-DROP VIEW IF EXISTS `gluttex`.`financial_documents_status` ;
-USE `gluttex`;
+DROP TABLE IF EXISTS `verdelia`.`financial_documents_status`;
+DROP VIEW IF EXISTS `verdelia`.`financial_documents_status` ;
+USE `verdelia`;
 
 
 SET SQL_MODE=@OLD_SQL_MODE;

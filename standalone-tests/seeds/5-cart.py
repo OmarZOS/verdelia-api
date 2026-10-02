@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Bulk Data Creator for Gluttex - Creates Carts, Processes Payments & Tests Status Transitions
+Bulk Data Creator for Verdelia - Creates Carts, Processes Payments & Tests Status Transitions
 Run with: python bulk_data_creator.py
 
 This script:
@@ -1377,7 +1377,7 @@ class BulkDataCreator:
 # ============================================================================
 
 async def main():
-    parser = argparse.ArgumentParser(description="Bulk Data Creator for Gluttex")
+    parser = argparse.ArgumentParser(description="Bulk Data Creator for Verdelia")
     parser.add_argument("--url", default="http://localhost:9000", help="Base URL")
     parser.add_argument("--context-file", default="test_context.json", help="Context file")
     parser.add_argument("--carts", type=int, default=10, help="Number of carts to create")

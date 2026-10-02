@@ -12,7 +12,7 @@ SQL_SCHEMA = os.getenv("SQL_SCHEMA","mysql+pymysql")
 SQL_HOST = os.getenv("SQL_HOST","127.0.0.1")
 SQL_USER = os.getenv("SQL_USER","root")
 SQL_PASSWORD = os.getenv("SQL_PASSWORD","dev_password")
-SQL_DATABASE = os.getenv("SQL_DATABASE","gluttex")
+SQL_DATABASE = os.getenv("SQL_DATABASE","verdelia")
 SQL_PORT= os.getenv("SQL_PORT","3308")
 DB_URI = f"{SQL_SCHEMA}://{SQL_USER}:{SQL_PASSWORD}@{SQL_HOST}:{SQL_PORT}/{SQL_DATABASE}"
 
@@ -37,7 +37,7 @@ REFRESH_TOKEN_EXPIRE_DAYS = os.getenv("REFRESH_TOKEN_EXPIRE_DAYS",'')
 
 
 AUTH_SERVER_PROTOCOLE=os.getenv("AUTH_SERVER_PROTOCOLE",'http')
-AUTH_SERVER_NAME =  os.getenv("AUTH_SERVER_NAME",'gluttex-auth')
+AUTH_SERVER_NAME =  os.getenv("AUTH_SERVER_NAME",'verdelia-auth')
 AUTH_PORT = os.getenv("AUTH_PORT",9090)
 AUTH_REGISTRATION_ENDPOINT = os.getenv("AUTH_REGISTRATION_ENDPOINT",'/auth/register')
 AUTH_LOGIN_ENDPOINT = os.getenv("AUTH_LOGIN_ENDPOINT",'/auth/login')
@@ -66,7 +66,7 @@ TEMPERATURE = 0.2                   # stable answers
 TOP_P = 1
 RETRIES = 3
 
-# COMPUTING_SERVER_BASE_URL = os.getenv("COMPUTING_SERVER_BASE_URL","gluttex") 
+# COMPUTING_SERVER_BASE_URL = os.getenv("COMPUTING_SERVER_BASE_URL","verdelia") 
 
 ORDER_STATUSES = {'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELED'}
 
@@ -92,7 +92,7 @@ COMMENT_REACTION_IDS = {1,3,8}
 
 AMQP_HOST=os.getenv("RABBITMQ_HOST",'localhost')
 AMQP_PORT=os.getenv("RABBITMQ_PORT",5672)
-AMQP_VIRTUAL_HOST=os.getenv("RABBITMQ_VHOST",'/gluttex')
+AMQP_VIRTUAL_HOST=os.getenv("RABBITMQ_VHOST",'/verdelia')
 AMQP_USER=os.getenv("RABBITMQ_USER","dev_user")
 AMQP_PASS=os.getenv("RABBITMQ_PASS","dev_pass")
 

@@ -1,6 +1,6 @@
 # core/exceptions/specific/search_exceptions.py
 """
-Search-specific exceptions for the Gluttex system.
+Search-specific exceptions for the Verdelia system.
 """
 
 from typing import Optional, Dict, Any, List

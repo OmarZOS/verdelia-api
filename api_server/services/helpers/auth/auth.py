@@ -45,7 +45,7 @@ def create_access_token(
     
     # Optional: Add issuer if not present
     if "iss" not in to_encode:
-        to_encode.update({"iss": "gluttex-auth-server"})
+        to_encode.update({"iss": "verdelia-auth-server"})
     
     # Log for debugging
     logger.debug(f"Creating token with exp: {expire} (type: {type(expire)})")

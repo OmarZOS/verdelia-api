@@ -7,19 +7,19 @@
       "tags": "administrator"
     },
     {
-      "name": "gluttex",
-      "password": "gluttex123",
+      "name": "verdelia",
+      "password": "verdelia123",
       "tags": "management"
     }
   ],
   "vhosts": [
     { "name": "/" },
-    { "name": "/gluttex" }
+    { "name": "/verdelia" }
   ],
   "permissions": [
     {
-      "user": "gluttex",
-      "vhost": "/gluttex",
+      "user": "verdelia",
+      "vhost": "/verdelia",
       "configure": ".*",
       "write": ".*",
       "read": ".*"
@@ -28,7 +28,7 @@
   "exchanges": [
     {
       "name": "events",
-      "vhost": "/gluttex",
+      "vhost": "/verdelia",
       "type": "topic",
       "durable": true,
       "internal": false,
@@ -38,19 +38,19 @@
   "queues": [
     {
       "name": "product_updates",
-      "vhost": "/gluttex",
+      "vhost": "/verdelia",
       "durable": true
     },
     {
       "name": "user_notifications",
-      "vhost": "/gluttex",
+      "vhost": "/verdelia",
       "durable": true
     }
   ],
   "bindings": [
     {
       "source": "events",
-      "vhost": "/gluttex",
+      "vhost": "/verdelia",
       "destination": "product_updates",
       "destination_type": "queue",
       "routing_key": "product.*"

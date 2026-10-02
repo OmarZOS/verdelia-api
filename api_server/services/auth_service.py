@@ -57,11 +57,11 @@ class AuthService:
         """Create a redirect response with encoded data or error."""
         if error:
             encoded_data = urllib.parse.quote(error)
-            deep_link = f"gluttex://auth/callback?error={encoded_data}"
+            deep_link = f"verdelia://auth/callback?error={encoded_data}"
         else:
             json_data = json.dumps(data, default=str)
             encoded_data = urllib.parse.quote(json_data)
-            deep_link = f"gluttex://auth/callback?data={encoded_data}"
+            deep_link = f"verdelia://auth/callback?data={encoded_data}"
         
         return RedirectResponse(url=deep_link)
     
@@ -164,7 +164,7 @@ class AuthService:
             "type": "access",
             "iat": now,
             "exp": expire,
-            "iss": "gluttex-api"
+            "iss": "verdelia-api"
         }
         
         if email:
@@ -196,7 +196,7 @@ class AuthService:
             "type": "refresh",
             "iat": now,
             "exp": expire,
-            "iss": "gluttex-api"
+            "iss": "verdelia-api"
         }
         
         refresh_token = jwt.encode(payload, AUTH_SECRET_KEY, algorithm=AUTH_ALGORITHM)
