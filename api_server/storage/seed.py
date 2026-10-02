@@ -318,9 +318,9 @@ async def seed_database(
         logger.info("Seeding product categories...")
         results["product_categories"] = seed_product_categories()
         
-        # Seed recipe categories
-        logger.info("Seeding recipe categories...")
-        results["recipe_categories"] = seed_recipe_categories(use_icons=with_icons)
+        # # Seed recipe categories
+        # logger.info("Seeding recipe categories...")
+        # results["recipe_categories"] = seed_recipe_categories(use_icons=with_icons)
         
         # Seed product provider types
         logger.info("Seeding product provider types...")
@@ -334,9 +334,9 @@ async def seed_database(
         logger.info("Seeding staff roles...")
         results["staff_roles"] = seed_staff_roles()
         
-        # Seed ingredients
-        logger.info("Seeding ingredients...")
-        results["ingredients"] = seed_ingredients()
+        # # Seed ingredients
+        # logger.info("Seeding ingredients...")
+        # results["ingredients"] = seed_ingredients()
         
         # Seed iproducts
         logger.info("Seeding iproducts...")
