@@ -26,6 +26,7 @@ Every method the workflow needs to reach is public (no leading underscore).
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from storage import storage_broker
 from core.logging_config import get_logger
 from core.exceptions.specific.supplier_exceptions import (
     ImageInsertFailedException,
@@ -47,7 +48,7 @@ from core.exceptions.specific.product_exceptions import (
     ProductImageNotFoundException,
 )
 from core.models.models import Product, ProductImage, Iproduct
-from repositories.product_repository import ProductRepository
+from repositories.product_repository import ProductRepository, _visible_filter
 from repositories.iproduct_repository import IProductRepository
 from repositories.naming_contribution_repository import (
     NamingContributionRepository,
@@ -87,19 +88,63 @@ class ProductService:
     def get_product_by_id(
         self,
         product_id: int,
-        full: bool = False,
+        eager_load: bool = False,
         include_hidden: bool = True,
-    ) -> Product:
-        """Fetch a product by id."""
-        product = self.product_repo.get_product_by_id(
-            product_id,
-            eager_load=full,
-            include_hidden=include_hidden,
+    ) -> Optional[Product]:
+        """
+        Get a product by ID.
+
+        `include_hidden` defaults to True so the editor can always open a
+        product by id, even when it's hidden. Pass False to treat a hidden
+        product as if it doesn't exist.
+
+        `eager_load` controls how deep the hydration goes:
+        - False → just the row itself plus its category and images.
+            Cheap; used by listings and cards.
+        - True  → the full details graph. Category with its naming row,
+            provider with details / org / location / images / type, the
+            product's own images, the origin Iproduct with its category
+            and naming row, and reactions. One HTTP round trip; everything
+            the details screen needs to render without a second call.
+        """
+        conditions = [Product.id_product == product_id]
+
+        if not include_hidden:
+            conditions.append(_visible_filter())
+
+        eager = (
+            [
+
+
+                # Product's own image gallery.
+                Product.product_image,
+
+                # Origin Iproduct — the AI-derived metadata plus the
+                # trilingual name and the reference category.
+                {
+                    Product.product_origin: [
+                        Iproduct.naming_contribution,
+                    ]
+                },
+
+                # Reactions — cheap enough to include; the details screen
+                # typically renders like/rating counts.
+                Product.product_reaction,
+            ]
+            if eager_load
+            else [
+                Product.product_category,
+                Product.product_image,
+            ]
         )
-        if not product:
-            logger.warning(f"Product not found with ID: {product_id}")
-            raise ProductNotFoundException(product_id=product_id)
-        return product
+
+        records = storage_broker.get(
+            Product,
+            conditions,
+            [],
+            eager,
+        )
+        return records[0] if records else None
 
     def get_all_products(
         self,
