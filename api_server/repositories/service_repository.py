@@ -7,10 +7,7 @@ from sqlalchemy.orm import joinedload, sessionmaker, Session
 from sqlalchemy import select, delete
 import logging
 
-from core.logging_config import get_logger
-
-logger = get_logger(__name__)
-
+logger = logging.getLogger(__name__)
 
 
 class ServiceRepository:
@@ -20,9 +17,9 @@ class ServiceRepository:
         """Get service by ID"""
         eager_fields = []
         if eager_load:
-            eager_fields = [
+            eager_fields =[
+                {ProvidedService.service_staff_requirement: [{ServiceStaffRequirement.staff_role : [{StaffRole.naming_contribution:[]}]}]},
                 ProvidedService.service_resource_requirement,
-                ProvidedService.service_staff_requirement
             ]
         
         records = storage_broker.get(
@@ -51,7 +48,7 @@ class ServiceRepository:
         eager_fields = [ProvidedService.service_resource_requirement]
         if eager_load:
             eager_fields = [
-                ProvidedService.service_staff_requirement,
+                {ProvidedService.service_staff_requirement: [StaffRole.naming_contribution]},
                 ProvidedService.provided_service_category,
                 ProvidedService.provided_service_product_provider,
                 ProvidedService.ordered_service,

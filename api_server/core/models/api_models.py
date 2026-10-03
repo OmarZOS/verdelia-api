@@ -477,23 +477,9 @@ class AppUser_API(BaseModel):
     app_user_name: Optional[str] = Field(default=None, min_length=3, max_length=50, description="Username")
     app_user_password: Optional[str] = Field(default=None, min_length=6, description="Password (hashed)")
     
-    @field_validator('app_user_password')
-    @classmethod
-    def validate_password(cls, v: str) -> str:
-        """Validate password strength"""
-        if len(v) < 6:
-            raise ValueError('Password must be at least 6 characters long')
-        # Optional: Add more password requirements
-        if not any(c.isupper() for c in v):
-            raise ValueError('Password must contain at least one uppercase letter')
-        if not any(c.islower() for c in v):
-            raise ValueError('Password must contain at least one lowercase letter')
-        if not any(c.isdigit() for c in v):
-            raise ValueError('Password must contain at least one digit')
-        return v
     
     app_user_person_id: Optional[int] = Field(default=None, description="Person reference")
-    app_user_preferences: Optional[dict] = Field(default=None, description="User preferences (JSON)")
+    app_user_preferences: Optional[str] = Field(default=None, description="User preferences (JSON)")
     app_user_email: Optional[str] = Field(default=None, max_length=100, description="Email address")
     app_user_image_url: Optional[str] = Field(default=None, max_length=500, description="Profile image URL")
     app_user_type: AppUserType = Field(

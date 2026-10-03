@@ -292,18 +292,7 @@ def update_user_record_endpoint(
     """
     logger.info(f"Updating user record for ID: {user.id_app_user}")
     
-    result = user_service.update_user(user, person_record, location_record)
-    
-    return SuccessResponseModel(
-        success=True,
-        message=f"User {user.id_app_user} updated successfully",
-        data=result,
-        details={
-            "user_id": user.id_app_user,
-            "person_updated": person_record is not None,
-            "location_updated": location_record is not None
-        }
-    )
+    return user_service.update_user(user, person_record, location_record)
 
 
 # ==================== Social/Reaction Endpoints ====================
