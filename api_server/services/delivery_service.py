@@ -41,7 +41,10 @@ from repositories.delivery_repository import DeliveryRepository
 from repositories.address_repository import AddressRepository
 from services.location_service import LocationService
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class DeliveryService:

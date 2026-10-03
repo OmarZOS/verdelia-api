@@ -5,6 +5,7 @@ import logging
 from typing import Dict, Any, Optional
 from enum import Enum
 
+from core.logging_config import get_logger
 from communication.communication_broker import send_delete_request, send_post_request, send_put_request
 from constants import (
     AUTH_SERVER_NAME,
@@ -25,7 +26,10 @@ from core.exceptions.handler import (
     AuthNetworkException
 )
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class AuthEndpoint(str, Enum):

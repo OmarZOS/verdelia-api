@@ -32,7 +32,10 @@ from repositories.naming_contribution_repository import (
 )
 from services.naming_flow import NamingFlow
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 # Contribution type. Matches the `naming_contribution_type` enum value
 # used for both suppliers and organisations — the schema does not

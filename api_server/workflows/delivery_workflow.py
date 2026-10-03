@@ -30,7 +30,10 @@ from core.exceptions.specific.delivery_exceptions import (
 from policies.delivery_policy import DeliveryPolicy
 from services.delivery_service import DeliveryService
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 # Signal fields on Delivery_API. Single source of truth for the patch filter.

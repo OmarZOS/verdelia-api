@@ -26,7 +26,10 @@ from core.models.models import Recipe, RecipeContainsIngredient, RecipeImage, In
 from repositories.recipe_repository import RecipeRepository
 from services.user_service import UserService
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class RecipeService:

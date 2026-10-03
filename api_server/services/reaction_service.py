@@ -1,6 +1,7 @@
 # services/reaction_service.py
 import logging
 from typing import Union, Optional, Dict, Any, List
+from core.logging_config import get_logger
 from core.messages.http_status import *
 from constants import ReactionType
 from core.models.api_models import ReactionBase, ReactionValue
@@ -14,7 +15,10 @@ from core.models.models import (
 )
 from repositories.reaction_repository import ReactionRepository
 
-logger = logging.getLogger("FastAPIApp")
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 # ============================================================================
 # EXCEPTION CLASSES

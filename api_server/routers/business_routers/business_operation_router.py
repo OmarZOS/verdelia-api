@@ -16,7 +16,10 @@ from core.exceptions.specific.business_exceptions import (
 )
 from services.business_operation_service import BusinessOperationService
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 business_operation_router = APIRouter()
 

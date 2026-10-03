@@ -21,7 +21,10 @@ from core.exceptions.specific.finance_exceptions import (
     InvoiceUpdateFailedException,
 )
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class InvoiceService:

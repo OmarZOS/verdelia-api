@@ -19,7 +19,10 @@ from repositories.supplier_repository import OrganisationRepository
 from .organisation_validator import OrganisationValidator
 from .organisation_image import OrganisationImageHandler
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 _UNSET = object()
 

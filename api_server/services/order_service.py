@@ -44,7 +44,10 @@ from repositories.user_repository import UserRepository
 from repositories.delivery_repository import DeliveryRepository
 from services.pricing_service import PricingService
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class OrderService:

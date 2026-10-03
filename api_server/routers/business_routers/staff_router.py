@@ -23,7 +23,10 @@ from core.exceptions.specific.staff_exceptions import (
 )
 from services.management_rule_service import ManagementRuleService
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 staff_router = APIRouter()
 

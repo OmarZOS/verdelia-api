@@ -24,7 +24,10 @@ from core.models.models import ProvidedService, ProvidedServiceCategory, Service
 from repositories.supplier_repository import SupplierRepository
 from storage.storage_broker import session_scope
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class ServiceService:

@@ -13,7 +13,10 @@ from services.helpers.notification_builder_service import NotificationBuilderSer
 from repositories.supplier_repository import SupplierRepository
 from communication.publisher import notify_invitation_to_role_received, notify_rule_to_role_received
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class RuleNotification:

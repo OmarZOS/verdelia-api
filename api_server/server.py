@@ -17,6 +17,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from core.logging_config import get_logger
 from storage.seed import seed_database_if_needed
 from core.exceptions.handler import setup_exception_handlers_with_config
 from core.response_models import SuccessResponseModel
@@ -53,7 +54,10 @@ logging.basicConfig(
     level=logging.INFO if not (settings.DEBUG== "PRODUCTION") else logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 

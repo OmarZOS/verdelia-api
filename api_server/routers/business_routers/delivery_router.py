@@ -28,7 +28,10 @@ from core.exceptions.specific.delivery_exceptions import (
 )
 from workflows.delivery_workflow import DeliveryWorkflow
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 delivery_router = APIRouter()
 

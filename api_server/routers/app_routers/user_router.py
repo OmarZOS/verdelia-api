@@ -19,7 +19,10 @@ from core.response_models import (
 from services.user_service import UserService
 from services.social_service import SocialService
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 app_user_router = APIRouter(
     # tags=["Users"],

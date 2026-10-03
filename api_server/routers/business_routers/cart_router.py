@@ -38,7 +38,10 @@ from core.response_models import (
 from services.cart_service import CartService
 from workflows.cart_workflow import CartWorkflow
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 # ==================== Router ====================

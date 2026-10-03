@@ -32,7 +32,10 @@ from core.models.models import Product, Iproduct
 from services.helpers.ai_service import AIService
 from services.product_service import ProductService
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 # Global subscribers storage — lives with the workflow because notification
 # is a workflow concern, not a persistence one.

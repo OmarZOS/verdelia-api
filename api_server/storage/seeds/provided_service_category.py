@@ -20,7 +20,10 @@ from typing import Any, Dict, List, Optional
 from storage.storage_broker import insert_record, get, session_scope
 from core.models import models
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 # ==================== Seed Data ====================

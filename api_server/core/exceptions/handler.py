@@ -7,6 +7,7 @@ Provides a hierarchy of exceptions with proper error codes and messages.
 from typing import Optional, Dict, Any, List
 from enum import Enum
 
+from core.logging_config import get_logger
 from core.messages.error_codes import ErrorCode
 from core.messages.error_messages import get_error_message
 from core.messages.http_status import (
@@ -35,7 +36,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from core.exceptions.error_responses import create_error_response, create_validation_error_response
 import logging
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 def setup_exception_handlers_with_config(app: FastAPI, debug: bool = False):

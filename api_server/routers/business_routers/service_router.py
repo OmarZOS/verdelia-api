@@ -26,7 +26,10 @@ from core.exceptions.specific.service_exceptions import (
 )
 from services.service_service import ServiceService
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 service_router = APIRouter()
 

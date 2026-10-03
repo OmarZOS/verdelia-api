@@ -24,7 +24,10 @@ from core.exceptions.specific.delivery_exceptions import (
 from services.delivery_service import DeliveryService
 from services.location_service import LocationService
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 address_router = APIRouter()
 

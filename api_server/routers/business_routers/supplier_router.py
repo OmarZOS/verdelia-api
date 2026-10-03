@@ -21,7 +21,10 @@ from core.models.models import ProductProvider, ProviderOrganisation
 from services.supplier_service import SupplierService
 from services.supplier_service import OrganisationService
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 supplier_router = APIRouter()
 

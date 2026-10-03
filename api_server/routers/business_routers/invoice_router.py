@@ -21,7 +21,10 @@ from core.exceptions.specific.finance_exceptions import (
 )
 from services.invoice_service import InvoiceService
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 invoice_router = APIRouter(
     prefix="/invoices",

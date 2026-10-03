@@ -21,7 +21,10 @@ import logging
 from features.document import constants
 from features.document import settings
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class ProfessionalQRGenerator:

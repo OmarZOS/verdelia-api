@@ -10,7 +10,10 @@ from core.models.models import ProductProvider, ProductProviderType, ProviderDet
 from services.location_service import LocationService
 from .supplier_validator import SupplierValidator
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class SupplierBuilder:

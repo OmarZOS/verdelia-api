@@ -11,6 +11,7 @@ from datetime import datetime
 import random
 import asyncio
 
+from core.logging_config import get_logger
 from core.models.api_models import AppUser_API, Location_API, Person_API, ProductProvider_API
 from services.user_service import UserService
 from storage.seeds.iproduct import seed_random_iproducts
@@ -26,7 +27,10 @@ from config import settings
 from core.models import models
 from core.exceptions.handler import APIException
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 # ==================== User Seeding Functions ====================

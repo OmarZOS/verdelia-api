@@ -27,7 +27,10 @@ from .supplier_validator import SupplierValidator
 from .supplier_builder import SupplierBuilder
 from .supplier_image import SupplierImageHandler
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 _UNSET = object()
 

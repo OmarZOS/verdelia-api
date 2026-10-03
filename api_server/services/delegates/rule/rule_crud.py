@@ -21,7 +21,10 @@ from .rule_validator import RuleValidator
 from .rule_notification import RuleNotification
 from .rule_helpers import RuleHelpers
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class RuleCrud:

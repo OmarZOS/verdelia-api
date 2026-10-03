@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Optional
 import logging
 
+from core.logging_config import get_logger
 from core.messages.http_status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR
 from core.models.api_models import ReactionBase, ReactionStatistics, ReactionBulkRequest, ReactionBulkResponse
 from core.exceptions.handler import APIException
@@ -11,7 +12,10 @@ from core.response_models import SuccessResponseModel, ErrorResponseModel, get_c
 from services.reaction_service import ReactionService
 from constants import ReactionType
 
-logger = logging.getLogger("FastAPIApp")
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 reaction_router = APIRouter()
 

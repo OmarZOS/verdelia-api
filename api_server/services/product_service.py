@@ -23,10 +23,10 @@ Forbidden collaborators:
 Every method the workflow needs to reach is public (no leading underscore).
 """
 
-import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
+from core.logging_config import get_logger
 from core.exceptions.specific.supplier_exceptions import (
     ImageInsertFailedException,
     ImageUpdateFailedException,
@@ -54,14 +54,20 @@ from repositories.naming_contribution_repository import (
 )
 from services.naming_flow import NamingFlow, ResolvedNaming
 
-logger = logging.getLogger(__name__)
 
-VISIBILITY_VISIBLE = 'VISIBLE'
-VISIBILITY_HIDDEN = 'HIDDEN'
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+
+
+VISIBILITY_VISIBLE = "VISIBLE"
+VISIBILITY_HIDDEN = "HIDDEN"
+VISIBILITY_DELETED = "DELETED"
 
 # Contribution type for iproduct naming rows. Matches the
 # `naming_contribution_type` enum value.
-IPRODUCT_CONTRIBUTION_TYPE = 'product'
+IPRODUCT_CONTRIBUTION_TYPE = "product"
 
 
 class ProductService:
@@ -104,8 +110,26 @@ class ProductService:
         limit: int = 10,
         serialize: bool = False,
         include_hidden: bool = False,
+        domain: Optional[str] = None,
+        subdomain: Optional[str] = None,
     ) -> List[Product]:
-        """Fetch all products with filters."""
+        """
+        Fetch all products with filters.
+
+        `domain` and `subdomain` follow the `domain.subdomain.category`
+        naming convention used by product categories. `subdomain`
+        requires `domain` — filtering by subdomain alone is ambiguous
+        across domains, so we reject it early rather than silently
+        matching every domain that happens to carry that subdomain.
+        """
+        domain_n = self._normalize_segment(domain)
+        subdomain_n = self._normalize_segment(subdomain)
+
+        if subdomain_n and not domain_n:
+            raise ValueError(
+                "`subdomain` requires `domain` to be specified as well."
+            )
+
         return self.product_repo.get_all_products(
             user_id,
             provider_id,
@@ -114,6 +138,8 @@ class ProductService:
             limit,
             serialize,
             include_hidden=include_hidden,
+            domain=domain_n,
+            subdomain=subdomain_n,
         )
 
     def get_products_by_category(
@@ -273,8 +299,14 @@ class ProductService:
         product_id: int,
         visibility: str,
     ) -> Product:
-        """Local: set only the visibility field and persist."""
-        normalized = (visibility or '').strip().upper()
+        """
+        Local: set only the visibility field and persist.
+
+        Single point of truth for visibility changes. The router calls
+        this directly instead of rebuilding a Product_API from the
+        current row.
+        """
+        normalized = (visibility or "").strip().upper()
         if normalized not in (VISIBILITY_VISIBLE, VISIBILITY_HIDDEN):
             raise ValueError(
                 f"Invalid visibility '{visibility}'. "
@@ -319,7 +351,7 @@ class ProductService:
         )
         product = self.get_product_by_id(product_id, include_hidden=True)
 
-        product.product_visibility = "DELETED"
+        product.product_visibility = VISIBILITY_DELETED
 
         try:
             result = self.product_repo.update_product(product)
@@ -584,6 +616,18 @@ class ProductService:
 
     # ==================== Helpers ====================
 
+    @staticmethod
+    def _normalize_segment(value: Optional[str]) -> Optional[str]:
+        """
+        Normalize a domain or subdomain segment: trim, lowercase, and
+        return None when empty. Ensures comparisons against dotted keys
+        are case- and whitespace-insensitive.
+        """
+        if value is None:
+            return "%"
+        cleaned = f"%{value.strip().lower()}%"
+        return cleaned or "%"
+
     def _collect_changes(
         self, product: Product, product_api: Product_API
     ) -> List[str]:
@@ -621,3 +665,34 @@ class ProductService:
             else:
                 out[key] = value
         return out
+
+    def search_products(
+        self,
+        token: str,
+        offset: int = 0,
+        limit: int = 20,
+        domain: Optional[str] = None,
+        subdomain: Optional[str] = None,
+        include_hidden: bool = False,
+    ):
+        """
+        Local: search products by token in name, brand, and description.
+
+        Token matching is delegated to the repository, which owns the
+        SQL-level LIKE/ILIKE clauses. Domain/subdomain filtering uses the
+        same convention as `get_all_products`.
+        """
+        token_n = (token or "").strip()
+        if len(token_n) < 2:
+            # The router already guards, but keep the service safe for
+            # direct callers.
+            raise ValueError("Search token must be at least 2 characters.")
+
+        return self.product_repo.search_products(
+            token=token_n,
+            offset=offset,
+            limit=limit,
+            include_hidden=include_hidden,
+            domain=self._normalize_segment(domain),
+            subdomain=self._normalize_segment(subdomain),
+        )

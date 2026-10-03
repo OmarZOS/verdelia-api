@@ -41,7 +41,10 @@ from core.exceptions.handler import UserNotFoundException
 from services.order_service import OrderService
 from workflows.order_workflow import OrderWorkflow
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 order_router = APIRouter()
 

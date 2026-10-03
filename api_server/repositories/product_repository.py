@@ -1,6 +1,7 @@
 # repositories/product_repository.py
-from typing import Optional, List
-from sqlalchemy import or_,not_
+from typing import Any, Optional, List
+
+from sqlalchemy import exists, or_, not_, and_, outerjoin
 
 from core.models.models import (
     NamingContribution,
@@ -28,6 +29,32 @@ def _visible_filter():
     )
 
 
+def _category_key_filter(domain: Optional[str], subdomain: Optional[str]):
+    """
+    Build a filter on the category's dotted key
+    (`domain.subdomain.category`).
+
+    - `domain` only     → `key LIKE 'domain.%'`
+    - `domain+subdomain`→ `key LIKE 'domain.subdomain.%'`
+    - `subdomain` only  → rejected at the service layer; if reached,
+                          match any domain that carries that subdomain.
+
+    The key lives in `ProductCategory.product_category_name` (per the
+    naming convention where the column stores the dotted key).
+    """
+    if domain and subdomain:
+        prefix = f"{domain}.{subdomain}.%"
+        return ProductCategory.product_category_name.like(prefix)
+    if domain:
+        prefix = f"{domain}.%"
+        return ProductCategory.product_category_name.like(prefix)
+    if subdomain:
+        # Ambiguous across domains; the service raises before reaching
+        # here, but keep this defensive branch for direct repo callers.
+        return ProductCategory.product_category_name.like(f"%.{subdomain}.%")
+    return None
+
+
 class ProductRepository:
     """Repository for Product-related database operations."""
 
@@ -47,7 +74,7 @@ class ProductRepository:
         product as if it doesn't exist.
         """
         conditions = [Product.id_product == product_id]
-        
+
         if not include_hidden:
             conditions.append(_visible_filter())
 
@@ -57,7 +84,7 @@ class ProductRepository:
                 Product.product_category,
                 Product.product_provider,
                 Product.product_image,
-                {Product.product_origin: [{Iproduct:[Iproduct.naming_contribution]}]},
+                {Product.product_origin: [{Iproduct: [Iproduct.naming_contribution]}]},
             ]
             if eager_load
             else []
@@ -98,7 +125,7 @@ class ProductRepository:
                 Product.product_category,
                 Product.product_provider,
                 Product.product_image,
-                {Product.product_origin: [{Iproduct:[Iproduct.naming_contribution]}]},
+                {Product.product_origin: [{Iproduct: [Iproduct.naming_contribution]}]},
             ]
             if eager_load
             else []
@@ -120,13 +147,21 @@ class ProductRepository:
         limit: int = 10,
         serialize: bool = False,
         include_hidden: bool = False,
+        domain: Optional[str] = None,
+        subdomain: Optional[str] = None,
     ) -> List[Product]:
         """
         Get all products with filters.
 
+        `domain` / `subdomain` filter on the category's dotted key
+        (`domain.subdomain.category`). `subdomain` alone is ambiguous
+        across domains and is expected to be rejected at the service
+        layer; the repo keeps a defensive branch in case it's called
+        directly.
+
         `include_hidden` defaults to False so the public catalog never
-        surfaces hidden products. Editors that need everything must opt in
-        explicitly.
+        surfaces hidden products. Editors that need everything must opt
+        in explicitly.
         """
         conditions = []
         conditions.append(not_(Product.product_visibility == "DELETED"))
@@ -140,10 +175,18 @@ class ProductRepository:
         if not include_hidden:
             conditions.append(_visible_filter())
 
+        # Domain / subdomain filter. Requires a join to ProductCategory
+        # so the LIKE clause can run against the dotted key column.
+        category_filter = _category_key_filter(domain, subdomain)
+        join_tables = []
+        if category_filter is not None:
+            join_tables.append(ProductCategory)
+            conditions.append(category_filter)
+
         return storage_broker.get(
             Product,
             conditions=conditions,
-            join_tables=[],
+            join_tables=join_tables,
             eager_load_depth=[
                 Product.product_category,
                 Product.product_provider,
@@ -153,7 +196,7 @@ class ProductRepository:
                         ProductImage.product_image_url,
                     ]
                 },
-                {Product.product_origin: [{Iproduct.naming_contribution:[NamingContribution]}]},
+                {Product.product_origin: [{Iproduct.naming_contribution: [NamingContribution]}]},
             ],
             offset=offset,
             limit=limit,
@@ -180,7 +223,7 @@ class ProductRepository:
                 Product.product_image,
                 Product.product_category,
                 Product.product_provider,
-                {Product.product_origin: [{Iproduct:[Iproduct.naming_contribution]}]},
+                {Product.product_origin: [{Iproduct: [Iproduct.naming_contribution]}]},
             ],
             None,
             offset,
@@ -209,17 +252,24 @@ class ProductRepository:
 
     def get_product_categories(self) -> List[ProductCategory]:
         """Get all product categories."""
-        return storage_broker.get(ProductCategory,None,None,[ProductCategory.naming_contribution])
+        return storage_broker.get(
+            ProductCategory,
+            conditions=None,
+            join_tables=None,
+            eager_load_depth=[ProductCategory.naming_contribution],
+            offset=0,
+            limit=300,
+        )
 
     def get_product_category_by_id(
-        self, category_id: str
+        self, category_id: int
     ) -> Optional[ProductCategory]:
         """Get product category by ID."""
         records = storage_broker.get(
             ProductCategory,
             {ProductCategory.id_product_category: category_id},
             None,
-            [ProductCategory.naming_contribution]
+            [ProductCategory.naming_contribution],
         )
         return records[0] if records else None
 
@@ -241,3 +291,88 @@ class ProductRepository:
         """Update a product image."""
         from features.insertion import update_record_in_api
         return update_record_in_api(image)
+    
+    def search_products(
+        self,
+        token: str,
+        offset: int = 0,
+        limit: int = 20,
+        include_hidden: bool = False,
+        domain: Optional[str] = None,
+        subdomain: Optional[str] = None,
+    ) -> List[Product]:
+        """
+        Search products by token in:
+        - the flat columns on Product (name, brand, description)
+        - the trilingual NamingContribution attached to the product's
+            origin Iproduct (EN / FR / AR)
+
+        The naming match is expressed as an EXISTS subquery rather than a
+        join, so products without an origin Iproduct (or without a naming
+        row) are unaffected and still match on the flat columns. This
+        avoids relying on outer joins that the storage broker does not
+        currently expose.
+        """
+        conditions = [not_(Product.product_visibility == "DELETED")]
+
+        pattern = f"%{token}%"
+
+        # EXISTS clause: true when the product's origin Iproduct has a
+        # naming row whose EN / FR / AR text matches the pattern.
+        naming_exists = exists().where(
+            and_(
+                Iproduct.id_iproduct == Product.product_origin_id,
+                NamingContribution.id_naming_contribution
+                == Iproduct.iproduct_naming_ref,
+                or_(
+                    NamingContribution.naming_contribution_en.ilike(pattern),
+                    NamingContribution.naming_contribution_fr.ilike(pattern),
+                    NamingContribution.naming_contribution_ar.ilike(pattern),
+                ),
+            )
+        )
+
+        conditions.append(
+            or_(
+                Product.product_name.ilike(pattern),
+                Product.product_brand.ilike(pattern),
+                Product.product_description.ilike(pattern),
+                naming_exists,
+            )
+        )
+
+        if not include_hidden:
+            conditions.append(_visible_filter())
+
+        # No join needed for Iproduct / NamingContribution — the EXISTS
+        # subquery handles it. ProductCategory is still joined only when a
+        # domain / subdomain filter is present.
+        join_tables = []
+
+        key_filter = _category_key_filter(domain, subdomain)
+        if key_filter is not None:
+            join_tables.append(ProductCategory)
+            conditions.append(key_filter)
+
+        return storage_broker.get(
+            Product,
+            conditions=conditions,
+            join_tables=join_tables,
+            eager_load_depth=[
+                Product.product_category,
+                Product.product_provider,
+                {
+                    Product.product_image: [
+                        ProductImage.id_product_image,
+                        ProductImage.product_image_url,
+                    ]
+                },
+                {
+                    Product.product_origin: [
+                        {Iproduct.naming_contribution: [NamingContribution]}
+                    ]
+                },
+            ],
+            offset=offset,
+            limit=limit,
+        )

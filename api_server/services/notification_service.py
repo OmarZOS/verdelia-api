@@ -3,6 +3,7 @@ import json
 import logging
 import datetime
 from typing import List, Optional, Dict, Any
+from core.logging_config import get_logger
 from core.models.api_models import Notification_API
 from core.exceptions.specific.notification_exceptions import (
     NotificationException,
@@ -17,7 +18,10 @@ from core.exceptions.specific.notification_exceptions import (
 from core.models.models import Notification
 from repositories.notification_repository import NotificationRepository
 
-logger = logging.getLogger("FastAPIApp")
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 class NotificationService:
     """Service for notification-related business logic"""

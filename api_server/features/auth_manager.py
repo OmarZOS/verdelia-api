@@ -5,6 +5,7 @@ import time
 from typing import Dict, Any, Optional
 from threading import Lock
 
+from core.logging_config import get_logger
 from features.auth_client import AuthClient
 from constants import DEFAULT_ADMIN_USERNAME, DEFAULT_ADMIN_PASSWORD
 from core.exceptions.handler import (
@@ -13,7 +14,10 @@ from core.exceptions.handler import (
     AuthServiceUnavailableException
 )
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class AuthManager:

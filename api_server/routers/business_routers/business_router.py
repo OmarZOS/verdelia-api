@@ -34,7 +34,10 @@ from core.exceptions.specific.cart_exceptions import (
 from services.cart_service import CartService
 from services.financial_service import FinancialService
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 business_router = APIRouter()
 

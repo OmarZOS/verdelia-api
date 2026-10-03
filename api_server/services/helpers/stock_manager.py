@@ -17,7 +17,10 @@ from core.models.models import Product, OrderedItem
 from repositories.product_repository import ProductRepository
 from communication.publisher import send_to_product_subscribers
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 @dataclass

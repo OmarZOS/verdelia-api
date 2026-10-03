@@ -13,7 +13,10 @@ from repositories.user_repository import UserRepository
 from repositories.supplier_repository import SupplierRepository
 from repositories.management_rule_repository import ManagementRuleRepository
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class RuleQuery:

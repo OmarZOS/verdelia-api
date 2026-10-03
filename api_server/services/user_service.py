@@ -27,7 +27,12 @@ from core.messages.http_status import (
     HTTP_417_EXPECTATION_FAILED
 )
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 class UserService:
     """Service for user-related business logic"""

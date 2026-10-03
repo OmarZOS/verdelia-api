@@ -7,7 +7,10 @@ from sqlalchemy.orm import joinedload, sessionmaker, Session
 from sqlalchemy import select, delete
 import logging
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class CartRepository:

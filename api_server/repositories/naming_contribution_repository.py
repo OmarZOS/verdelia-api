@@ -18,7 +18,10 @@ from typing import List, Optional
 from core.models.models import NamingContribution
 from storage.storage_broker import get, insert_record, session_scope
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class NamingContributionRepository:

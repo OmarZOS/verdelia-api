@@ -1,6 +1,7 @@
 # routers/business_routers/product_router.py
 """
-Product router for managing products, barcode search, image recognition, and SSE updates.
+Product router for managing products, barcode search, image recognition,
+and SSE updates.
 
 The router talks to ProductWorkflow, which owns every cross-process call
 (AIService, subscriber notification, background tasks) and sequences the
@@ -9,12 +10,24 @@ directly for orchestrated operations; it still uses the workflow's
 exposed accessor for pure-local reads when that's the whole job.
 """
 
-from fastapi import APIRouter, status, BackgroundTasks, File, UploadFile, Depends, Query
-from fastapi.encoders import jsonable_encoder
-from sse_starlette.sse import EventSourceResponse
-from typing import Optional
 import asyncio
 import logging
+import sys
+from typing import Optional
+
+from fastapi import (
+    APIRouter,
+    status,
+    BackgroundTasks,
+    File,
+    UploadFile,
+    Depends,
+    Query,
+)
+from fastapi.encoders import jsonable_encoder
+from sse_starlette.sse import EventSourceResponse
+
+from core.logging_config import get_logger
 
 from services.helpers.auth.auth_dependencies import get_current_user_id
 from core.models.api_models import Iproduct_API, Product_API, ProductImage_API
@@ -29,7 +42,11 @@ from core.exceptions.specific.product_exceptions import (
 from services.product_service import ProductService
 from workflows.product_workflow import ProductWorkflow
 
-logger = logging.getLogger(__name__)
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+
 
 product_router = APIRouter()
 
@@ -52,7 +69,7 @@ def get_product_service() -> ProductService:
 # ==================== SSE Endpoint for Product Updates ====================
 
 @product_router.get(
-    "/products/observer/{product_id}",
+    "/products/observer",
     summary="Subscribe to product updates",
     description="Server-Sent Events endpoint for real-time product updates",
     responses={
@@ -71,14 +88,14 @@ def get_product_service() -> ProductService:
     },
 )
 async def product_updates(
-    product_id: int,
+    product_id: int = Query(..., description="Product ID to observe"),
     user_id: int = Depends(get_current_user_id),
     workflow: ProductWorkflow = Depends(get_product_workflow),
 ):
     """
     Subscribe to real-time product updates via SSE.
     """
-    logger.info(f"SSE subscription established for product {product_id}")
+    logger.info(f"GET SSE subscription established for product {product_id}")
 
     # Verify the product exists via the local service.
     workflow.service.get_product_by_id(product_id)
@@ -101,31 +118,50 @@ async def product_updates(
 # ==================== Product Listing Endpoints ====================
 
 @product_router.get(
-    "/products/{user_id}/{provider_id}/{category_id}/{offset}/{limit}",
+    "/products",
     summary="Get all products",
-    description="Fetch all products with pagination and filters",
+    description=(
+        "Fetch all products with pagination, filter by user, provider, "
+        "category, domain, subdomain, and visibility."
+    ),
     responses={
         200: {"description": "Products retrieved successfully"},
         **get_crud_error_responses(include_404=True),
     },
 )
 def get_all_products(
-    user_id: int,
-    provider_id: int,
-    category_id: int,
-    offset: int,
-    limit: int,
+    user_id: int = Query(..., description="Owner user ID"),
+    provider_id: int = Query(..., description="Provider ID"),
+    category_id: int = Query(..., description="Category ID"),
+    offset: int = Query(0, ge=0, description="Pagination offset"),
+    limit: int = Query(20, ge=1, le=200, description="Pagination limit"),
+    domain: Optional[str] = Query(
+        None,
+        description=(
+            "Filter by top-level domain (e.g. 'food', 'health', 'retail'). "
+            "Matches the first segment of a category key."
+        ),
+    ),
+    subdomain: Optional[str] = Query(
+        None,
+        description=(
+            "Filter by subdomain inside a domain (e.g. 'alimentary' when "
+            "domain='food'). Matches the second segment of a category key."
+        ),
+    ),
     include_hidden: bool = Query(
         False,
-        description="Include products with visibility=HIDDEN. Defaults to False "
-                    "so buyers only see the public catalog.",
+        description=(
+            "Include products with visibility=HIDDEN. Defaults to False "
+            "so buyers only see the public catalog."
+        ),
     ),
     service: ProductService = Depends(get_product_service),
 ):
     logger.info(
-        f"Fetching products - user:{user_id}, provider:{provider_id}, "
-        f"category:{category_id}, offset:{offset}, limit:{limit}, "
-        f"include_hidden:{include_hidden}"
+        f"GET /products — user:{user_id}, provider:{provider_id}, "
+        f"category:{category_id}, domain:{domain}, subdomain:{subdomain}, "
+        f"offset:{offset}, limit:{limit}, include_hidden:{include_hidden}"
     )
     return service.get_all_products(
         user_id,
@@ -134,22 +170,24 @@ def get_all_products(
         offset,
         limit,
         include_hidden=include_hidden,
+        domain=domain,
+        subdomain=subdomain,
     )
 
 
 @product_router.get(
-    "/products/category/all",
+    "/products/categories",
     summary="Get all categories",
     description="Fetch all product categories",
     responses={200: {"description": "Categories retrieved successfully"}},
 )
 def get_categories(service: ProductService = Depends(get_product_service)):
-    logger.info("Fetching all product categories")
+    logger.info("GET /products/categories")
     return service.get_product_categories()
 
 
 @product_router.get(
-    "/products/category/{category_id}/{offset}/{limit}",
+    "/products/by-category",
     summary="Get products by category",
     description="Retrieve products by category with pagination",
     responses={
@@ -159,19 +197,18 @@ def get_categories(service: ProductService = Depends(get_product_service)):
     },
 )
 def get_products_by_category(
-    category_id: int,
-    offset: int,
-    limit: int,
+    category_id: int = Query(..., description="Category ID"),
+    offset: int = Query(0, ge=0, description="Pagination offset"),
+    limit: int = Query(20, ge=1, le=200, description="Pagination limit"),
     include_hidden: bool = Query(
         False,
-        description="Include products with visibility=HIDDEN. Defaults to False "
-                    "so buyers only see the public catalog.",
+        description="Include products with visibility=HIDDEN.",
     ),
     service: ProductService = Depends(get_product_service),
 ):
     logger.info(
-        f"Fetching products for category {category_id} "
-        f"(offset={offset}, limit={limit}, include_hidden={include_hidden})"
+        f"GET /products/by-category — category:{category_id}, "
+        f"offset:{offset}, limit:{limit}, include_hidden:{include_hidden}"
     )
     return service.get_products_by_category(
         category_id,
@@ -182,7 +219,7 @@ def get_products_by_category(
 
 
 @product_router.get(
-    "/products/{product_id}",
+    "/products/by-id",
     summary="Get product by ID",
     description="Retrieve a product by its ID",
     responses={
@@ -191,17 +228,19 @@ def get_products_by_category(
     },
 )
 def get_product_by_id(
-    product_id: int,
+    product_id: int = Query(..., description="Product ID"),
     include_hidden: bool = Query(
         True,
-        description="Return the product even when visibility=HIDDEN. Defaults to "
-                    "True so editors can open a hidden product by id.",
+        description=(
+            "Return the product even when visibility=HIDDEN. Defaults to "
+            "True so editors can open a hidden product by id."
+        ),
     ),
     service: ProductService = Depends(get_product_service),
 ):
     logger.info(
-        f"Fetching product with ID: {product_id} "
-        f"(include_hidden={include_hidden})"
+        f"GET /products/by-id — product:{product_id}, "
+        f"include_hidden:{include_hidden}"
     )
     return service.get_product_by_id(
         product_id,
@@ -212,38 +251,39 @@ def get_product_by_id(
 # ==================== Barcode Search Endpoints ====================
 
 @product_router.get(
-    "/products/barcode/{barcode}",
+    "/products/by-barcode",
     summary="Search product by barcode",
-    description="Search for a product using a barcode. DB first, fallback to AI if needed.",
+    description=(
+        "Search for a product using a barcode. DB first, fallback to AI "
+        "if needed."
+    ),
     responses={
         200: {"description": "Product found"},
         404: {"model": ErrorResponseModel},
     },
 )
 async def get_product_from_barcode(
-    barcode: str,
+    barcode: str = Query(..., description="Product barcode"),
     workflow: ProductWorkflow = Depends(get_product_workflow),
 ):
     """
     DB first, AI fallback. The AI fallback is orchestration, so it lives
     in the workflow.
     """
-    logger.info(f"Searching for product with barcode: {barcode}")
+    logger.info(f"GET /products/by-barcode — barcode:{barcode}")
 
-    # DB first
     product = workflow.service.get_iproduct_by_barcode(barcode)
     if product:
         logger.info(f"Product found in database for barcode {barcode}")
         return product
 
-    # AI fallback
     logger.info(f"Product not found in DB, trying AI for barcode {barcode}")
     iproduct_data = await workflow.get_product_info_by_barcode(barcode)
     return [iproduct_data]
 
 
 @product_router.get(
-    "/products/db/barcode/{barcode}",
+    "/products/db/by-barcode",
     summary="Search product by barcode (DB only)",
     description="Search for a product using a barcode from database only",
     responses={
@@ -252,10 +292,10 @@ async def get_product_from_barcode(
     },
 )
 async def get_product_barcode_db_only(
-    barcode: str,
+    barcode: str = Query(..., description="Product barcode"),
     service: ProductService = Depends(get_product_service),
 ):
-    logger.info(f"Searching database for product with barcode: {barcode}")
+    logger.info(f"GET /products/db/by-barcode — barcode:{barcode}")
 
     product = service.get_iproduct_by_barcode(barcode)
     if not product:
@@ -283,7 +323,7 @@ async def search_product_by_image(
     file: UploadFile = File(..., description="Product image file"),
     workflow: ProductWorkflow = Depends(get_product_workflow),
 ):
-    logger.info(f"Processing image search for file: {file.filename}")
+    logger.info(f"POST /products/search/image — file:{file.filename}")
 
     if not file.content_type or not file.content_type.startswith("image/"):
         raise ProductInsertFailedException(
@@ -305,7 +345,7 @@ async def search_product_by_image(
 # ==================== Product Image Endpoints ====================
 
 @product_router.get(
-    "/products/image/{image_id}",
+    "/products/image",
     summary="Get product image",
     description="Fetch product image by ID",
     responses={
@@ -314,10 +354,10 @@ async def search_product_by_image(
     },
 )
 def get_product_image(
-    image_id: int,
+    image_id: int = Query(..., description="Product image ID"),
     service: ProductService = Depends(get_product_service),
 ):
-    logger.info(f"Fetching product image with ID: {image_id}")
+    logger.info(f"GET /products/image — image:{image_id}")
 
     images = service.product_repo.get_product_image_by_id(image_id)
     if not images:
@@ -329,7 +369,7 @@ def get_product_image(
 # ==================== Product Modification Endpoints ====================
 
 @product_router.put(
-    "/products/{product_id}",
+    "/products",
     summary="Update product",
     description="Update product details and notify subscribers",
     responses={
@@ -339,17 +379,17 @@ def get_product_image(
     },
 )
 def update_product_details(
-    product_id: int,
     product: Product_API,
     image: ProductImage_API,
     background_tasks: BackgroundTasks,
+    product_id: int = Query(..., description="Product ID to update"),
     user_id: int = Depends(get_current_user_id),
     workflow: ProductWorkflow = Depends(get_product_workflow),
 ):
     """
     Update product details and notify subscribers.
     """
-    logger.info(f"Updating product with ID: {product_id}")
+    logger.info(f"PUT /products — product:{product_id}")
     return workflow.update_product(
         product_id=product_id,
         product_api=product,
@@ -359,7 +399,7 @@ def update_product_details(
 
 
 @product_router.patch(
-    "/products/visibility/{product_id}",
+    "/products/visibility",
     summary="Update product visibility",
     description="Toggle a product's visibility between VISIBLE and HIDDEN",
     responses={
@@ -369,7 +409,7 @@ def update_product_details(
     },
 )
 def update_product_visibility(
-    product_id: int,
+    product_id: int = Query(..., description="Product ID"),
     visibility: str = Query(
         ...,
         description="Target visibility. Must be either VISIBLE or HIDDEN.",
@@ -381,19 +421,16 @@ def update_product_visibility(
 ):
     """
     Flip a product between visible and hidden.
-
-    Fetches the existing product, applies the new visibility, persists
-    through the workflow, and notifies SSE subscribers of the change.
     """
     logger.info(
-        f"Updating visibility for product {product_id} to {visibility}"
+        f"PATCH /products/visibility — product:{product_id}, "
+        f"visibility:{visibility}"
     )
 
-    # Load the current product so we don't overwrite other fields.
-    current = workflow.service.get_product_by_id(product_id, include_hidden=True)
+    current = workflow.service.get_product_by_id(
+        product_id, include_hidden=True
+    )
 
-    # Build an updated Product_API from the existing row with the new
-    # visibility. Every other field is carried through unchanged.
     updated_api = Product_API(
         id_product=current.id_product,
         product_name=current.product_name,
@@ -438,17 +475,13 @@ async def insert_product_details(
 ):
     """
     Insert a new product.
-
-    If `iproduct` is not supplied but the product has a barcode, the
-    workflow will try to fetch AI metadata. Failure of that lookup is
-    non-fatal; the product is created without the AI data.
     """
-    logger.info(f"Creating new product: {product.product_name}")
+    logger.info(f"POST /products — name:{product.product_name}")
     return await workflow.create_product(product, image, iproduct)
 
 
 @product_router.delete(
-    "/products/delete/{product_id}",
+    "/products",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete product",
     description="Delete a product by ID",
@@ -459,7 +492,7 @@ async def insert_product_details(
     },
 )
 def delete_product_by_id(
-    product_id: int,
+    product_id: int = Query(..., description="Product ID to delete"),
     force_delete: bool = Query(
         False, description="Force delete even if product has dependencies"
     ),
@@ -469,7 +502,10 @@ def delete_product_by_id(
     """
     Delete a product. Pure local operation; no orchestration needed.
     """
-    logger.info(f"Deleting product with ID: {product_id} (force={force_delete})")
+    logger.info(
+        f"DELETE /products — product:{product_id}, "
+        f"force:{force_delete}"
+    )
 
     success = service.delete_product(product_id, force_delete)
     if not success:
@@ -478,4 +514,4 @@ def delete_product_by_id(
             error="Product not found or cannot be deleted",
         )
 
-    return None  # 204 No Content
+    return None
