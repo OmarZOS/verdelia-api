@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class PaymentCreate(BaseModel):
     """Request model for creating a payment"""
-    invoice_id: int = Field(..., description="ID of the invoice to pay", gt=0)
+    invoice_id: Optional[int] = Field(default=None, description="ID of the invoice to pay")
     amount: float = Field(..., description="Payment amount", gt=0)
     payment_method: str = Field(..., description="Payment method: card, cash, bank_transfer, etc.")
     user_id: int = Field(..., description="ID of the user making the payment", gt=0)

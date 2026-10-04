@@ -18,9 +18,11 @@ class UserRepository:
         
         if eager_load:
             eager_load_depth = [
-                
+                {AppUser.subscription:[]},
+                {AppUser.app_user_wallet:[]},
                 {
                     AppUser.app_user_person: [
+
                         Person.person_blood_type,
                         
                         {Person.person_location: [

@@ -11,7 +11,7 @@ from core.exceptions.handler import (
     UserNotFoundException,
     # Add these specific exceptions to your core/exceptions.py
 )
-from core.models.models import AppUser
+from core.models.models import AppUser, Subscription, Wallet
 from repositories.user_repository import UserRepository
 from repositories.person_repository import PersonRepository
 from repositories.location_repository import LocationRepository
@@ -55,100 +55,106 @@ class UserService:
             raise UserNotFoundException(user_id=user_id)
         return user
     
-    async def create_user(
+    def create_user_record(
         self,
         user_data: AppUser_API,
         person_data: Optional[Person_API] = None,
         location_data: Optional[Location_API] = None,
-        provider: Optional[str] = None
-    ):
-        """Create a new user"""
-        logger.info("Getting user by name")
-        # Check if user already exists
-        if self.user_repo.get_by_name(user_data.app_user_name):
-            raise APIException(
-                status_code=HTTP_409_CONFLICT,
-                error_code=ErrorCode.APPUSER_ALREADY_EXISTS,
-                details={"username": user_data.app_user_name}
-            )
-        
-        if user_data.app_user_email:
-            if self.user_repo.get_by_email(user_data.app_user_email):
-                raise APIException(
-                    status_code=HTTP_409_CONFLICT,
-                    error_code=ErrorCode.APPUSER_ALREADY_EXISTS,
-                    details={"email": user_data.app_user_email}
-                )
-        
-        logger.info("Creating user object")
-        # Build AppUser object
+    ) -> AppUser:
+        """Persist a new AppUser row plus its person/location, if any.
+
+        Does not touch auth. Does not check uniqueness — the workflow
+        checks that before calling. This method is purely the storage
+        step.
+        """
         now = datetime.datetime.now()
         app_user = AppUser(
             app_user_name=user_data.app_user_name,
             app_user_password="",
             app_user_preferences=json.dumps(user_data.app_user_preferences),
-            app_user_email= user_data.app_user_email,
+            app_user_email=user_data.app_user_email,
             app_user_image_url=user_data.app_user_image_url,
             app_user_type=user_data.app_user_type.value,
             app_user_last_active=str(now),
             app_user_last_updated=str(now),
             app_user_creation=str(now),
         )
-        
-        # Attach Person if provided
-        if person_data :
+        app_user.app_user_wallet = Wallet(
+            wallet_balance= 0.00,wallet_status= 'active'
+        )
+
+        app_user.subscription = Subscription(
+                    subscription_quota= 100,subscription_plan_id = 1
+        )
+
+        if person_data:
             existing_person = self.person_repo.get_person_by_id(person_data.id_person)
             if existing_person:
                 app_user.app_user_person_id = existing_person.id_person
             else:
-                app_user.app_user_person = self.person_service.generate_person_object(person_data, location_data)
-        
-        # Save AppUser record
+                app_user.app_user_person = self.person_service.generate_person_object(
+                    person_data, location_data
+                )
+
         try:
-            user = self.user_repo.create(app_user)
+            return self.user_repo.create(app_user)
         except Exception as e:
             logger.error(f"Failed to insert AppUser: {e}")
             raise APIException(
                 status_code=HTTP_417_EXPECTATION_FAILED,
                 error_code=ErrorCode.USER_INSERT_FAILED,
-                details={"error": str(e)}
+                details={"error": str(e)},
             )
-        
-        # Handle authentication for non-OAuth users
-        if provider and provider.lower() == "google":
-            logger.info(f"Skipping auth creation for OAuth provider '{provider}'")
-            return user
-        
-        # Create auth record for regular users
-        user_auth_data = {
-            "username": user.app_user_name,
-            "app_user_id": user.id_app_user,
-            "password": user_data.app_user_password,
-        }
-        if user_data.app_user_email:
-            user_auth_data["email"] = user_data.app_user_email
 
-        
+
+    def update_user_record_raw(self,user: AppUser):
         try:
-            logger.info(f"Creating auth record for user '{user.app_user_name}'")
-            user_auth_record = await self.auth_manager.register_user(user_auth_data)
-            self.update_user_password(user, user_auth_record["hashed_password"])
-        except APIException as e:
-            logger.error(f"Failed to create/update auth record: {e}")
-            # if e.status_code == HTTP_417_EXPECTATION_FAILED:
-            deleted=  self.user_repo.delete(user)
-            if deleted:
-                logger.info(f"Deleted the user record")
-            else:
-                logger.error(f"Failed to delete the user record")
-
+            return self.user_repo.update(user)
+        except Exception as e:
             raise APIException(
-                status_code=HTTP_410_GONE,
-                error_code=ErrorCode.USER_AUTH_CREATION_FAILED,
-                details={"auth_error": str(e), "user_id": user.id_app_user}
+                status_code=HTTP_417_EXPECTATION_FAILED,
+                error_code=ErrorCode.USER_UPDATE_FAILED,
+                details={"user_id": user.id_app_user, "error": str(e)},
             )
-        
-        return user
+
+    def update_user_record(
+        self,
+        user: AppUser,
+        user_data: AppUser_API,
+        person_id: int,
+    ) -> AppUser:
+        """Apply updates to an existing AppUser row.
+
+        Caller supplies the resolved person id — the workflow is
+        responsible for inserting or refreshing the person first.
+        """
+        updatable_fields = [
+            "app_user_preferences",
+            "app_user_last_active",
+            "app_user_image_url",
+            "app_user_email",
+            "app_user_type",
+        ]
+        for field in updatable_fields:
+            if hasattr(user_data, field):
+                setattr(user, field, getattr(user_data, field))
+
+        user.app_user_person_id = person_id
+        user.app_user_last_updated = datetime.datetime.now()
+
+        try:
+            return self.user_repo.update(user)
+        except Exception as e:
+            raise APIException(
+                status_code=HTTP_417_EXPECTATION_FAILED,
+                error_code=ErrorCode.USER_UPDATE_FAILED,
+                details={"user_id": user.id_app_user, "error": str(e)},
+            )
+
+
+    def delete_user_record(self, user: AppUser) -> bool:
+        """Delete an AppUser row. Auth deletion is the workflow's job."""
+        return self.user_repo.delete(user)
     
     def update_user(
         self,
@@ -221,4 +227,6 @@ class UserService:
         """Delete a user"""
         user = self.get_user_by_id(user_data.id_app_user)
         return self.user_repo.delete(user)
+    
+
     

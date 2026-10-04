@@ -15,6 +15,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Query, status
 
+from core.models.models import ProductProvider
 from core.logging_config import get_logger
 from core.response_models import ErrorResponseModel, get_crud_error_responses
 from core.exceptions.specific.search_exceptions import (
@@ -248,8 +249,31 @@ def search_supplier_by_position(
         longitude, latitude, distance_km, offset, limit
     )
     logger.info(f"Found {len(results)} suppliers in the specified area")
-    return results
 
+
+    return [_serialize_row(r, ProductProvider) for r in results]
+
+
+def _serialize_row(row, model_class):
+    """Flatten a heterogeneous SQLAlchemy Row into a plain dict.
+
+    Handles three kinds of keys:
+      - a mapped class (ProductProvider) → expand its columns
+      - a Column                       → use .name
+      - a string label ("distance")    → use the key as-is
+    """
+    from sqlalchemy import inspect as sa_inspect
+
+    out = {}
+    for key, value in row._mapping.items():
+        if isinstance(key, type):
+            mapper = sa_inspect(key)
+            for col in mapper.columns:
+                out[col.key] = getattr(value, col.key, None)
+        else:
+            name = getattr(key, "name", None) or str(key)
+            out[name] = value
+    return out
 
 # ==================== Enhanced Multi-Search Endpoints ====================
 

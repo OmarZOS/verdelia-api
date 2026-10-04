@@ -352,7 +352,7 @@ def search_by_filter(
     eager_load_depth: Optional[int] = None,
     offset: int = 0,
     limit: int = 20
-) -> List[Any]:
+) :
     """Search records by geographic location"""
     if limit > 100:
         limit = 100

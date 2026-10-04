@@ -4,26 +4,27 @@ Verdelia API Test Runner - Comprehensive Data Generation
 Run with: python test_runner.py
 
 Fixes over the previous revision:
-  - Invoice payload matches the real backend enums:
-      invoice_status: unpaid | paid | canceled | partially_paid | overdue | refunded
-      invoice_type:   receipt | invoice | proforma
-      invoice_due_date: date only (YYYY-MM-DD), not a full datetime
-  - Removed `payment_method` / `payment_status` from the invoice body —
-    those don't belong on an invoice row.
-  - Staff rule status limited to the backend enum (removed EXPIRED,
-    which was causing "Data truncated" errors).
-  - Order generator now takes real product ids.
-  - Response handling unwraps {success, message, data} everywhere,
-    extracts ids from the nested dict, and prints the response body
-    on failure so 4xx reasons are actually visible.
+  - Invoice payload matches the real backend enums.
+  - Removed payment_method / payment_status from invoice body.
+  - Staff rule status limited to backend enum.
+  - Order generator takes real product ids.
+  - Response unwrapping for {success, message, data}.
   - Bounded retry on transient 5xx.
-  - Cart/invoice/order/product/supplier/org id extraction covers the
-    fields the backend actually returns.
-  - Prints reasons instead of just HTTP codes.
-  - Organisations and suppliers now carry an optional trilingual
-    `naming` block (see generate_organisation_data /
-    generate_supplier_data). The runner sends both forms so the
-    API's synth-from-flat fallback is also exercised.
+  - Id extraction covers the fields the backend actually returns.
+  - Organisations and suppliers carry an optional trilingual naming block.
+  - Subscription flow: reads seeded plans, exercises the single-call
+    purchase path, free-link, and cancel.
+
+Removed from this revision:
+  - Invoice creation (seed script owns it).
+  - Order creation (seed script owns it).
+  - Delivery creation (seed script owns it).
+  - Plan creation (plans are seeded out-of-band via
+    `python -m storage.seed --plans-only`).
+  - Explicit confirm + finalize calls in the paid subscription path —
+    the workflow now handles both inside `initiate_subscription`.
+  - `invoice_id` from the subscription purchase params — the workflow
+    creates its own invoice.
 """
 
 import asyncio
@@ -166,6 +167,16 @@ COUNTRIES = ["DZ", "MA", "TN", "EG", "SA", "AE", "US", "FR", "DE", "IT", "ES", "
 
 
 # ============================================================================
+# SUBSCRIPTION CONSTANTS
+# ============================================================================
+
+# Must match the DB enum on `payment.payment_method`.
+PAYMENT_METHODS = [
+    "wallet","cash",
+]
+
+
+# ============================================================================
 # ENUMS
 # ============================================================================
 
@@ -176,6 +187,13 @@ class Gender(str, Enum):
 
 
 class AppUserType(str, Enum):
+    """Mirrors the DB enum on `app_user.app_user_type`.
+
+    Kept in sync with the backend so the runner generates only types
+    the API accepts. `doctor`, `nurse`, and `staff` are intentionally
+    absent — those are modelled via `CareGiver` and `staff_role` links,
+    not as `app_user_type` variants.
+    """
     PROVIDER = "provider"
     CUSTOMER = "customer"
     PATIENT = "patient"
@@ -260,12 +278,11 @@ class TestContext:
     created_suppliers: List[int] = field(default_factory=list)
     created_products: List[int] = field(default_factory=list)
     created_staff_rules: List[int] = field(default_factory=list)
-    created_invoices: List[int] = field(default_factory=list)
-    created_orders: List[int] = field(default_factory=list)
-    created_deliveries: List[int] = field(default_factory=list)
+    created_subscriptions: List[int] = field(default_factory=list)
     user_org_mapping: Dict[int, List[int]] = field(default_factory=dict)
     user_supplier_mapping: Dict[int, List[int]] = field(default_factory=dict)
     user_roles: Dict[int, List[str]] = field(default_factory=dict)
+    subscription_user_mapping: Dict[int, List[int]] = field(default_factory=dict)
 
     def save(self, filename: str = "test_context.json"):
         data = {
@@ -274,12 +291,11 @@ class TestContext:
             "created_suppliers": self.created_suppliers,
             "created_products": self.created_products,
             "created_staff_rules": self.created_staff_rules,
-            "created_invoices": self.created_invoices,
-            "created_orders": self.created_orders,
-            "created_deliveries": self.created_deliveries,
+            "created_subscriptions": self.created_subscriptions,
             "user_org_mapping": self.user_org_mapping,
             "user_supplier_mapping": self.user_supplier_mapping,
             "user_roles": self.user_roles,
+            "subscription_user_mapping": self.subscription_user_mapping,
             "timestamp": datetime.now().isoformat(),
         }
         with open(filename, "w") as f:
@@ -296,12 +312,11 @@ class TestContext:
         self.created_suppliers = data.get("created_suppliers", [])
         self.created_products = data.get("created_products", [])
         self.created_staff_rules = data.get("created_staff_rules", [])
-        self.created_invoices = data.get("created_invoices", [])
-        self.created_orders = data.get("created_orders", [])
-        self.created_deliveries = data.get("created_deliveries", [])
+        self.created_subscriptions = data.get("created_subscriptions", [])
         self.user_org_mapping = data.get("user_org_mapping", {})
         self.user_supplier_mapping = data.get("user_supplier_mapping", {})
         self.user_roles = data.get("user_roles", {})
+        self.subscription_user_mapping = data.get("subscription_user_mapping", {})
         print(f"📂 Test context loaded from {filename}")
         return True
 
@@ -335,14 +350,14 @@ def generate_user_data(user_type: str = None) -> Dict[str, Any]:
         "app_user_password": "Test123!@#",
         "app_user_email": f"{first.lower()}.{last.lower()}.{uuid.uuid4().hex[:4]}@example.com",
         "app_user_type": user_type or random.choice(all_types),
-        "app_user_preferences": {
+        "app_user_preferences": json.dumps({
             "theme": random.choice(["dark", "light"]),
             "notifications": random.choice([True, False]),
             "language": random.choice(["en", "fr", "ar"]),
             "timezone": random.choice(["UTC+1", "UTC+2", "UTC+3"]),
             "currency": "DZD",
             "date_format": random.choice(["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"]),
-        },
+        }),
         "app_user_image_url": f"https://example.com/avatars/{uuid.uuid4().hex[:8]}.jpg",
     }
 
@@ -395,28 +410,9 @@ def generate_location_data(extended: bool = False) -> Dict[str, Any]:
     return data
 
 
-def generate_organisation_data(
-    *,
-    with_naming: bool = True,
-) -> Dict[str, Any]:
-    """
-    Build an organisation payload matching `ProviderOrganisation_API`.
-
-    Fields sent:
-        provider_organisation_name : flat English name (mirrors naming.en)
-        provider_organisation_desc : free-text description
-        naming                     : optional trilingual block
-
-    The nested `naming` block, when present, drives the naming
-    contribution. When absent, the service synthesises a contribution
-    from `provider_organisation_name` with all three languages set to
-    the same string.
-    """
+def generate_organisation_data(*, with_naming: bool = True) -> Dict[str, Any]:
     base = get_random_item(REAL_ORG_NAMES) or "HealthCare Plus"
     suffix = uuid.uuid4().hex[:4]
-
-    # Flat name: the org name plus a short suffix so generated rows are
-    # distinguishable in list views.
     flat_name = f"{base} {suffix}"
 
     payload: Dict[str, Any] = {
@@ -428,9 +424,6 @@ def generate_organisation_data(
     }
 
     if with_naming:
-        # Trilingual block. `en` mirrors the flat name. `ar` and `fr`
-        # carry the same ASCII suffix so a mismatched translation is
-        # visible at a glance in the DB.
         payload["naming"] = {
             "en": flat_name,
             "ar": f"مؤسسة {suffix}",
@@ -448,22 +441,6 @@ def generate_supplier_data(
     *,
     with_naming: bool = True,
 ) -> Dict[str, Any]:
-    """
-    Build a supplier payload matching `ProductProvider_API`.
-
-    Fields sent:
-        id_provider_owner           : FK to the owning user
-        id_provider_organisation    : FK to the organisation
-        id_product_provider_type    : FK to the provider type
-        provider_name               : flat English name
-        provider_contact_info       : JSON string of contact details
-        naming                      : optional trilingual block
-
-    Extra fields the server model doesn't declare — provider rating,
-    reviews, verified flag, denormalised org name — are intentionally
-    left out. Sending them either triggers a strict-mode 422 or gets
-    silently dropped, and neither is a helpful signal.
-    """
     base = get_random_item(REAL_SUPPLIER_NAMES) or "Medical Center"
     suffix = uuid.uuid4().hex[:4]
 
@@ -485,11 +462,7 @@ def generate_supplier_data(
     }
 
     if with_naming:
-        # Supplier display name is a short human-readable string that
-        # an admin can recognize in a list; keep the base in the
-        # English name so it reads like the org it belongs to.
         display_en = f"{base} {suffix}"
-
         payload["provider_name"] = display_en
         payload["naming"] = {
             "en": display_en,
@@ -547,45 +520,19 @@ def generate_product_image_data() -> Dict[str, Any]:
 
 
 def generate_iproduct_data() -> Dict[str, Any]:
-    """
-    Build a trilingual iproduct payload matching the current
-    `Iproduct_API` shape.
-
-    Emits both forms the API accepts:
-      - `naming` with `en` / `ar` / `fr`, which the server unpacks into
-        a NamingContribution row.
-      - `iproduct_name` mirroring `naming.en`, so any reader still on
-        the flat field sees a consistent value.
-
-    Sending both is deliberate: the API overwrites the flat name from
-    `naming.en` when both are present, and doing it on the client
-    side proves the round-trip preserves the invariant.
-    """
     name_en, name_ar, name_fr = random.choice(IPRODUCT_NAME_POOL)
     suffix = uuid.uuid4().hex[:4]
-
-    # The flat name keeps a suffix so generated rows don't collide on
-    # display in the list view. The naming.en also gets the suffix so
-    # the two stay byte-for-byte identical — that's the invariant the
-    # API enforces.
     flat_name = f"{name_en} {suffix}"
 
     return {
-        # -------- Trilingual naming block --------
         "naming": {
             "en": flat_name,
             "ar": f"{name_ar} {suffix}",
             "fr": f"{name_fr} {suffix}",
             "naming_contribution_type": "product",
-            # The runner doesn't know the DB id yet. 0 signals "insert"
-            # to the API; the server fills it in and returns it.
             "id_naming_contribution": 0,
         },
-
-        # -------- Flat name (mirrors naming.en) --------
         "iproduct_name": flat_name,
-
-        # -------- Everything else as before --------
         "iproduct_barcode": f"{random.randint(1000000000000, 9999999999999)}",
         "iproduct_brand": get_random_item(
             ["BrandA", "BrandB", "BrandC", "Generic", "Premium"]
@@ -616,133 +563,31 @@ def generate_iproduct_data() -> Dict[str, Any]:
     }
 
 
-def generate_invoice_data(user_id: int, supplier_id: int, org_id: int) -> Dict[str, Any]:
-    """
-    Matches the real invoice contract:
-      invoice_status:     unpaid | paid | canceled | partially_paid | overdue | refunded
-      invoice_type:       receipt | invoice | proforma
-      invoice_due_date:   date only (YYYY-MM-DD)
-    Note: `canceled` is spelled with one 'l'.
-    """
-    total = random_price(100.0, 5000.0)
-    tax = round(total * random.uniform(0.05, 0.20), 2)
-    discount = round(random.uniform(0.0, 50.0), 2)
+# ============================================================================
+# SUBSCRIPTION PURCHASE GENERATOR
+# ============================================================================
 
-    return {
-        "invoice_number": f"INV-{datetime.now().year}-{uuid.uuid4().hex[:6].upper()}",
-        "invoice_user_id": user_id,
-        "invoice_supplier_id": supplier_id,
-        "invoice_org_id": org_id,
-        "invoice_date": datetime.now().date().isoformat(),
-        "invoice_due_date": (datetime.now() + timedelta(days=random.randint(7, 30))).date().isoformat(),
-        "invoice_total_amount": total,
-        "invoice_tax_amount": tax,
-        "invoice_discount": discount,
-        "invoice_final_amount": round(total + tax - discount, 2),
-        "invoice_status": random.choice([
-            "unpaid", "paid", "canceled", "partially_paid", "overdue", "refunded",
-        ]),
-        "invoice_notes": f"Order invoice for supplier {supplier_id}",
-        "invoice_type": random.choice(["receipt", "invoice", "proforma"]),
-    }
-
-
-def generate_order_data(
-    user_id: int,
-    supplier_id: int,
-    org_id: int,
-    product_ids: List[int],
+def generate_subscription_purchase_data(
+    plan_id: int,
+    *,
+    payment_method: Optional[str] = None,
+    notes: Optional[str] = None,
 ) -> Dict[str, Any]:
+    """Query params for `POST /app_user/{user_id}/subscription/initiate`.
+
+    The endpoint reads everything from query params, so this dict is
+    meant to be passed as `params=` to httpx, not `json=`.
+
+    Note: no `invoice_id` — the workflow composes the invoice itself
+    as part of the purchase. There is nothing for the client to pass.
     """
-    Enums verified from backend 422 responses:
-      payment_status:     PENDING | PAID | FAILED | REFUNDED
-      placed_order_state: PENDING | PROCESSING | SHIPPED | DELIVERED | CANCELLED | REFUNDED
-      payment_method:     cash | card | bank_transfer
-    """
-    if not product_ids:
-        raise ValueError("generate_order_data requires at least one product id")
-
-    now = datetime.utcnow().isoformat() + "Z"
-    order_states = ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"]
-    payment_statuses = ["pending", "paid", "failed", "refunded"]
-    payment_methods = ["cash", "card", "bank_transfer"]
-
-    n_items = random.randint(1, min(3, len(product_ids)))
-    chosen = random.sample(product_ids, n_items)
-
-    ordered_items = [
-        {
-            "id_ordered_item": 0,
-            "ordered_product_id": pid,
-            "order_ref": 0,
-            "product_discount": round(random.uniform(0, 10), 2),
-            "ordered_quantity": random.randint(1, 3),
-            "unit_price": round(random.uniform(5, 500), 2),
-            "applied_vat": round(random.uniform(0, 19), 2),
-        }
-        for pid in chosen
-    ]
-
-    return {
-        "ordered_items": ordered_items,
-        "submitted_order": {
-            "id_placed_order": 0,
-            "ordered_timestamp": now,
-            "order_discount": round(random.uniform(0, 50), 2),
-            "placed_order_last_mod": now,
-            "payment_status": random.choice(payment_statuses),
-            "payment_ref": "",
-            "placed_order_state": random.choice(order_states),
-            "payment_method": random.choice(payment_methods),
-            "ordering_user_id": user_id,
-        },
-        "delivery_info": {
-            "destination_address": {
-                "id_location": 0,
-                "location_latitude": round(random.uniform(-90, 90), 6),
-                "location_longitude": round(random.uniform(-180, 180), 6),
-                "location_name": f"Location {uuid.uuid4().hex[:4]}",
-                "location_address_id": 0,
-                "id_address": 0,
-                "address_street": f"{random.randint(1, 999)} {get_random_item(REAL_STREETS) or 'Main St'}",
-                "address_city": get_random_item(REAL_CITIES) or "Algiers",
-                "address_postal_code": f"{random.randint(1000, 9999)}",
-                "address_country": random.choice(COUNTRIES),
-            },
-            "delivery_fee": round(random.uniform(0, 50), 2),
-        },
+    params: Dict[str, Any] = {
+        "plan_id": plan_id,
+        "payment_method": payment_method or random.choice(PAYMENT_METHODS),
     }
-
-
-def generate_delivery_data(order_id: int, supplier_id: int, user_id: int) -> Dict[str, Any]:
-    """
-    NOTE: this shape has not been verified against a real delivery 422.
-    If deliveries start failing, dump the response body and align field
-    names to the actual model. Do not trust these names blindly.
-    """
-    return {
-        "order_id": order_id,
-        "supplier_id": supplier_id,
-        "user_id": user_id,
-        "delivery_address": f"{random.randint(1, 999)} {get_random_item(REAL_STREETS) or 'Main St'}, {get_random_item(REAL_CITIES) or 'Algiers'}",
-        "delivery_status": random.choice(
-            ["pending", "processing", "ready_for_pickup", "in_transit",
-             "out_for_delivery", "delivered", "cancelled", "failed"]
-        ),
-        "shipping_method": random.choice(["standard", "express", "overnight", "courier", "pickup"]),
-        "tracking_number": f"TRK-{uuid.uuid4().hex[:12].upper()}",
-        "estimated_delivery": (datetime.now() + timedelta(days=random.randint(1, 7))).isoformat(),
-        "actual_delivery": None,
-        "delivery_fee": random_price(0.0, 50.0),
-        "package_count": random.randint(1, 5),
-        "total_weight": round(random.uniform(0.5, 50.0), 2),
-        "special_instructions": random.choice(
-            ["Leave at front door", "Call upon arrival", "Deliver to reception",
-             "No signature required", ""]
-        ),
-        "recipient_name": f"{get_random_item(REAL_FIRST_NAMES)} {get_random_item(REAL_LAST_NAMES)}",
-        "recipient_phone": random_phone(),
-    }
+    if notes is not None:
+        params["notes"] = notes
+    return params
 
 
 # ============================================================================
@@ -762,9 +607,7 @@ class TestRunner:
             "suppliers": 0,
             "products": 0,
             "staff_rules": 0,
-            "invoices": 0,
-            "orders": 0,
-            "deliveries": 0,
+            "subscriptions": 0,
             "failures": 0,
         }
 
@@ -787,38 +630,33 @@ class TestRunner:
             "id_app_user", "id_product_provider", "id_provider_organisation",
             "idprovider_organisation", "id_product", "id",
             "user_id", "supplier_id", "organisation_id",
-            "invoice_id", "order_id", "delivery_id",
-            "cart_id", "payment_id", "rule_id", "staff_rule_id",
+            "rule_id", "staff_rule_id",
             "location_id", "person_id",
+            "id_plan", "plan_id",
+            "id_subscription", "subscription_id",
+            "payment_id", "id_payment",
         ]
 
     def extract_id(self, payload: Any) -> int:
-        """Unwrap {data:{...}} then look for an id field."""
         if not isinstance(payload, dict):
             return 0
-
-        # unwrap once
         inner = payload.get("data")
         if isinstance(inner, dict):
             payload = inner
-
         for key in self._id_keys():
             if key in payload:
                 try:
                     return int(payload[key])
                 except (ValueError, TypeError):
                     pass
-
-        # fall back to nested well-known keys
-        for nested in ["user", "provider", "product", "invoice", "order",
-                       "cart", "payment", "rule", "staff", "organisation",
-                       "delivery"]:
+        for nested in ["user", "provider", "product",
+                       "payment", "rule", "staff", "organisation",
+                       "plan", "subscription", "invoice"]:
             v = payload.get(nested)
             if isinstance(v, dict):
                 found = self.extract_id(v)
                 if found:
                     return found
-
         return 0
 
     def _record_failure(self, label: str, response: httpx.Response):
@@ -867,9 +705,6 @@ class TestRunner:
             "customer": ["customer", "consumer"],
             "patient": ["patient"],
             "admin": ["admin", "super_user"],
-            "staff": ["staff", "support"],
-            "doctor": ["doctor", "medical_staff"],
-            "nurse": ["nurse", "medical_staff"],
             "guest": ["guest"],
         }
         user.roles = role_map.get(t, ["guest"])
@@ -877,7 +712,10 @@ class TestRunner:
     async def create_users(self, count: int = 10) -> List[TestUser]:
         print(f"\n👥 Creating {count} users...")
         created: List[TestUser] = []
-        user_types = ["provider", "customer", "patient", "guest", "doctor", "nurse", "staff", "admin"]
+        # Only the four types the backend enum accepts plus admin.
+        # `doctor`, `nurse`, and `staff` are modelled via CareGiver and
+        # staff_role links, not as app_user_type variants.
+        user_types = ["provider", "customer", "patient", "guest"]
 
         for i in range(count):
             user_type = user_types[i % len(user_types)]
@@ -928,21 +766,8 @@ class TestRunner:
 
     # ==================== ORGANISATIONS ====================
 
-    async def create_organisations(
-        self, user: TestUser, count: int = 3
-    ) -> List[int]:
-        """
-        Create `count` organisations owned by `user`.
-
-        Each organisation gets a trilingual naming block 85% of the
-        time; the remaining 15% carries only the flat name so the run
-        also exercises the service's synth-from-flat fallback. The
-        probability is rolled per call so a large run always contains
-        both variants.
-        """
-        print(
-            f"\n🏢 Creating {count} organisations for {user.username}..."
-        )
+    async def create_organisations(self, user: TestUser, count: int = 3) -> List[int]:
+        print(f"\n🏢 Creating {count} organisations for {user.username}...")
         headers = self.get_auth_headers(user)
         if not headers:
             print("   ❌ No auth token")
@@ -966,19 +791,11 @@ class TestRunner:
                         self.context.created_organisations.append(org_id)
                         self.stats["organisations"] += 1
                         kind = "trilingual" if with_naming else "flat-only"
-                        print(
-                            f"   ✅ Organisation {i + 1} ({kind}): "
-                            f"{org_id}"
-                        )
+                        print(f"   ✅ Organisation {i + 1} ({kind}): {org_id}")
                     else:
-                        print(
-                            f"   ⚠️ Could not extract org id: "
-                            f"{short(response.text, 200)}"
-                        )
+                        print(f"   ⚠️ Could not extract org id: {short(response.text, 200)}")
                 else:
-                    self._record_failure(
-                        f"Organisation {i + 1}", response
-                    )
+                    self._record_failure(f"Organisation {i + 1}", response)
             except Exception as e:
                 print(f"   ❌ Error: {e}")
             await asyncio.sleep(0.1)
@@ -997,12 +814,6 @@ class TestRunner:
         org_ids: List[int],
         count_per_org: int = 3,
     ) -> List[int]:
-        """
-        Create suppliers under the given organisations.
-
-        Same 85/15 naming mix as organisations: most suppliers carry a
-        trilingual `naming` block, the rest only a flat `provider_name`.
-        """
         if not org_ids:
             return []
         print(f"\n🏥 Creating suppliers for {user.username}...")
@@ -1037,22 +848,12 @@ class TestRunner:
                             self.context.created_suppliers.append(sup_id)
                             self.stats["suppliers"] += 1
                             count += 1
-                            kind = (
-                                "trilingual" if with_naming else "flat-only"
-                            )
-                            print(
-                                f"   ✅ Supplier {count}/{total} "
-                                f"({kind}): {sup_id}"
-                            )
+                            kind = "trilingual" if with_naming else "flat-only"
+                            print(f"   ✅ Supplier {count}/{total} ({kind}): {sup_id}")
                         else:
-                            print(
-                                f"   ⚠️ Could not extract supplier id: "
-                                f"{short(response.text, 200)}"
-                            )
+                            print(f"   ⚠️ Could not extract supplier id: {short(response.text, 200)}")
                     else:
-                        self._record_failure(
-                            f"Supplier {count + 1}/{total}", response
-                        )
+                        self._record_failure(f"Supplier {count + 1}/{total}", response)
                 except Exception as e:
                     print(f"   ❌ Error: {e}")
                 await asyncio.sleep(0.1)
@@ -1127,14 +928,13 @@ class TestRunner:
             return 0
 
         rule_codes = [27, 45, 60, 12, 33, 78, 91, 56, 23, 67]
-        # NOTE: EXPIRED was rejected by the DB. Use only values the enum
-        # is known to accept. Adjust if your model has different values.
-        statuses = ["ACTIVE", "PENDING", "SUSPENDED", "REJECTED"]
+        # Must match the DB enum on management_rule_status. Adjust if
+        # your model uses different values.
+        statuses = ["ACTIVE", "PENDING", "REJECTED"]
 
         total = 0
         for supplier_id in supplier_ids:
             for target in target_users[:rules_per_supplier]:
-                # skip if target owns this supplier
                 if supplier_id in self.context.user_supplier_mapping.get(target.id, []):
                     continue
 
@@ -1171,144 +971,432 @@ class TestRunner:
         print(f"✅ Created {total} staff rules")
         return total
 
-    # ==================== INVOICES ====================
+    # ==================== PLANS (read-only) ====================
 
-    async def create_invoices(self, user: TestUser, supplier_ids: List[int], count: int = 3) -> int:
-        if not supplier_ids:
-            return 0
-        print(f"\n📄 Creating invoices for {user.username}...")
+    async def get_plans(
+        self,
+        user: Optional[TestUser] = None,
+        plan_type: Optional[str] = None,
+        billing_cycle: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Read the plan catalogue.
 
+        `/plans` is public — no auth header required. Plans are seeded
+        out-of-band via `python -m storage.seed --plans-only`; this
+        method only reads them.
+        """
+        params: Dict[str, Any] = {}
+        if plan_type:
+            params["plan_type"] = plan_type
+        if billing_cycle:
+            params["billing_cycle"] = billing_cycle
+
+        try:
+            response = await self.client.get(
+                f"{self.base_url}/api/v1/plans",
+                params=params,
+                headers=self.get_auth_headers(user) if user else {},
+            )
+            if response.status_code != 200:
+                self._record_failure("List plans", response)
+                return []
+
+            payload = response.json()
+
+            # Current router returns a bare list.
+            if isinstance(payload, list):
+                return payload
+
+            inner = payload.get("data") if isinstance(payload, dict) else None
+
+            if isinstance(inner, list):
+                return inner
+
+            if isinstance(inner, dict):
+                items = inner.get("items")
+                if isinstance(items, list):
+                    return items
+
+            print(
+                f"   ⚠️ /plans returned 200 but no list — "
+                f"shape: {short(response.text, 200)}"
+            )
+            return []
+
+        except Exception as e:
+            print(f"   ❌ Error listing plans: {e}")
+            return []
+
+    async def get_plan_by_id(
+        self, plan_id: int, user: Optional[TestUser] = None
+    ) -> Optional[Dict[str, Any]]:
+        try:
+            response = await self.client.get(
+                f"{self.base_url}/api/v1/plans/{plan_id}",
+                headers=self.get_auth_headers(user) if user else {},
+            )
+            if response.status_code == 200:
+                return unwrap(response.json())
+            self._record_failure(f"Get plan {plan_id}", response)
+            return None
+        except Exception as e:
+            print(f"   ❌ Error fetching plan {plan_id}: {e}")
+            return None
+
+    # ==================== SUBSCRIPTIONS ====================
+
+    async def initiate_subscription(
+        self,
+        user: TestUser,
+        plan_id: int,
+        *,
+        payment_method: Optional[str] = None,
+        notes: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Purchase a subscription.
+
+        Single call. `POST /app_user/{user_id}/subscription/initiate`
+        creates the invoice, creates the payment, confirms the payment
+        with the finance service, and finalizes the subscription — all
+        server-side. The response carries a live subscription.
+
+        The client does *not* need to call `confirm_payment` or
+        `finalize_subscription` afterward; those are handled inside the
+        workflow. The runner previously split this into three calls;
+        it doesn't anymore.
+        """
         headers = self.get_auth_headers(user)
         if not headers:
             print("   ❌ No auth token")
-            return 0
+            return None
 
-        org_ids = self.context.user_org_mapping.get(user.id, [])
-        if not org_ids:
-            print("   ⚠️ No organisation found")
-            return 0
+        params = generate_subscription_purchase_data(
+            plan_id,
+            payment_method=payment_method,
+            notes=notes,
+        )
 
-        total = 0
-        for supplier_id in supplier_ids[:3]:
-            for _ in range(count):
-                data = generate_invoice_data(user.id, supplier_id, org_ids[0])
-                try:
-                    response = await self.client.post(
-                        f"{self.base_url}/api/v1/invoices", json=data, headers=headers,
-                    )
-                    if response.status_code in (200, 201):
-                        inv_id = self.extract_id(response.json())
-                        if inv_id > 0:
-                            self.context.created_invoices.append(inv_id)
-                            self.stats["invoices"] += 1
-                            total += 1
-                            print(f"   ✅ Invoice: {inv_id}")
-                        else:
-                            print(f"   ⚠️ Could not extract invoice id: {short(response.text, 200)}")
-                    else:
-                        self._record_failure("Invoice", response)
-                except Exception as e:
-                    print(f"   ❌ Error: {e}")
-                await asyncio.sleep(0.1)
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/api/v1/app_user/{user.id}/subscription/initiate",
+                params=params,
+                headers=headers,
+            )
+            if response.status_code in (200, 201):
+                payload = unwrap(response.json()) or response.json()
 
-        print(f"✅ Created {total} invoices")
-        return total
-
-    # ==================== ORDERS ====================
-
-    async def create_orders(self, user: TestUser, supplier_ids: List[int], count: int = 3) -> int:
-        if not supplier_ids:
-            return 0
-        if not self.context.created_products:
-            print("\n⚠️ No products available — cannot create orders")
-            return 0
-
-        print(f"\n📋 Creating orders for {user.username}...")
-
-        headers = self.get_auth_headers(user)
-        if not headers:
-            print("   ❌ No auth token")
-            return 0
-
-        org_ids = self.context.user_org_mapping.get(user.id, [])
-        if not org_ids:
-            print("   ⚠️ No organisation found")
-            return 0
-
-        total = 0
-        for supplier_id in supplier_ids[:3]:
-            for _ in range(count):
-                data = generate_order_data(
-                    user.id, supplier_id, org_ids[0], self.context.created_products
+                subscription = (
+                    payload.get("subscription")
+                    if isinstance(payload, dict)
+                    else None
                 )
-                try:
-                    response = await self.client.post(
-                        f"{self.base_url}/api/v1/business/orders", json=data, headers=headers,
-                    )
-                    if response.status_code in (200, 201):
-                        order_id = self.extract_id(response.json())
-                        if order_id > 0:
-                            self.context.created_orders.append(order_id)
-                            self.stats["orders"] += 1
-                            total += 1
-                            print(f"   ✅ Order: {order_id}")
-                        else:
-                            print(f"   ⚠️ Could not extract order id: {short(response.text, 200)}")
-                    else:
-                        self._record_failure("Order", response)
-                except Exception as e:
-                    print(f"   ❌ Error: {e}")
-                await asyncio.sleep(0.1)
+                sub_id = 0
+                if isinstance(subscription, dict):
+                    sub_id = self.extract_id(subscription)
+                if sub_id > 0:
+                    self.context.created_subscriptions.append(sub_id)
+                    self.stats["subscriptions"] += 1
+                    self.context.subscription_user_mapping.setdefault(
+                        user.id, []
+                    ).append(sub_id)
 
-        print(f"✅ Created {total} orders")
-        return total
+                payment = (
+                    payload.get("payment")
+                    if isinstance(payload, dict)
+                    else None
+                )
+                payment_id = 0
+                if isinstance(payment, dict):
+                    payment_id = self.extract_id(payment)
 
-    # ==================== DELIVERIES ====================
+                invoice = (
+                    payload.get("invoice")
+                    if isinstance(payload, dict)
+                    else None
+                )
+                invoice_id = 0
+                if isinstance(invoice, dict):
+                    invoice_id = self.extract_id(invoice)
 
-    async def create_deliveries(self, user: TestUser, order_ids: List[int], count: int = 2) -> int:
-        if not order_ids:
-            return 0
-        print(f"\n🚚 Creating deliveries for {user.username}...")
+                print(
+                    f"   ✅ Purchased subscription: user={user.id} "
+                    f"plan={plan_id} subscription={sub_id} "
+                    f"payment={payment_id} invoice={invoice_id}"
+                )
+                return payload
 
+            self._record_failure(
+                f"Purchase subscription user={user.id} plan={plan_id}",
+                response,
+            )
+            return None
+        except Exception as e:
+            print(f"   ❌ Error: {e}")
+            return None
+
+    async def finalize_subscription(
+        self, user: TestUser, payment_id: int
+    ) -> Optional[Dict[str, Any]]:
+        """Recovery path for a payment that didn't produce a subscription.
+
+        Only used when `initiate_subscription` returns a payment but no
+        subscription — which shouldn't happen in the single-call flow
+        unless the confirm or finalize step half-completed. The runner
+        keeps this method to exercise the recovery endpoint, but it is
+        not part of the normal flow.
+        """
         headers = self.get_auth_headers(user)
         if not headers:
             print("   ❌ No auth token")
-            return 0
+            return None
 
-        supplier_ids = self.context.user_supplier_mapping.get(user.id, [])
-        if not supplier_ids:
-            print("   ⚠️ No suppliers found")
-            return 0
-
-        total = 0
-        for order_id in order_ids[:5]:
-            supplier_id = random.choice(supplier_ids)
-            data = generate_delivery_data(order_id, supplier_id, user.id)
-            try:
-                response = await self.client.post(
-                    f"{self.base_url}/api/v1/deliveries", json=data, headers=headers,
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/api/v1/app_user/{user.id}/subscription/finalize",
+                params={"payment_id": payment_id},
+                headers=headers,
+            )
+            if response.status_code in (200, 201):
+                payload = unwrap(response.json()) or response.json()
+                subscription = (
+                    payload.get("subscription")
+                    if isinstance(payload, dict)
+                    else None
                 )
-                if response.status_code in (200, 201):
-                    delivery_id = self.extract_id(response.json())
-                    if delivery_id > 0:
-                        self.context.created_deliveries.append(delivery_id)
-                        self.stats["deliveries"] += 1
-                        total += 1
-                        print(f"   ✅ Delivery: {delivery_id}")
-                    else:
-                        print(f"   ⚠️ Could not extract delivery id: {short(response.text, 200)}")
-                else:
-                    self._record_failure("Delivery", response)
-            except Exception as e:
-                print(f"   ❌ Error: {e}")
-            await asyncio.sleep(0.1)
+                sub_id = 0
+                if isinstance(subscription, dict):
+                    sub_id = self.extract_id(subscription)
+                if sub_id > 0:
+                    self.context.created_subscriptions.append(sub_id)
+                    self.stats["subscriptions"] += 1
+                    self.context.subscription_user_mapping.setdefault(
+                        user.id, []
+                    ).append(sub_id)
+                print(
+                    f"   ✅ Recovered subscription: {sub_id}"
+                )
+                return payload
+            self._record_failure(
+                f"Finalize subscription user={user.id} payment={payment_id}",
+                response,
+            )
+            return None
+        except Exception as e:
+            print(f"   ❌ Error: {e}")
+            return None
 
-        print(f"✅ Created {total} deliveries")
-        return total
+    async def link_free_plan(
+        self, user: TestUser, plan_id: int
+    ) -> Optional[Dict[str, Any]]:
+        """Attach a zero-priced plan.
+
+        Calls `POST /app_user/{user_id}/subscription/link-free`. If the
+        plan is not free, the endpoint rejects with 400 — the runner
+        treats that as an expected outcome for non-free plans, so it
+        doesn't count as a failure.
+        """
+        headers = self.get_auth_headers(user)
+        if not headers:
+            print("   ❌ No auth token")
+            return None
+
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/api/v1/app_user/{user.id}/subscription/link-free",
+                params={"plan_id": plan_id},
+                headers=headers,
+            )
+            if response.status_code in (200, 201):
+                payload = unwrap(response.json()) or response.json()
+                subscription = (
+                    payload.get("subscription")
+                    if isinstance(payload, dict)
+                    else None
+                )
+                sub_id = 0
+                if isinstance(subscription, dict):
+                    sub_id = self.extract_id(subscription)
+                if sub_id > 0:
+                    self.context.created_subscriptions.append(sub_id)
+                    self.stats["subscriptions"] += 1
+                    self.context.subscription_user_mapping.setdefault(
+                        user.id, []
+                    ).append(sub_id)
+                print(
+                    f"   ✅ Free plan linked: user={user.id} "
+                    f"plan={plan_id} subscription={sub_id}"
+                )
+                return payload
+            if response.status_code == 400:
+                print(
+                    f"   ℹ️ Link-free rejected for plan {plan_id} "
+                    f"(expected if plan is paid)"
+                )
+                return None
+            self._record_failure(
+                f"Link free plan user={user.id} plan={plan_id}", response
+            )
+            return None
+        except Exception as e:
+            print(f"   ❌ Error: {e}")
+            return None
+
+    async def get_user_subscription(
+        self, user: TestUser
+    ) -> Optional[Dict[str, Any]]:
+        """Read a user's current subscription.
+
+        404 means no subscription on file — a normal free-tier state,
+        not a failure. The runner treats it as informational.
+        """
+        headers = self.get_auth_headers(user)
+        try:
+            response = await self.client.get(
+                f"{self.base_url}/api/v1/app_user/{user.id}/subscription",
+                headers=headers,
+            )
+            if response.status_code == 200:
+                payload = unwrap(response.json()) or response.json()
+                print(f"   ✅ User {user.id} has a subscription")
+                return payload
+            if response.status_code == 404:
+                print(f"   ℹ️ User {user.id} has no subscription (404)")
+                return None
+            self._record_failure(
+                f"Get subscription for user {user.id}", response
+            )
+            return None
+        except Exception as e:
+            print(f"   ❌ Error: {e}")
+            return None
+
+    async def check_subscription_status(
+        self, user: TestUser
+    ) -> Optional[Dict[str, Any]]:
+        """Read just the boolean status — cheaper than the full read."""
+        headers = self.get_auth_headers(user)
+        try:
+            response = await self.client.get(
+                f"{self.base_url}/api/v1/app_user/{user.id}/subscription/status",
+                headers=headers,
+            )
+            if response.status_code == 200:
+                payload = response.json()
+                active = (
+                    payload.get("active")
+                    if isinstance(payload, dict)
+                    else None
+                )
+                print(f"   ✅ User {user.id} active={active}")
+                return payload
+            self._record_failure(
+                f"Check subscription status for user {user.id}", response
+            )
+            return None
+        except Exception as e:
+            print(f"   ❌ Error: {e}")
+            return None
+
+    async def cancel_subscription(
+        self,
+        user: TestUser,
+        *,
+        refund_payment_id: Optional[int] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Cancel a user's subscription, optionally refunding.
+
+        Calls `DELETE /app_user/{user_id}/subscription`. The runner
+        uses this at the end of a subscription test so the user is left
+        clean for the next run.
+        """
+        headers = self.get_auth_headers(user)
+        params: Dict[str, Any] = {}
+        if refund_payment_id is not None:
+            params["refund_payment_id"] = refund_payment_id
+
+        try:
+            response = await self.client.delete(
+                f"{self.base_url}/api/v1/app_user/{user.id}/subscription",
+                params=params,
+                headers=headers,
+            )
+            if response.status_code == 200:
+                print(f"   ✅ Cancelled subscription for user {user.id}")
+                return unwrap(response.json()) or response.json()
+            if response.status_code == 404:
+                print(
+                    f"   ℹ️ No subscription to cancel for user {user.id}"
+                )
+                return None
+            self._record_failure(
+                f"Cancel subscription for user {user.id}", response
+            )
+            return None
+        except Exception as e:
+            print(f"   ❌ Error: {e}")
+            return None
+
+    async def run_subscription_flow(
+        self, user: TestUser, plans: List[int]
+    ) -> None:
+        """Exercise the full subscription lifecycle for one user.
+
+        Covers:
+          - list and read plans
+          - single-call purchase (invoice + payment + confirm + finalize)
+          - read subscription + status
+          - link-free against a paid plan (expects 400)
+          - link-free against a free plan (expects 201)
+          - cancel
+        """
+        print(f"\n💳 Subscription flow for {user.username}...")
+
+        # Catalogue reads.
+        all_plans = await self.get_plans(user)
+        print(f"   ℹ️ Listed {len(all_plans)} plans")
+        if all_plans:
+            await self.get_plan_by_id(
+                self.extract_id(all_plans[0]), user
+            )
+
+        if not plans:
+            print("   ⚠️ No plans to subscribe to")
+            return
+
+        # Pick a paid plan for the full flow, and remember a free plan
+        # if one exists for the free-link test.
+        paid_plan_id: Optional[int] = None
+        free_plan_id: Optional[int] = None
+        for pid in plans:
+            plan = await self.get_plan_by_id(pid, user)
+            if plan is None:
+                continue
+            price = plan.get("plan_price") or 0
+            if price and float(price) > 0 and paid_plan_id is None:
+                paid_plan_id = pid
+            elif float(price or 0) == 0 and free_plan_id is None:
+                free_plan_id = pid
+
+        # Paid path — single call.
+        if paid_plan_id is not None:
+            await self.initiate_subscription(user, paid_plan_id)
+            await self.get_user_subscription(user)
+            await self.check_subscription_status(user)
+
+        # Free path — first against a paid plan (expects 400), then
+        # against a real free plan (expects 201).
+        if paid_plan_id is not None:
+            await self.link_free_plan(user, paid_plan_id)
+        if free_plan_id is not None:
+            await self.link_free_plan(user, free_plan_id)
+
+        # Clean up so re-runs start fresh.
+        await self.cancel_subscription(user)
 
     # ==================== MAIN RUNNER ====================
 
     async def run(self, skip_users: bool = False, skip_login: bool = False,
+                  skip_subscriptions: bool = False,
                   context_file: str = "test_context.json"):
         print("\n" + "=" * 60)
         print("🚀 VERDELIA API TEST RUNNER - COMPREHENSIVE")
@@ -1324,9 +1412,9 @@ class TestRunner:
             self.stats["suppliers"] = len(self.context.created_suppliers)
             self.stats["products"] = len(self.context.created_products)
             self.stats["staff_rules"] = len(self.context.created_staff_rules)
-            self.stats["invoices"] = len(self.context.created_invoices)
-            self.stats["orders"] = len(self.context.created_orders)
-            self.stats["deliveries"] = len(self.context.created_deliveries)
+            self.stats["subscriptions"] = len(
+                self.context.created_subscriptions
+            )
 
         if not skip_users and not self.context.users:
             await self.create_users(10)
@@ -1363,21 +1451,36 @@ class TestRunner:
         print("🧪 Creating Test Data")
         print("=" * 60)
 
+        # Subscriptions — plans are seeded out-of-band by
+        # `python -m storage.seed --plans-only`, so we only read them here.
+        if not skip_subscriptions:
+            existing_plans = await self.get_plans(self.test_user)
+            plan_ids = [
+                self.extract_id(p)
+                for p in existing_plans
+                if isinstance(p, dict)
+            ]
+            plan_ids = [pid for pid in plan_ids if pid > 0]
+
+            if not plan_ids:
+                print(
+                    "\n⚠️ No plans found in the DB. Seed them first:\n"
+                    "   python -m storage.seed --plans-only"
+                )
+            else:
+                print(f"\n💳 Found {len(plan_ids)} plans")
+                await self.run_subscription_flow(
+                    self.test_user, plan_ids
+                )
+
         orgs = await self.create_organisations(self.test_user, count=3)
         suppliers = await self.create_suppliers(self.test_user, orgs, count_per_org=3)
         await self.create_products(self.test_user, suppliers, count_per_supplier=5)
 
         if len(providers) > 1:
-            await self.create_staff_rules(self.test_user, suppliers, providers[:3], rules_per_supplier=2)
-
-        if suppliers:
-            await self.create_invoices(self.test_user, suppliers, count=3)
-
-        if suppliers and self.context.created_products:
-            await self.create_orders(self.test_user, suppliers, count=3)
-
-        if self.context.created_orders:
-            await self.create_deliveries(self.test_user, self.context.created_orders, count=2)
+            await self.create_staff_rules(
+                self.test_user, suppliers, providers[:3], rules_per_supplier=2
+            )
 
         self.context.save(context_file)
         self.print_summary()
@@ -1389,18 +1492,17 @@ class TestRunner:
         print("\n📈 Generated Data:")
         print(f"   👤 Users: {self.stats['users']}")
         print(f"   🔐 Authenticated: {len([u for u in self.context.users if u.access_token])}")
+        print(f"   📋 Subscriptions: {self.stats['subscriptions']}")
         print(f"   🏢 Organisations: {self.stats['organisations']}")
         print(f"   🏥 Suppliers: {self.stats['suppliers']}")
         print(f"   📦 Products: {self.stats['products']}")
         print(f"   👥 Staff Rules: {self.stats['staff_rules']}")
-        print(f"   📄 Invoices: {self.stats['invoices']}")
-        print(f"   📋 Orders: {self.stats['orders']}")
-        print(f"   🚚 Deliveries: {self.stats['deliveries']}")
         print(f"   ❌ Failures: {self.stats['failures']}")
 
         print("\n📊 Distribution:")
         print(f"   Users with Orgs: {len(self.context.user_org_mapping)}")
         print(f"   Users with Suppliers: {len(self.context.user_supplier_mapping)}")
+        print(f"   Users with Subscriptions: {len(self.context.subscription_user_mapping)}")
         print(f"   Staff Assignments: {len(self._used_assignments)}")
 
         if self.context.user_roles:
@@ -1426,6 +1528,11 @@ async def main():
     parser.add_argument("--url", default="http://localhost:9000")
     parser.add_argument("--skip-users", action="store_true")
     parser.add_argument("--skip-login", action="store_true")
+    parser.add_argument(
+        "--skip-subscriptions",
+        action="store_true",
+        help="Skip the subscription flow",
+    )
     parser.add_argument("--context-file", default="test_context.json")
     parser.add_argument("--clear-context", action="store_true")
     args = parser.parse_args()
@@ -1438,6 +1545,7 @@ async def main():
         await runner.run(
             skip_users=args.skip_users,
             skip_login=args.skip_login,
+            skip_subscriptions=args.skip_subscriptions,
             context_file=args.context_file,
         )
 

@@ -23,6 +23,7 @@ from storage.seeds.provider_type import seed_product_provider_types
 from storage.seeds.provided_service_category import seed_service_categories
 from storage.seeds.staff_role import seed_staff_roles
 from storage.seeds.ingredient import seed_ingredients
+from storage.seeds.plan import seed_plans
 from config import settings
 from core.models import models
 from core.exceptions.handler import APIException
@@ -310,6 +311,7 @@ async def seed_database(
         "staff_roles": 0,
         "ingredients": 0,
         "iproducts": 0,
+        "plans": 0,
         "users_created": 0,
         "user_ids": [],
         "specific_users_created": 0,
@@ -337,6 +339,10 @@ async def seed_database(
         # Seed staff roles
         logger.info("Seeding staff roles...")
         results["staff_roles"] = seed_staff_roles()
+        
+        # Seed plans
+        logger.info("Seeding plans...")
+        results["plans"] = seed_plans()
         
         # # Seed ingredients
         # logger.info("Seeding ingredients...")
@@ -379,6 +385,7 @@ async def seed_database(
             results["staff_roles"],
             results["ingredients"],
             results["iproducts"],
+            results["plans"],
             results["users_created"],
             results["specific_users_created"],
         ])
@@ -463,6 +470,7 @@ def get_seed_status() -> Dict[str, Any]:
             "has_staff_roles": False,
             "has_ingredients": False,
             "has_iproducts": False,
+            "has_plans": False,
             "has_users": False,
             "product_category_count": 0,
             "recipe_category_count": 0,
@@ -471,6 +479,7 @@ def get_seed_status() -> Dict[str, Any]:
             "staff_role_count": 0,
             "ingredient_count": 0,
             "iproduct_count": 0,
+            "plan_count": 0,
             "user_count": 0,
             "needs_seeding": True,
         }
@@ -484,6 +493,7 @@ def get_seed_status() -> Dict[str, Any]:
             ('staff_role', 'has_staff_roles', 'staff_role_count'),
             ('ingredient', 'has_ingredients', 'ingredient_count'),
             ('iproduct', 'has_iproducts', 'iproduct_count'),
+            ('plan', 'has_plans', 'plan_count'),
             ('app_user', 'has_users', 'user_count'),
         ]
         
@@ -504,6 +514,7 @@ def get_seed_status() -> Dict[str, Any]:
             status["has_staff_roles"],
             status["has_ingredients"],
             status["has_iproducts"],
+            status["has_plans"],
             status["has_users"],
         ])
         
@@ -520,6 +531,7 @@ def get_seed_status() -> Dict[str, Any]:
             "has_staff_roles": False,
             "has_ingredients": False,
             "has_iproducts": False,
+            "has_plans": False,
             "has_users": False,
             "product_category_count": 0,
             "recipe_category_count": 0,
@@ -528,6 +540,7 @@ def get_seed_status() -> Dict[str, Any]:
             "staff_role_count": 0,
             "ingredient_count": 0,
             "iproduct_count": 0,
+            "plan_count": 0,
             "user_count": 0,
             "needs_seeding": True,
             "error": str(e)
@@ -559,6 +572,7 @@ def needs_seeding() -> bool:
             'provided_service_category',
             'staff_role',
             'ingredient',
+            'plan',
             'app_user',
         ]
         
@@ -667,6 +681,11 @@ def seed_database_cli():
         help="Seed only users (skip other seed data)"
     )
     parser.add_argument(
+        "--plans-only",
+        action="store_true",
+        help="Seed only plans (skip other seed data)"
+    )
+    parser.add_argument(
         "--user-count",
         type=int,
         default=5,
@@ -699,6 +718,7 @@ def seed_database_cli():
                 db.query(models.AppUser).delete()
                 db.query(models.Person).delete()
                 db.query(models.Wallet).delete()
+                db.query(models.Plan).delete()
                 db.commit()
             print("Cleared all seeded tables")
         elif args.force:
@@ -719,6 +739,12 @@ def seed_database_cli():
             if results.get("user_ids"):
                 print(f"   Random User IDs: {results['user_ids'][:10]}{'...' if len(results['user_ids']) > 10 else ''}")
             
+        elif args.plans_only:
+            # Seed only plans
+            count = seed_plans()
+            print(f"\n✅ Plan seeding complete!")
+            print(f"   Plans Created: {count}")
+            
         else:
             # Full seed including users
             results = asyncio.run(seed_database(
@@ -737,6 +763,7 @@ def seed_database_cli():
             print(f"   Staff Roles: {results['staff_roles']}")
             print(f"   Ingredients: {results['ingredients']}")
             print(f"   IProducts: {results['iproducts']}")
+            print(f"   Plans: {results['plans']}")
             print(f"   Random Users: {results['users_created']}")
             print(f"   Specific Users: {results['specific_users_created']}")
             print(f"   Total: {results['total']}")
@@ -751,6 +778,7 @@ def seed_database_cli():
         print(f"   Staff Roles: {status['staff_role_count']}")
         print(f"   Ingredients: {status['ingredient_count']}")
         print(f"   IProducts: {status['iproduct_count']}")
+        print(f"   Plans: {status['plan_count']}")
         print(f"   Users: {status['user_count']}")
         
         if not args.users_only and not args.no_specific_users:

@@ -235,7 +235,7 @@ class SupplierRepository:
         distance: float,
         offset: int = 0,
         limit: int = 10
-    ) -> List[Dict[str, Any]]:
+    ) :
         """Search suppliers by location using PostGIS"""
         from storage.storage_broker import search_by_filter
         
@@ -281,70 +281,70 @@ class SupplierRepository:
             limit=limit
         )
     
-    def search_by_filter(
-        self,
-        location: Tuple[float, float],
-        distance_km: float,
-        offset: int = 0,
-        limit: int = 10
-    ) -> List[Dict[str, Any]]:
-        """
-        Search suppliers by geographic location using PostGIS.
+    # def search_by_filter(
+    #     self,
+    #     location: Tuple[float, float],
+    #     distance_km: float,
+    #     offset: int = 0,
+    #     limit: int = 10
+    # ) -> List[Dict[str, Any]]:
+    #     """
+    #     Search suppliers by geographic location using PostGIS.
         
-        Args:
-            location: Tuple of (longitude, latitude)
-            distance_km: Search radius in kilometers
-            offset: Pagination offset
-            limit: Pagination limit
+    #     Args:
+    #         location: Tuple of (longitude, latitude)
+    #         distance_km: Search radius in kilometers
+    #         offset: Pagination offset
+    #         limit: Pagination limit
         
-        Returns:
-            List of suppliers with distance information
-        """
-        from storage.storage_broker import search_by_filter
+    #     Returns:
+    #         List of suppliers with distance information
+    #     """
+    #     from storage.storage_broker import search_by_filter
         
-        longitude, latitude = location
-        ST_location = WKTElement(
-            f"POINT({longitude} {latitude})",
-            srid=4326
-        )
+    #     longitude, latitude = location
+    #     ST_location = WKTElement(
+    #         f"POINT({longitude} {latitude})",
+    #         srid=4326
+    #     )
         
-        labeled_attrs = [
-            func.ST_Distance(Location.location_position, ST_location).label("distance")
-        ]
+    #     labeled_attrs = [
+    #         func.ST_Distance(Location.location_position, ST_location).label("distance")
+    #     ]
         
-        selected_fields = [
-            ProviderDetails.idprovider_details_id,
-            ProviderDetails.provider_name,
-            ProviderDetails.provider_contact_info,
-            Location.id_location,
-            Location.position_wkt,
-            ProductProvider.id_product_provider,
-            ProductProvider.product_provider_type_id,
-            ProductProvider.product_provider_owner,
-            Address.id_address,
-            Address.address_street,
-            Address.address_city,
-            Address.address_postal_code,
-            Address.address_country,
-        ]
+    #     selected_fields = [
+    #         ProviderDetails.idprovider_details_id,
+    #         ProviderDetails.provider_name,
+    #         ProviderDetails.provider_contact_info,
+    #         Location.id_location,
+    #         Location.position_wkt,
+    #         ProductProvider.id_product_provider,
+    #         ProductProvider.product_provider_type_id,
+    #         ProductProvider.product_provider_owner,
+    #         Address.id_address,
+    #         Address.address_street,
+    #         Address.address_city,
+    #         Address.address_postal_code,
+    #         Address.address_country,
+    #     ]
         
-        return search_by_filter(
-            ProductProvider,
-            join_tables=[
-                ProductProvider.product_provider_location,
-                Location.location_address,
-                ProductProvider.product_provider_details
-            ],
-            conditions=[
-                func.ST_Distance(Location.location_position, ST_location) <= distance_km * 1000
-            ],
-            labeled_attrs=labeled_attrs,
-            ordering_attr=["distance"],
-            selected_fields=selected_fields,
-            eager_load_depth=None,
-            offset=offset,
-            limit=limit
-        )
+    #     return search_by_filter(
+    #         ProductProvider,
+    #         join_tables=[
+    #             ProductProvider.product_provider_location,
+    #             Location.location_address,
+    #             ProductProvider.product_provider_details
+    #         ],
+    #         conditions=[
+    #             func.ST_Distance(Location.location_position, ST_location) <= distance_km * 1000
+    #         ],
+    #         labeled_attrs=labeled_attrs,
+    #         ordering_attr=["distance"],
+    #         selected_fields=selected_fields,
+    #         eager_load_depth=None,
+    #         offset=offset,
+    #         limit=limit
+    #     )
 
 # repositories/organisation_repository.py
 from typing import Optional, List

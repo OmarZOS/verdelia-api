@@ -474,8 +474,13 @@ def get_records_by_filter(
         query_elements = []
 
         if selected_fields:
+            # Always include the model class so joins have a root
+            # entity to bind to. SQLAlchemy needs at least one mapped
+            # class in the query when relationship attributes are used
+            # as join targets.
+            query_elements.append(model_class)
             query_elements.extend(selected_fields)
-        elif not selected_fields:
+        else:
             query_elements.append(model_class)
 
         if labeled_attrs:
@@ -486,17 +491,16 @@ def get_records_by_filter(
         if join_tables:
             for join_table in join_tables:
                 query = query.join(join_table)
-                
+
         if eager_load_depth and model_class in query_elements:
             query = query.options(*build_eager_options(model_class, eager_load_depth))
-        
-        # Exclude geometry columns
+
         if model_class in query_elements:
             excluded_cols = get_excluded_columns(model_class)
             if excluded_cols:
                 columns_to_load = [
-                    getattr(model_class, c.name) 
-                    for c in model_class.__table__.columns 
+                    getattr(model_class, c.name)
+                    for c in model_class.__table__.columns
                     if c.name not in excluded_cols
                 ]
                 if columns_to_load:

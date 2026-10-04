@@ -197,7 +197,7 @@ class SearchService:
         distance_km: float,
         offset: int = 0,
         limit: int = 100
-    ) -> List[Dict[str, Any]]:
+    ) :
         """
         Search suppliers by geographic location.
         

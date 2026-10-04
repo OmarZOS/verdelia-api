@@ -115,10 +115,33 @@ def search_suppliers_by_location(
     Search suppliers by geographic location.
     """
     logger.info(f"Searching suppliers near ({longitude}, {latitude}) within {distance_km}km")
-    return supplier_service.search_suppliers_by_location(
+
+    results = supplier_service.search_suppliers_by_location(
         longitude, latitude, distance_km, offset, limit
     )
+    
+    return [_serialize_row(r, ProductProvider) for r in results] 
 
+def _serialize_row(row, model_class):
+    """Flatten a heterogeneous SQLAlchemy Row into a plain dict.
+
+    Handles three kinds of keys:
+      - a mapped class (ProductProvider) → expand its columns
+      - a Column                       → use .name
+      - a string label ("distance")    → use the key as-is
+    """
+    from sqlalchemy import inspect as sa_inspect
+
+    out = {}
+    for key, value in row._mapping.items():
+        if isinstance(key, type):
+            mapper = sa_inspect(key)
+            for col in mapper.columns:
+                out[col.key] = getattr(value, col.key, None)
+        else:
+            name = getattr(key, "name", None) or str(key)
+            out[name] = value
+    return out
 
 @supplier_router.get(
     "/suppliers/{provider_id}",
