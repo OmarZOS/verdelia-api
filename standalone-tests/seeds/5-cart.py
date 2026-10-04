@@ -31,7 +31,7 @@ import uuid
 import random
 from typing import Dict, Any, Optional, List, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import time
 import argparse
@@ -210,7 +210,16 @@ class BulkContext:
             return False
         if not self.token_expires_at:
             return True
-        return datetime.now() < self.token_expires_at
+        # Compare in UTC. `datetime.now()` is naive (local), while the
+        # parsed token_expires_at may be timezone-aware — normalizing both
+        # to aware UTC keeps the comparison valid regardless of how the
+        # context file was written.
+        now = datetime.now(timezone.utc)
+        expires = self.token_expires_at
+        if expires.tzinfo is None:
+            # Legacy context files wrote naive timestamps in local time.
+            expires = expires.astimezone()
+        return now < expires
 
 
 # ============================================================================
@@ -240,7 +249,14 @@ def load_context(context_file: str = "test_context.json") -> BulkContext:
         expires_at = u.get('token_expires_at')
         if expires_at:
             try:
-                user.token_expires_at = datetime.fromisoformat(expires_at)
+                parsed = datetime.fromisoformat(expires_at)
+                # If the string had no offset (naive), assume UTC. The server
+                # issues tokens with UTC expiry, and the context file is
+                # written by this same script, so any naive timestamp in it
+                # is almost certainly UTC.
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=timezone.utc)
+                user.token_expires_at = parsed
             except Exception:
                 pass
         context.users.append(user)

@@ -143,6 +143,7 @@ class ProductRepository:
         user_id: int = 0,
         provider_id: int = 0,
         category_id: int = 0,
+        product_barcode = None,
         offset: int = 0,
         limit: int = 10,
         serialize: bool = False,
@@ -172,6 +173,8 @@ class ProductRepository:
             conditions.append(Product.product_category_id == category_id)
         if provider_id != 0:
             conditions.append(Product.product_provider_id == provider_id)
+        if product_barcode :
+            conditions.append(Product.product_barcode == product_barcode)
         if not include_hidden:
             conditions.append(_visible_filter())
 

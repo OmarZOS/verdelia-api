@@ -96,7 +96,7 @@ def get_user_workflow() -> UserWorkflow:
             "headers": {
                 "Location": {
                     "description": "OAuth provider authorization URL",
-                    "schema": {"type": "string"},
+                    "schema": {"token_type": "string"},
                 }
             },
         },

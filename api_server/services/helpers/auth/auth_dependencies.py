@@ -162,7 +162,7 @@ class JWTBearer(HTTPBearer):
                     )
             
             # Check token type
-            token_type = payload.get("type", "access")
+            token_type = payload.get("token_type", "access")
             
             # If this is a refresh token endpoint, allow refresh tokens
             if token_type == "refresh" and not self.allow_refresh:
@@ -288,7 +288,7 @@ async def get_refresh_token_user(
         Dict containing user information
     """
     # Verify it's actually a refresh token
-    if payload.get("type") != "refresh":
+    if payload.get("token_type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token type: expected refresh token"
@@ -382,7 +382,7 @@ async def get_current_user_info(
         "exp": payload.get("exp"),
         "iat": payload.get("iat"),
         "iss": payload.get("iss"),
-        "token_type": payload.get("type", "access"),
+        "token_type": payload.get("token_type", "access"),
     }
 
 
@@ -472,7 +472,7 @@ async def validate_refresh_token(
         )
         
         # Check token type
-        if payload.get("type") != "refresh":
+        if payload.get("token_type") != "refresh":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token type: expected refresh token"

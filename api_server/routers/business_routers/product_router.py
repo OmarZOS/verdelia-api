@@ -133,6 +133,7 @@ def get_all_products(
     user_id: int = Query(..., description="Owner user ID"),
     provider_id: int = Query(..., description="Provider ID"),
     category_id: int = Query(..., description="Category ID"),
+    product_barcode: Optional[str] = Query(None, description="Product barcode"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
     limit: int = Query(20, ge=1, le=200, description="Pagination limit"),
     domain: Optional[str] = Query(
@@ -167,6 +168,7 @@ def get_all_products(
         user_id,
         provider_id,
         category_id,
+        product_barcode,
         offset,
         limit,
         include_hidden=include_hidden,

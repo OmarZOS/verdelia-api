@@ -282,47 +282,42 @@ def toggle_service(
     "/services/{service_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a service",
-    description="Deletes a service and all its associated requirements"
+    description=(
+        "Deletes a service. When the service has requirements and "
+        "`force_delete=false` (the default), the request is refused "
+        "with 409. Pass `force_delete=true` to cascade the requirement "
+        "deletions."
+    ),
 )
 def delete_service(
     service_id: int,
-    force_delete: bool = Query(False, description="Force delete even if service has requirements"),
+    force_delete: bool = Query(
+        False,
+        description="Cascade delete requirements and refuse-if-in-use check",
+    ),
     user_id: int = Depends(get_current_user_id),
-    service_service: ServiceService = Depends(get_service_service)
+    service_service: ServiceService = Depends(get_service_service),
 ):
     """
     Delete a service.
-    """
-    logger.info(f"Deleting service with ID: {service_id} (force={force_delete})")
-    
-    try:
-        existing_service = service_service.get_service_by_id(service_id)
-        if not existing_service:
-            raise ServiceNotFoundException(service_id=service_id)
-        
-        has_requirements = hasattr(existing_service, 'requirements') and existing_service.requirements
-        has_staff_requirements = hasattr(existing_service, 'staff_requirements') and existing_service.staff_requirements
-        
-        
 
-        if (has_requirements or has_staff_requirements) and not force_delete:
-            raise ServiceDeleteFailedException(
-                service_id=service_id,
-                error="Service has associated requirements. Use force_delete=true to delete."
-            )
-        
-        success = service_service.delete_service(service_id)
-        if not success:
-            raise ServiceDeleteFailedException(service_id=service_id, error="Service returned False")
-        
-        logger.info(f"Service {service_id} deleted successfully")
-        return None  # 204 No Content
-        
-    except (ServiceNotFoundException, ServiceDeleteFailedException):
-        raise
-    except Exception as e:
-        logger.error(f"Failed to delete service {service_id}: {e}")
-        raise ServiceDeleteFailedException(service_id=service_id, error=str(e))
+    Raises:
+        ServiceNotFoundException: 404 if the service doesn't exist.
+        ServiceDeleteFailedException: 409 if the service has
+            dependencies or requirements and force_delete is false;
+            500 if the delete fails for another reason.
+    """
+    logger.info(
+        f"Deleting service with ID: {service_id} (force={force_delete})"
+    )
+
+    # The service layer owns the delete policy — existence check,
+    # dependency check, requirement cascade, and the actual delete.
+    # The router just forwards the call and translates exceptions to
+    # HTTP responses.
+    service_service.delete_service(service_id, force_delete=force_delete)
+    logger.info(f"Service {service_id} deleted successfully")
+    return None  # 204 No Content
 
 
 # ==================== Additional Service Endpoints ====================

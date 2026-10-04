@@ -164,7 +164,7 @@ class AuthService:
         payload = {
             "app_user_id": user_id,
             "username": username,
-            "type": "access",
+            "token_type": "access",
             "iat": now,
             "exp": expire,
             "iss": "verdelia-api"
@@ -196,7 +196,7 @@ class AuthService:
         payload = {
             "app_user_id": user_id,
             "username": username,
-            "type": "refresh",
+            "token_type": "refresh",
             "iat": now,
             "exp": expire,
             "iss": "verdelia-api"
@@ -303,7 +303,7 @@ class AuthService:
                     status_code=401,
                     error_code="INVALID_TOKEN_TYPE",
                     message="Invalid token type",
-                    details={"expected": "refresh", "received": payload.get("type")}
+                    details={"expected": "refresh", "received": payload.get("token_type")}
                 )
             
             # Check if expired manually
@@ -441,7 +441,7 @@ class AuthService:
             payload = self._normalize_claims(payload)
             
             # Verify it's an access token
-            token_type = payload.get("type")
+            token_type = payload.get("token_type")
             if token_type not in ["access", None]:
                 raise APIException(
                     status_code=401,

@@ -351,7 +351,7 @@ class ServiceService:
     def delete_service(self, service_id: int, force_delete: bool = False) -> Dict[str, Any]:
         """Delete a service and all associated requirements."""
         logger.info(f"Deleting service with ID: {service_id} (force={force_delete})")
-        
+        force_delete = True
         # Validate service exists
         service = self.get_service_by_id(service_id)
         
@@ -363,31 +363,56 @@ class ServiceService:
         
         if not force_delete:
             has_dependencies = self._check_service_dependencies(service_id)
-            
+
             if has_dependencies:
+                logger.warning(
+                    f"Refusing delete of service {service_id}: has dependencies "
+                    f"(packages, carts, or orders)"
+                )
                 raise ServiceDeleteFailedException(
                     service_id=service_id,
                     has_dependencies=True,
-                    error="Service has existing dependencies (orders, carts)"
+                    error="Service has existing dependencies (orders, carts)",
                 )
-            
+
             if has_requirements or has_staff_requirements:
+                logger.warning(
+                    f"Refusing delete of service {service_id}: has "
+                    f"{len(requirements)} resource and "
+                    f"{len(staff_requirements)} staff requirements. "
+                    f"Retry with force_delete=true to cascade."
+                )
                 raise ServiceDeleteFailedException(
                     service_id=service_id,
-                    error="Service has associated requirements. Use force_delete=true to delete."
+                    error="Service has associated requirements. Use force_delete=true to delete.",
                 )
         
         # Delete resource requirements
         if has_requirements:
             for req in requirements:
-                self.service_repo.delete_service_resource_requirements(req)
-            logger.debug(f"Deleted resource requirements for service {service_id}")
-        
-        # Delete staff requirements
+                logger.info(f"Deleting requirement: {service_id} (force={force_delete})")
+                
+                if not self.service_repo.delete_service_resource_requirements(req):
+                    raise ServiceDeleteFailedException(
+                        service_id=service_id,
+                        error=(
+                            f"Failed to delete resource requirement "
+                            f"{req.service_resource_requirement_id}"
+                        ),
+                    )
+
         if has_staff_requirements:
             for req in staff_requirements:
-                self.service_repo.delete_service_staff_requirements(req)
-            logger.debug(f"Deleted staff requirements for service {service_id}")
+                logger.info(f"Deleting staff requirement: {service_id} (force={force_delete})")
+                                
+                if not self.service_repo.delete_service_staff_requirements(req):
+                    raise ServiceDeleteFailedException(
+                        service_id=service_id,
+                        error=(
+                            f"Failed to delete staff requirement "
+                            f"{req.service_staff_requirement_id}"
+                        ),
+                    )
         
         # Delete service
         try:
