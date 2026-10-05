@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Query, status
 from typing import Optional, List
 import logging
 
+from workflows.supplier_workflow import SupplierWorkflow
 from services.helpers.auth.auth_dependencies import get_current_user_id
 from core.exceptions.specific.supplier_exceptions import SupplierNotFoundException
 from core.models.api_models import (
@@ -35,6 +36,10 @@ def get_supplier_service() -> SupplierService:
 
 def get_organisation_service() -> OrganisationService:
     return OrganisationService()
+
+def get_supplier_workflow() -> SupplierWorkflow:
+    return SupplierWorkflow()
+
 
 
 # ==================== Supplier Endpoints ====================
@@ -204,38 +209,56 @@ def get_supplier_by_ids(
 @supplier_router.post(
     "/suppliers",
     status_code=status.HTTP_201_CREATED,
-    # response_model=ProductProvider_API,
     summary="Create a new supplier",
     description="Create a new supplier with location and optional image",
     responses={
-        201: {
-            "description": "Supplier created successfully"
-        },
+        201: {"description": "Supplier created successfully"},
         400: {
             "description": "Bad Request - Invalid data",
-            "model": ErrorResponseModel
+            "model": ErrorResponseModel,
+        },
+        402: {
+            "description": (
+                "Payment required — the caller's plan does not allow "
+                "creating suppliers"
+            ),
+            "model": ErrorResponseModel,
+        },
+        404: {
+            "description": "Not Found - No subscription on file",
+            "model": ErrorResponseModel,
         },
         409: {
             "description": "Conflict - Supplier already exists",
-            "model": ErrorResponseModel
+            "model": ErrorResponseModel,
         },
-        **get_crud_error_responses(include_404=False, include_409=True)
-    }
+        429: {
+            "description": "Plan limit exceeded — too many suppliers",
+            "model": ErrorResponseModel,
+        },
+        **get_crud_error_responses(include_404=False, include_409=True),
+    },
 )
 def create_supplier(
     provider: ProductProvider_API,
     location: Location_API,
     image: Optional[ProviderImage_API] = None,
     user_id: int = Depends(get_current_user_id),
-    supplier_service: SupplierService = Depends(get_supplier_service)
+    workflow: SupplierWorkflow = Depends(get_supplier_workflow),
 ):
-    """
-    Create a new supplier.
+    """Create a new supplier.
+
+    Enforces the plan's `provider_owned` limit. A Free-plan user
+    (limit = 0) is refused before any row is written.
     """
     provider.id_provider_owner = user_id
     logger.info(f"Creating new supplier: {provider.provider_name}")
-    return supplier_service.create_supplier(provider, location, image)
-
+    return workflow.create_supplier(
+        provider=provider,
+        location=location,
+        image=image,
+        user_id=user_id,
+    )
 
 @supplier_router.put(
     "/suppliers/{provider_id}",
@@ -347,37 +370,57 @@ def get_organisation(
 @supplier_router.post(
     "/organisations",
     status_code=status.HTTP_201_CREATED,
-    # response_model=ProviderOrganisation_API,
     summary="Create a new organisation",
     description="Create a new organisation with optional image",
     responses={
-        201: {
-            "description": "Organisation created successfully"
-        },
+        201: {"description": "Organisation created successfully"},
         400: {
             "description": "Bad Request - Invalid data",
-            "model": ErrorResponseModel
+            "model": ErrorResponseModel,
+        },
+        402: {
+            "description": (
+                "Payment required — the caller's plan does not allow "
+                "creating organisations"
+            ),
+            "model": ErrorResponseModel,
+        },
+        404: {
+            "description": "Not Found - No subscription on file",
+            "model": ErrorResponseModel,
         },
         409: {
             "description": "Conflict - Organisation already exists",
-            "model": ErrorResponseModel
+            "model": ErrorResponseModel,
         },
-        **get_crud_error_responses(include_404=False, include_409=True)
-    }
+        429: {
+            "description": "Plan limit exceeded — too many organisations",
+            "model": ErrorResponseModel,
+        },
+        **get_crud_error_responses(include_404=False, include_409=True),
+    },
 )
 def create_organisation(
     organisation: ProviderOrganisation_API,
     org_image: Optional[OrganisationImage_API] = None,
     user_id: int = Depends(get_current_user_id),
-    organisation_service: OrganisationService = Depends(get_organisation_service)
+    workflow: SupplierWorkflow = Depends(get_supplier_workflow),
 ):
-    """
-    Create a new organisation.
-    """
-    logger.info(f"Creating new organisation: {organisation.provider_organisation_name}")
-    organisation.app_user_id = user_id
-    return organisation_service.create_organisation(organisation, org_image)
+    """Create a new organisation.
 
+    Enforces the plan's `organization_owned` limit. A Free-plan user
+    (limit = 0) is refused before any row is written.
+    """
+    logger.info(
+        f"Creating new organisation: "
+        f"{organisation.provider_organisation_name}"
+    )
+    organisation.app_user_id = user_id
+    return workflow.create_organisation(
+        org=organisation,
+        org_image=org_image,
+        user_id=user_id,
+    )
 
 @supplier_router.put(
     "/organisations/{org_id}",

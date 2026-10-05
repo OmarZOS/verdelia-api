@@ -280,6 +280,23 @@ class SupplierRepository:
             offset=offset,
             limit=limit
         )
+
+    def count_supplier_for_user(self, user_id: int) -> int:
+        """Count products currently attached to a provider.
+
+        The plan limit is enforced against the current provider count,
+        not against a guessed value in the router. Use the storage
+        broker's count API instead of a paginated list query so the
+        call never hits the global `limit` validation guard.
+        """
+        return int(
+            storage_broker.count(
+                ProductProvider,
+                conditions={ProductProvider.product_provider_owner: user_id},
+            )
+            or 0
+        )
+
     
     # def search_by_filter(
     #     self,
@@ -448,3 +465,20 @@ class OrganisationRepository:
         """Delete an organisation image"""
         from features.insertion import delete_record_from_api
         return delete_record_from_api(image)
+
+
+    def count_orgs_by_owner(self, user_id: int) -> int:
+        """Count products currently attached to a provider.
+
+        The plan limit is enforced against the current provider count,
+        not against a guessed value in the router. Use the storage
+        broker's count API instead of a paginated list query so the
+        call never hits the global `limit` validation guard.
+        """
+        return int(
+            storage_broker.count(
+                ProviderOrganisation,
+                conditions={ProviderOrganisation.app_user_id: user_id},
+            )
+            or 0
+        )

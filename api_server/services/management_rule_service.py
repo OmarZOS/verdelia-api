@@ -84,3 +84,7 @@ class ManagementRuleService:
     def get_rule_by_user_and_provider(self, user_id: int, provider_id: int) -> Optional[ManagementRule]:
         """Get rule for a specific user and provider."""
         return self.query.get_rule_by_user_and_provider(user_id, provider_id)
+
+    def count_team_members_for_org(self,org_id: int):
+        return self.crud.count_team_members_for_org(org_id)
+

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Query, status
 from typing import Optional, List
 import logging
 
+from workflows.team_workflow import TeamWorkflow
 from services.helpers.auth.auth_dependencies import get_current_user_id
 from core.models.api_models import ManagementRule_API
 from core.response_models import ErrorResponseModel, get_crud_error_responses
@@ -24,12 +25,13 @@ from core.exceptions.specific.staff_exceptions import (
 from services.management_rule_service import ManagementRuleService
 
 from core.logging_config import get_logger
-
 logger = get_logger(__name__)
 
 
 staff_router = APIRouter()
 
+def get_team_workflow() -> TeamWorkflow:
+    return TeamWorkflow()
 
 def get_management_rule_service() -> ManagementRuleService:
     """Dependency to get ManagementRuleService instance"""
@@ -201,26 +203,44 @@ def get_pending_invitations(
 @staff_router.post(
     "/staff",
     status_code=status.HTTP_201_CREATED,
-    # response_model=ManagementRule_API,
     summary="Create staff assignment",
     description="Insert a new staff member (create a management rule)",
     responses={
         201: {"description": "Staff assignment created successfully"},
         400: {"model": ErrorResponseModel},
+        402: {
+            "description": (
+                "Payment required — the caller's plan does not allow "
+                "team members"
+            ),
+            "model": ErrorResponseModel,
+        },
         404: {"model": ErrorResponseModel},
         409: {"model": ErrorResponseModel},
-        **get_crud_error_responses(include_404=False, include_409=True)
-    }
+        429: {
+            "description": "Plan limit exceeded — team is full",
+            "model": ErrorResponseModel,
+        },
+        **get_crud_error_responses(include_404=False, include_409=True),
+    },
 )
 def insert_staff_details(
     rule: ManagementRule_API,
-    rule_service: ManagementRuleService = Depends(get_management_rule_service)
+    user_id: int = Depends(get_current_user_id),
+    workflow: TeamWorkflow = Depends(get_team_workflow),
 ):
+    """Insert a new staff member (create a management rule).
+
+    Enforces the plan's `team_members` limit, scoped to the rule's
+    organisation. A rule created without `rule_ref_org` is not
+    metered — it's not a team member.
     """
-    Insert a new staff member (create a management rule).
-    """
-    logger.info(f"Creating new staff assignment for user: {rule.rule_ref_user}")
-    return rule_service.create_rule(rule)
+    logger.info(
+        f"Creating new staff assignment for user: {rule.rule_ref_user} "
+        f"(invited by user_id={user_id})"
+    )
+    return workflow.create_rule(rule, user_id=user_id)
+
 
 
 @staff_router.put(

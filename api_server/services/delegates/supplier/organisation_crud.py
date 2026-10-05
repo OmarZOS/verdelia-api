@@ -193,3 +193,8 @@ class OrganisationCrud:
             "message": "Organisation deleted successfully",
             "organisation_id": org_id,
         }
+
+    def count_by_owner(self, owner_id: int) -> int:
+        """How many organisations a user owns."""
+        return self.org_repo.count_orgs_by_owner(owner_id)
+  

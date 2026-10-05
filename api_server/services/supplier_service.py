@@ -153,6 +153,15 @@ class SupplierService:
             longitude, latitude, distance_km, offset, limit
         )
 
+    def count_suppliers_for_owner(self, owner_id: int) -> int:
+        """How many suppliers a user owns.
+
+        Scoped to the owner, not to any organisation — the plan
+        limit is "how many suppliers can this user create",
+        regardless of how they're grouped.
+        """
+        return self.supplier_crud.count_by_owner(owner_id)
+
 
 class OrganisationService:
     """Service for organisation-related business logic."""
@@ -221,3 +230,12 @@ class OrganisationService:
         self, org_id: str, user_id: int
     ) -> Dict[str, Any]:
         return self.organisation_crud.delete(org_id, user_id)
+
+    def count_organisations_for_owner(self, owner_id: int) -> int:
+        """How many organisations a user owns.
+
+        Same scoping rule as `SupplierService.count_suppliers_for_owner`:
+        per user, not per anything else.
+        """
+        return self.organisation_crud.count_by_owner(owner_id)
+

@@ -83,200 +83,6 @@ def generate_test_user_data(index: int = 0) -> Dict[str, Any]:
     }
 
 
-async def seed_users_now(count: int = 5) -> Dict[str, Any]:
-    """
-    Seed users using the user service.
-    
-    Args:
-        count: Number of users to create
-        
-    Returns:
-        Dictionary with seeding results
-    """
-    logger.info(f"👤 Seeding {count} test users...")
-    
-    user_service = UserService()
-    results = {
-        "users_created": 0,
-        "users_failed": 0,
-        "user_ids": [],
-        "errors": []
-    }
-    
-    for i in range(count):
-        try:
-            test_data = generate_test_user_data(i)
-            
-            # Create schema objects
-            user = AppUser_API(**test_data["user"])
-            person = Person_API(**test_data["person"]) if test_data.get("person") else None
-            location = Location_API(**test_data["location"]) if test_data.get("location") else None
-            
-            # Create user using service - pass None as provider (no provider data for random users)
-            result = await user_service.create_user(user, person, location, None)
-            
-            if result and hasattr(result, 'id_app_user'):
-                results["users_created"] += 1
-                results["user_ids"].append(result.id_app_user)
-                logger.info(f"   ✅ Created user {i+1}: {user.app_user_name} (ID: {result.id_app_user})")
-            else:
-                results["users_failed"] += 1
-                error_msg = f"Failed to create user {i+1}: {user.app_user_name}"
-                results["errors"].append(error_msg)
-                logger.warning(f"   ⚠️ {error_msg}")
-                
-        except APIException as e:
-            results["users_failed"] += 1
-            error_msg = f"API error for user {i+1}: {e.message}"
-            results["errors"].append(error_msg)
-            logger.error(f"   ❌ {error_msg}")
-        except Exception as e:
-            results["users_failed"] += 1
-            error_msg = f"Unexpected error for user {i+1}: {str(e)}"
-            results["errors"].append(error_msg)
-            logger.error(f"   ❌ {error_msg}")
-    
-    logger.info(f"✅ User seeding complete: {results['users_created']} created, {results['users_failed']} failed")
-    return results
-
-
-async def seed_specific_users() -> Dict[str, Any]:
-    """
-    Seed specific test users with known credentials for testing.
-    """
-    logger.info("👤 Seeding specific test users...")
-    
-    user_service = UserService()
-    results = {
-        "users_created": 0,
-        "users_failed": 0,
-        "user_ids": [],
-        "errors": []
-    }
-    
-    # Define specific test users
-    test_users = [
-        {
-            "user": {
-                "app_user_name": "test_admin",
-                "app_user_password": "Admin123!@#",
-                "app_user_email": "admin@test.com",
-                "app_user_type": "provider",
-                "app_user_preferences": {"theme": "dark", "notifications": True, "language": "en"}
-            },
-            "person": {
-                "person_first_name": "Admin",
-                "person_last_name": "User",
-                "person_birth_date": "1985-01-01",
-                "person_gender": "male",
-                "person_country_code": "DZ",
-                "blood_type": "O+"
-            },
-            "location": {
-                "location_latitude": 36.7538,
-                "location_longitude": 3.0588,
-                "location_name": "Office",
-                "address_street": "123 Admin St",
-                "address_city": "Algiers",
-                "address_postal_code": "16000",
-                "address_country": "DZ"
-            },
-            "provider": {
-                "provider_organisation_name": "Admin Org",
-                "provider_organisation_desc": "Admin organisation for testing",
-                "provider_organisation_icon_url": "https://example.com/orgs/admin.png"
-            }
-        },
-        {
-            "user": {
-                "app_user_name": "test_customer",
-                "app_user_password": "Customer123!@#",
-                "app_user_email": "customer@test.com",
-                "app_user_type": "customer",
-                "app_user_preferences": {"theme": "light", "notifications": True, "language": "en"}
-            },
-            "person": {
-                "person_first_name": "Test",
-                "person_last_name": "Customer",
-                "person_birth_date": "1990-06-15",
-                "person_gender": "female",
-                "person_country_code": "DZ",
-                "blood_type": "A+"
-            },
-            "location": {
-                "location_latitude": 36.7538,
-                "location_longitude": 3.0588,
-                "location_name": "Home",
-                "address_street": "456 Customer Ave",
-                "address_city": "Algiers",
-                "address_postal_code": "16000",
-                "address_country": "DZ"
-            },
-            "provider": None
-        },
-        {
-            "user": {
-                "app_user_name": "test_provider",
-                "app_user_password": "Provider123!@#",
-                "app_user_email": "provider@test.com",
-                "app_user_type": "provider",
-                "app_user_preferences": {"theme": "dark", "notifications": False, "language": "fr"}
-            },
-            "person": {
-                "person_first_name": "Provider",
-                "person_last_name": "User",
-                "person_birth_date": "1980-03-20",
-                "person_gender": "male",
-                "person_country_code": "DZ",
-                "blood_type": "B+"
-            },
-            "location": {
-                "location_latitude": 36.7538,
-                "location_longitude": 3.0588,
-                "location_name": "Clinic",
-                "address_street": "789 Provider Blvd",
-                "address_city": "Oran",
-                "address_postal_code": "31000",
-                "address_country": "DZ"
-            },
-            "provider": {
-                "provider_organisation_name": "Provider Clinic",
-                "provider_organisation_desc": "Provider clinic for testing",
-                "provider_organisation_icon_url": "https://example.com/orgs/provider.png"
-            }
-        }
-    ]
-    
-    for i, test_data in enumerate(test_users):
-        try:
-            # Create schema objects
-            user = AppUser_API(**test_data["user"])
-            person = Person_API(**test_data["person"]) if test_data.get("person") else None
-            location = Location_API(**test_data["location"]) if test_data.get("location") else None
-            
-            
-            # Create user using service - pass proper provider object or None
-            result = await user_service.create_user(user, person, location)
-            
-            if result and hasattr(result, 'id_app_user'):
-                results["users_created"] += 1
-                results["user_ids"].append(result.id_app_user)
-                logger.info(f"   ✅ Created specific user: {user.app_user_name} (ID: {result.id_app_user})")
-                logger.info(f"      📧 Email: {user.app_user_email}")
-                logger.info(f"      🔑 Password: {user.app_user_password}")
-            else:
-                results["users_failed"] += 1
-                error_msg = f"Failed to create specific user: {user.app_user_name}"
-                results["errors"].append(error_msg)
-                logger.warning(f"   ⚠️ {error_msg}")
-                
-        except Exception as e:
-            results["users_failed"] += 1
-            error_msg = f"Error creating specific user {i+1}: {str(e)}"
-            results["errors"].append(error_msg)
-            logger.error(f"   ❌ {error_msg}")
-    
-    return results
 
 
 # ==================== Main Seed Functions ====================
@@ -352,52 +158,18 @@ async def seed_database(
         logger.info("Seeding iproducts...")
         results["iproducts"] = seed_random_iproducts()
         
-        # Seed users
-        if seed_users:
-            logger.info("\n" + "="*50)
-            logger.info("👤 Seeding users...")
-            
-            # Create specific test users first
-            if seed_specific:
-                specific_results = await seed_specific_users()
-                results["specific_users_created"] = specific_results["users_created"]
-                results["specific_user_ids"] = specific_results["user_ids"]
-                logger.info(f"   ✅ Created {specific_results['users_created']} specific test users")
-                if specific_results["errors"]:
-                    logger.warning(f"   ⚠️ {len(specific_results['errors'])} errors during specific user creation")
-            
-            # Create random users
-            if user_count > 0:
-                random_results = await seed_users_now(user_count)
-                results["users_created"] = random_results["users_created"]
-                results["user_ids"] = random_results["user_ids"]
-                if random_results["errors"]:
-                    logger.warning(f"   ⚠️ {len(random_results['errors'])} errors during random user creation")
-            
-            logger.info("="*50)
         
         # Calculate total
         results["total"] = sum([
             results["product_categories"],
-            results["recipe_categories"],
             results["product_provider_types"],
             results["service_categories"],
-            results["staff_roles"],
-            results["ingredients"],
             results["iproducts"],
-            results["plans"],
-            results["users_created"],
-            results["specific_users_created"],
+            # results["plans"],
         ])
         
         logger.info(f"\n✅ Seeding complete! Total records inserted: {results['total']}")
         
-        # Log user credentials if specific users were created
-        if seed_specific and results["specific_users_created"] > 0:
-            logger.info("\n📋 Specific Test Users Created:")
-            logger.info("   🔑 test_admin / Admin123!@#")
-            logger.info("   🔑 test_customer / Customer123!@#")
-            logger.info("   🔑 test_provider / Provider123!@#")
         
         return results
         
@@ -406,45 +178,6 @@ async def seed_database(
         raise
 
 
-async def seed_users_only(count: int = 5, seed_specific: bool = True) -> Dict[str, Any]:
-    """
-    Seed only users (useful for adding users to an already seeded database).
-    
-    Args:
-        count: Number of random users to create
-        seed_specific: Whether to create specific test users
-        
-    Returns:
-        Dictionary with seeding results
-    """
-    logger.info("👤 Seeding users only...")
-    
-    results = {
-        "users_created": 0,
-        "user_ids": [],
-        "specific_users_created": 0,
-        "specific_user_ids": [],
-        "errors": []
-    }
-    
-    # Create specific test users
-    if seed_specific:
-        specific_results = await seed_specific_users()
-        results["specific_users_created"] = specific_results["users_created"]
-        results["specific_user_ids"] = specific_results["user_ids"]
-        if specific_results["errors"]:
-            results["errors"].extend(specific_results["errors"])
-    
-    # Create random users
-    if count > 0:
-        random_results = await seed_users_now(count)
-        results["users_created"] = random_results["users_created"]
-        results["user_ids"] = random_results["user_ids"]
-        if random_results["errors"]:
-            results["errors"].extend(random_results["errors"])
-    
-    logger.info(f"✅ User seeding complete: {results['users_created'] + results['specific_users_created']} users created")
-    return results
 
 
 # ==================== Status and Helper Functions ====================
@@ -724,20 +457,6 @@ def seed_database_cli():
         elif args.force:
             print("Force seeding enabled - checking existing data...")
         
-        if args.users_only:
-            # Seed only users
-            results = asyncio.run(seed_users_only(
-                count=args.user_count,
-                seed_specific=not args.no_specific_users
-            ))
-            
-            print(f"\n✅ User seeding complete!")
-            print(f"   Random Users Created: {results['users_created']}")
-            print(f"   Specific Users Created: {results['specific_users_created']}")
-            if results.get("specific_user_ids"):
-                print(f"   Specific User IDs: {results['specific_user_ids']}")
-            if results.get("user_ids"):
-                print(f"   Random User IDs: {results['user_ids'][:10]}{'...' if len(results['user_ids']) > 10 else ''}")
             
         elif args.plans_only:
             # Seed only plans

@@ -7,7 +7,6 @@ from datetime import datetime
 from repositories.service_repository import ServiceRepository
 from core.models.api_models import ProvidedService_API, ServiceResourceRequirement_API, ServiceStaffRequirement_API
 from core.exceptions.specific.service_exceptions import (
-    ServiceException,
     ServiceNotFoundException,
     ServiceCreationFailedException,
     ServiceUpdateFailedException,
@@ -15,9 +14,6 @@ from core.exceptions.specific.service_exceptions import (
     ServiceCategoryNotFoundException,
     ServiceProviderNotFoundException,
     ServiceToggleStatusException,
-    ServiceRequirementCreationException,
-    ServiceRequirementNotFoundException,
-    ServiceStaffRequirementNotFoundException
 )
 from core.messages import *
 from core.models.models import ProvidedService, ProvidedServiceCategory, ServiceResourceRequirement, ServiceStaffRequirement, StaffRole
@@ -435,3 +431,15 @@ class ServiceService:
                 service_id=service_id,
                 error=str(e)
             )
+
+
+        # ==================== Counts ====================
+
+    def count_services_for_provider(self, provider_id: int) -> int:
+        """How many services a provider offers.
+
+        Scoped to the provider, not to the user — the plan limit is
+        "N services per provider", so a user with three providers has
+        three independent buckets, not one.
+        """
+        return self.service_repo.count_services_by_provider(provider_id)

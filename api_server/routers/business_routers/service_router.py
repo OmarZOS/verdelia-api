@@ -30,9 +30,7 @@ from core.logging_config import get_logger
 
 logger = get_logger(__name__)
 
-
 service_router = APIRouter()
-
 
 def get_service_service() -> ServiceService:
     """Dependency to get ServiceService instance"""

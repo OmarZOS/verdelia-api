@@ -26,6 +26,7 @@ from constants import API_SECRET_KEY
 
 # Import routers
 from routers.app_routers.user_router import app_user_router
+from routers.app_routers.subscription_router import subscription_router
 from routers.app_routers.auth_router import auth_router
 from routers.health_routers.person_router import person_router
 from routers.app_routers.notification_router import notification_router
@@ -174,6 +175,7 @@ def setup_routers(app: FastAPI) -> None:
     # Authentication and user routes
     app.include_router(auth_router, prefix=api_version, tags=["Authentication"])
     app.include_router(app_user_router, prefix=api_version, tags=["Users"])
+    app.include_router(subscription_router, prefix=api_version, tags=["Subscriptions"])
     
     # Business core routes
     app.include_router(invoice_router, prefix=api_version, tags=["Invoices"])

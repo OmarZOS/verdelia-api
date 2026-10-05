@@ -5,6 +5,7 @@ CRUD operations for management rules.
 import logging
 from typing import Dict, Any
 
+from storage import storage_broker
 from core.exceptions.handler import ForbiddenException
 from repositories.supplier_repository import OrganisationRepository, SupplierRepository
 from core.models.api_models import ManagementRule_API
@@ -304,3 +305,14 @@ class RuleCrud:
             new_rule.id_management_rule = rule_data.id_management_rule
         
         return new_rule
+
+    def count_team_members_for_org(self, org_id: int) -> int:
+        return int(
+                    storage_broker.count(
+                        ManagementRule,
+                        conditions={ManagementRule.rule_ref_org: org_id},
+                    )
+                    or 0
+                )
+
+    

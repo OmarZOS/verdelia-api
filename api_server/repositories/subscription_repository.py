@@ -96,6 +96,10 @@ class SubscriptionRepository:
             Plan,
             {Plan.id_plan: plan_id},
             [],
+            [
+                Plan.plan_limit,
+                {Plan.plan_feature: [{PlanFeature.feature_naming: []}]},
+            ]
         )
         return records[0] if records else None
 
@@ -104,7 +108,9 @@ class SubscriptionRepository:
         records = storage_broker.get(
             Plan,
             {Plan.plan_name: plan_name},
-            [],
+            [],[
+                {Plan.plan_feature: [{PlanFeature.feature_naming: []}]},
+            ]
         )
         return records[0] if records else None
 
@@ -134,9 +140,9 @@ class SubscriptionRepository:
             if cached is not None:
                 return cached
 
-        # Snapshot the generation *before* the query so a concurrent
-        # invalidation is detected when we try to store the result.
-        generation = plan_cache.generation()
+        # # Snapshot the generation *before* the query so a concurrent
+        # # invalidation is detected when we try to store the result.
+        # generation = plan_cache.generation()
 
         conditions = {}
         if plan_type:
@@ -150,7 +156,6 @@ class SubscriptionRepository:
             [],
             [
                 Plan.plan_limit,
-                {Plan.plan_feature: [{PlanFeature.feature_naming: []}]},
                 {Plan.plan_naming: []},
             ],
             0,
@@ -159,7 +164,7 @@ class SubscriptionRepository:
 
         # Store under the caller's filter. If an invalidation raced us
         # to the write, discard — the newer generation will refetch.
-        plan_cache.put(plan_type, billing_cycle, plans, generation)
+        # plan_cache.put(plan_type, billing_cycle, plans, generation)
         return plans
 
     # ==================== Plan writes (invalidate) ====================

@@ -303,15 +303,17 @@ _FEATURES_ENTERPRISE: List[Dict[str, Any]] = [
 _LIMITS_FREE: Dict[str, int] = {
     "organization_owned": 0,               # consumer tier
     "provider_owned": 0,                   # cannot create a supplier
+    "ai_credits_monthly":0,
     "team_members": 0,
-    "products_per_provider": 20,
-    "services_per_provider": 5,
+    "products_per_provider": 0,
+    "services_per_provider": 0,
     "ads_enabled": 1,
 }
 
 _LIMITS_STARTER: Dict[str, int] = {
     "organization_owned": 1,
     "provider_owned": 1,
+    "ai_credits_monthly":30,
     "team_members": 2,
     "products_per_provider": 100,
     "services_per_provider": 25,
@@ -321,6 +323,7 @@ _LIMITS_STARTER: Dict[str, int] = {
 _LIMITS_PRO: Dict[str, int] = {
     "organization_owned": 2,
     "provider_owned": 3,
+    "ai_credits_monthly":100,
     "team_members": 5,
     "products_per_provider": 500,
     "services_per_provider": 100,
@@ -330,6 +333,7 @@ _LIMITS_PRO: Dict[str, int] = {
 _LIMITS_BUSINESS_STARTER: Dict[str, int] = {
     "organization_owned": 1,               # one team workspace
     "provider_owned": 1,                   # one supplier under that workspace
+    "ai_credits_monthly":50,
     "team_members": 10,                    # this IS the team plan
     "products_per_provider": 500,
     "services_per_provider": 100,
@@ -339,6 +343,7 @@ _LIMITS_BUSINESS_STARTER: Dict[str, int] = {
 _LIMITS_BUSINESS_PRO: Dict[str, int] = {
     "organization_owned": 5,
     "provider_owned": 10,
+    "ai_credits_monthly":500,
     "team_members": 20,
     "products_per_provider": 5_000,
     "services_per_provider": 1_000,
@@ -348,6 +353,7 @@ _LIMITS_BUSINESS_PRO: Dict[str, int] = {
 _LIMITS_ENTERPRISE: Dict[str, int] = {
     "organization_owned": -2,              # negotiated per contract
     "provider_owned": -2,
+    "ai_credits_monthly":-2,
     "team_members": -2,
     "products_per_provider": -2,
     "services_per_provider": -2,

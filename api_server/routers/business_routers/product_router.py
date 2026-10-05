@@ -479,7 +479,12 @@ async def insert_product_details(
     Insert a new product.
     """
     logger.info(f"POST /products — name:{product.product_name}")
-    return await workflow.create_product(product, image, iproduct)
+    return await workflow.create_product(
+        product,
+        image,
+        iproduct,
+        user_id=user_id,
+    )
 
 
 @product_router.delete(

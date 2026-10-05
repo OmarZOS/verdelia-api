@@ -251,3 +251,14 @@ class SupplierCrud:
             "message": "Supplier deleted successfully",
             "supplier_id": provider_id,
         }
+
+  
+
+    def count_by_owner(self, owner_id: int) -> int:
+        """How many suppliers a user owns.
+
+        Scoped to the owner, not to any organisation — the plan
+        limit is "how many suppliers can this user create",
+        regardless of how they're grouped.
+        """
+        return self.supplier_repo.count_supplier_for_user(owner_id)
