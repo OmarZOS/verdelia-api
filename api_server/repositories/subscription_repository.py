@@ -1,8 +1,8 @@
 # repositories/subscription_repository.py (complete)
 from typing import Optional, List
-from core.models.models import Subscription, Plan, AppUser
+from core.models.models import PlanFeature, Subscription, Plan, AppUser
 import storage.storage_broker as storage_broker
-
+from repositories.cache.plan_cache import plan_cache
 
 class SubscriptionRepository:
     """Repository for subscription and plan database operations"""
@@ -83,7 +83,15 @@ class SubscriptionRepository:
     # ==================== Plan Operations ====================
 
     def get_plan_by_id(self, plan_id: int) -> Optional[Plan]:
-        """Get plan by ID."""
+        """
+        Get plan by ID.
+
+        Not served from the cache. The cache holds the *catalogue*
+        (all plans under a filter); a single-plan lookup is a
+        different, cheap query and caching it would require keeping
+        two structures in sync. If this becomes hot, cache it
+        separately.
+        """
         records = storage_broker.get(
             Plan,
             {Plan.id_plan: plan_id},
@@ -92,7 +100,7 @@ class SubscriptionRepository:
         return records[0] if records else None
 
     def get_plan_by_name(self, plan_name: str) -> Optional[Plan]:
-        """Get plan by name."""
+        """Get plan by name. Same rationale as get_plan_by_id."""
         records = storage_broker.get(
             Plan,
             {Plan.plan_name: plan_name},
@@ -104,27 +112,88 @@ class SubscriptionRepository:
         self,
         plan_type: Optional[str] = None,
         billing_cycle: Optional[str] = None,
+        force_refresh: bool = False,
     ) -> List[Plan]:
-        """Get all plans, optionally filtered by type and/or billing cycle."""
+        """
+        Get all plans, optionally filtered by type and/or billing cycle.
+
+        Served from the process-local cache when populated. The cache
+        is invalidated by every write path in this repository
+        (create_plan, update_plan, delete_plan) and can be force-
+        refreshed by passing `force_refresh=True` — for instance from
+        an admin endpoint or a test fixture.
+
+        The eager-load set is the reason this query is expensive: it
+        pulls every plan's limits, features, feature names, and the
+        plan's own naming row. The cache is keyed on the filter tuple,
+        so a request for `(individual, monthly)` does not evict the
+        `(None, None)` entry.
+        """
+        if not force_refresh:
+            cached = plan_cache.get(plan_type, billing_cycle)
+            if cached is not None:
+                return cached
+
+        # Snapshot the generation *before* the query so a concurrent
+        # invalidation is detected when we try to store the result.
+        generation = plan_cache.generation()
+
         conditions = {}
         if plan_type:
             conditions[Plan.plan_type] = plan_type
         if billing_cycle:
             conditions[Plan.billing_cycle] = billing_cycle
 
-        return storage_broker.get(Plan, conditions, [])
+        plans = storage_broker.get(
+            Plan,
+            conditions,
+            [],
+            [
+                Plan.plan_limit,
+                {Plan.plan_feature: [{PlanFeature.feature_naming: []}]},
+                {Plan.plan_naming: []},
+            ],
+            0,
+            100,
+        )
+
+        # Store under the caller's filter. If an invalidation raced us
+        # to the write, discard — the newer generation will refetch.
+        plan_cache.put(plan_type, billing_cycle, plans, generation)
+        return plans
+
+    # ==================== Plan writes (invalidate) ====================
 
     def create_plan(self, plan: Plan) -> Plan:
-        """Create a plan record."""
+        """Create a plan record. Invalidates the catalogue cache."""
         from features.insertion import insert_or_complete_or_raise
-        return insert_or_complete_or_raise(plan)
+        created = insert_or_complete_or_raise(plan)
+        plan_cache.invalidate()
+        return created
 
     def update_plan(self, plan: Plan) -> Plan:
-        """Update a plan record."""
+        """Update a plan record. Invalidates the catalogue cache."""
         from features.insertion import update_record_in_api
-        return update_record_in_api(plan)
+        updated = update_record_in_api(plan)
+        plan_cache.invalidate()
+        return updated
 
     def delete_plan(self, plan: Plan) -> bool:
-        """Delete a plan record."""
+        """Delete a plan record. Invalidates the catalogue cache."""
         from features.insertion import delete_record_from_api
-        return delete_record_from_api(plan)
+        ok = delete_record_from_api(plan)
+        if ok:
+            plan_cache.invalidate()
+        return ok
+
+    # ==================== Cache helpers (optional) ====================
+
+    def invalidate_plan_cache(self) -> None:
+        """
+        Drop every cached catalogue entry.
+
+        Call this from any code path that mutates the plan tables
+        *outside* the three write methods above — a raw SQL admin
+        script, a bulk import, a background job that adjusts prices.
+        """
+        plan_cache.invalidate()

@@ -136,12 +136,15 @@ class NamingContribution(Base):
     naming_contribution_app_version = Column(String(45))
     naming_contribution_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
     naming_contribution_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
-    naming_contribution_type = Column(Enum('product', 'provider', 'ingredient', 'recipe', 'service', 'symptom', 'role'))
+    naming_contribution_type = Column(Enum('product', 'provider', 'ingredient', 'recipe', 'service', 'symptom', 'role', 'plan', 'plan_feature'))
 
     app_user = relationship('AppUser', back_populates='naming_contribution')
+    plan = relationship('Plan', back_populates='plan_naming')
     provided_service_category = relationship('ProvidedServiceCategory', back_populates='naming_contribution')
     staff_role = relationship('StaffRole', back_populates='naming_contribution')
     ingredient = relationship('Ingredient', back_populates='naming_contribution')
+    plan_feature = relationship('PlanFeature', foreign_keys='[PlanFeature.feature_description_naming_id]', back_populates='feature_description_naming')
+    plan_feature_ = relationship('PlanFeature', foreign_keys='[PlanFeature.feature_naming_id]', back_populates='feature_naming')
     product_category = relationship('ProductCategory', back_populates='naming_contribution')
     product_provider_type = relationship('ProductProviderType', back_populates='naming_contribution')
     provider_details = relationship('ProviderDetails', back_populates='naming_contribution')
@@ -210,6 +213,10 @@ class PersonDetails(Base):
 
 class Plan(Base):
     __tablename__ = 'plan'
+    __table_args__ = (
+        ForeignKeyConstraint(['plan_naming_id'], ['naming_contribution.id_naming_contribution'], name='fk_plan_1'),
+        Index('fk_plan_1_idx', 'plan_naming_id')
+    )
 
     id_plan = Column(Integer, primary_key=True)
     plan_name = Column(String(45))
@@ -218,8 +225,12 @@ class Plan(Base):
     plan_type = Column(Enum('individual', 'organization'), server_default=text("'individual'"))
     plan_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
     plan_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+    plan_naming_id = Column(Integer)
 
+    plan_naming = relationship('NamingContribution', back_populates='plan')
     subscription = relationship('Subscription', back_populates='subscription_plan')
+    plan_feature = relationship('PlanFeature', back_populates='plan')
+    plan_limit = relationship('PlanLimit', back_populates='plan')
 
 
 class ProvidedServiceCategory(Base):
@@ -276,6 +287,31 @@ class StaffRole(Base):
     naming_contribution = relationship('NamingContribution', back_populates='staff_role')
     provided_service_category = relationship('ProvidedServiceCategory', back_populates='staff_role')
     service_staff_requirement = relationship('ServiceStaffRequirement', back_populates='staff_role')
+
+
+class Subscription(Base):
+    __tablename__ = 'subscription'
+    __table_args__ = (
+        ForeignKeyConstraint(['subscription_payment_id'], ['payment.payment_id'], name='fk_subscription_2'),
+        ForeignKeyConstraint(['subscription_plan_id'], ['plan.id_plan'], name='fk_subscription_1'),
+        Index('fk_subscription_1_idx', 'subscription_plan_id'),
+        Index('fk_subscription_2_idx', 'subscription_payment_id')
+    )
+
+    id_subscription = Column(Integer, primary_key=True)
+    subscription_plan_id = Column(Integer)
+    subscription_payment_id = Column(Integer)
+    subscription_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    subscription_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+    subscription_expiry = Column(TIMESTAMP)
+    subscription_quota = Column(Integer, server_default=text("'0'"))
+    current_period_start = Column(Date)
+    current_period_end = Column(Date)
+
+    app_user = relationship('AppUser', back_populates='subscription')
+    subscription_payment = relationship('Payment', back_populates='subscription')
+    subscription_plan = relationship('Plan', back_populates='subscription')
+    subscription_usage = relationship('SubscriptionUsage', back_populates='subscription')
 
 
 class Wallet(Base):
@@ -384,7 +420,6 @@ class Ingredient(Base):
     recipe_contains_ingredient = relationship('RecipeContainsIngredient', back_populates='contained_ingredient')
 
 
-
 class Notification(Base):
     __tablename__ = 'notification'
     __table_args__ = (
@@ -439,9 +474,53 @@ class Payment(Base):
     payment_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
     payment_type = Column(Enum('deposit', 'payment', 'refund'))
 
+    subscription = relationship('Subscription', back_populates='subscription_payment')
     payment_invoice = relationship('Invoice', back_populates='payment')
     money_transaction = relationship('MoneyTransaction', back_populates='payment')
-    subscription = relationship('Subscription', back_populates='subscription_payment')
+
+
+class PlanFeature(Base):
+    __tablename__ = 'plan_feature'
+    __table_args__ = (
+        ForeignKeyConstraint(['feature_description_naming_id'], ['naming_contribution.id_naming_contribution'], name='fk_plan_feature_3'),
+        ForeignKeyConstraint(['feature_naming_id'], ['naming_contribution.id_naming_contribution'], name='fk_plan_feature_2'),
+        ForeignKeyConstraint(['plan_id'], ['plan.id_plan'], name='fk_plan_feature_1'),
+        Index('fk_plan_feature_1_idx', 'plan_id'),
+        Index('fk_plan_feature_2_idx', 'feature_naming_id'),
+        Index('fk_plan_feature_3_idx', 'feature_description_naming_id')
+    )
+
+    id_plan_feature = Column(Integer, primary_key=True)
+    plan_id = Column(Integer)
+    feature_naming_id = Column(Integer)
+    feature_description_naming_id = Column(Integer)
+    feature_code = Column(String(64))
+    display_order = Column(Integer)
+    is_visible = Column(TINYINT)
+    feature_value = Column(String(255))
+    created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+
+    feature_description_naming = relationship('NamingContribution', foreign_keys=[feature_description_naming_id], back_populates='plan_feature')
+    feature_naming = relationship('NamingContribution', foreign_keys=[feature_naming_id], back_populates='plan_feature_')
+    plan = relationship('Plan', back_populates='plan_feature')
+
+
+class PlanLimit(Base):
+    __tablename__ = 'plan_limit'
+    __table_args__ = (
+        ForeignKeyConstraint(['plan_id'], ['plan.id_plan'], name='fk_plan_limit_1'),
+        Index('fk_plan_limit_1_idx', 'plan_id')
+    )
+
+    id_plan_limit = Column(Integer, primary_key=True)
+    plan_id = Column(Integer)
+    resource_code = Column(String(64))
+    limit_value = Column(BigInteger)
+    created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+
+    plan = relationship('Plan', back_populates='plan_limit')
 
 
 class ProductCategory(Base):
@@ -556,6 +635,27 @@ class Report(Base):
     report_appreciation_value = Column(Float)
 
     app_user = relationship('AppUser', back_populates='report')
+
+
+class SubscriptionUsage(Base):
+    __tablename__ = 'subscription_usage'
+    __table_args__ = (
+        ForeignKeyConstraint(['subscription_id'], ['subscription.id_subscription'], name='fk_subscription_usage_1'),
+        Index('fk_subscription_usage_1_idx', 'subscription_id')
+    )
+
+    id_subscription_usage = Column(Integer, primary_key=True)
+    subscription_id = Column(Integer)
+    period_start = Column(Date)
+    period_end = Column(Date)
+    ai_credits_used = Column(Integer)
+    ai_product_searches = Column(Integer)
+    ai_auto_fills = Column(Integer)
+    products_created = Column(Integer)
+    created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+
+    subscription = relationship('Subscription', back_populates='subscription_usage')
 
 
 class Symptom(Base):
@@ -819,28 +919,6 @@ class Serology(Base):
 
     indicator = relationship('SerologyIndicator', back_populates='serology')
     patient = relationship('Patient', back_populates='serology')
-
-
-class Subscription(Base):
-    __tablename__ = 'subscription'
-    __table_args__ = (
-        ForeignKeyConstraint(['subscription_payment_id'], ['payment.payment_id'], name='fk_subscription_2'),
-        ForeignKeyConstraint(['subscription_plan_id'], ['plan.id_plan'], name='fk_subscription_1'),
-        Index('fk_subscription_1_idx', 'subscription_plan_id'),
-        Index('fk_subscription_2_idx', 'subscription_payment_id')
-    )
-
-    id_subscription = Column(Integer, primary_key=True)
-    subscription_plan_id = Column(Integer)
-    subscription_payment_id = Column(Integer)
-    subscription_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
-    subscription_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
-    subscription_expiry = Column(TIMESTAMP)
-    subscription_quota = Column(Integer, server_default=text("'0'"))
-
-    app_user = relationship('AppUser', back_populates='subscription')
-    subscription_payment = relationship('Payment', back_populates='subscription')
-    subscription_plan = relationship('Plan', back_populates='subscription')
 
 
 class SymptomsOccurence(Base):

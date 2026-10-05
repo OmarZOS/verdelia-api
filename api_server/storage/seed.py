@@ -23,7 +23,7 @@ from storage.seeds.provider_type import seed_product_provider_types
 from storage.seeds.provided_service_category import seed_service_categories
 from storage.seeds.staff_role import seed_staff_roles
 from storage.seeds.ingredient import seed_ingredients
-from storage.seeds.plan import seed_plans
+from storage.seeds.plan import seed as seed_plans
 from config import settings
 from core.models import models
 from core.exceptions.handler import APIException
