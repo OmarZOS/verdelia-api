@@ -17,6 +17,8 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from routers.app_routers.wallet_router import wallet_router
+from routers.business_routers.action_link_router import action_link_router
 from core.logging_config import get_logger
 from storage.seed import seed_database_if_needed
 from core.exceptions.handler import setup_exception_handlers_with_config
@@ -183,6 +185,7 @@ def setup_routers(app: FastAPI) -> None:
     app.include_router(supplier_router, prefix=api_version, tags=["Suppliers"])
     app.include_router(person_router, prefix=api_version, tags=["People"])
     app.include_router(staff_router, prefix=api_version, tags=["Staff"])
+    app.include_router(wallet_router, prefix=api_version, tags=["Wallet"])
     # app.include_router(document_router, prefix=api_version, tags=["Documents"])
     
     # Business sub-modules
@@ -198,6 +201,7 @@ def setup_routers(app: FastAPI) -> None:
     app.include_router(recipe_router, prefix=api_version, tags=["Recipes"])
     app.include_router(address_router, prefix=f"{api_version}/addresses", tags=["Addresses"])
     app.include_router(reaction_router, prefix=f"{api_version}/reactions", tags=["Reactions"])
+    app.include_router(action_link_router, prefix=f"{api_version}/action", tags=["Action Links"])
     
     
     # Notification routes

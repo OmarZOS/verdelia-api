@@ -13,14 +13,16 @@ from typing import Any, Dict, List, Optional
 from context import VolumeProfile, TestContext, TestUser
 from data import extract_id, short
 from scenarios import (
+    CartScenario,
     OrganisationsScenario,
     ProductsScenario,
     ServicesScenario,
     StaffScenario,
-    UsageScenario,
     SubscriptionsScenario,
     SuppliersScenario,
+    UsageScenario,
     UsersScenario,
+    WalletScenario,
 )
 
 
@@ -34,9 +36,14 @@ class TestRunner:
             "organisations": 0,
             "suppliers": 0,
             "products": 0,
+            "carts": 0,
+            "cart_payments": 0,
+            "cart_inventory_confirmations": 0,
             "services": 0,
             "staff_rules": 0,
             "subscriptions": 0,
+            "wallet_topups": 0,
+            "wallet_credited_total": 0,
             "failures": 0,
         }
 
@@ -47,10 +54,11 @@ class TestRunner:
         self.suppliers: Optional[SuppliersScenario] = None
         self.products: Optional[ProductsScenario] = None
         self.services: Optional[ServicesScenario] = None
+        self.carts: Optional[CartScenario] = None
+        self.wallets: Optional[WalletScenario] = None
         self.staff: Optional[StaffScenario] = None
         self.subscriptions: Optional[SubscriptionsScenario] = None
         self.usage: Optional[UsageScenario] = None
-
 
     async def __aenter__(self):
         limits = httpx.Limits(
@@ -74,6 +82,8 @@ class TestRunner:
         self.suppliers = _make(SuppliersScenario)
         self.products = _make(ProductsScenario)
         self.services = _make(ServicesScenario)
+        self.carts = _make(CartScenario)
+        self.wallets = _make(WalletScenario)
         self.staff = _make(StaffScenario)
         self.subscriptions = _make(SubscriptionsScenario)
         self.usage = _make(UsageScenario)
@@ -156,7 +166,7 @@ class TestRunner:
             for plan_id, u in tiered.items():
                 await self.organisations.probe_user(plan_id, u)
 
-        # ── Volume generation ──────────────────────────────────
+        # ── Volume user ────────────────────────────────────────
         volume_user = self._pick_volume_user(primary, tiered)
         if volume_user.id != primary.id:
             print(
@@ -164,6 +174,19 @@ class TestRunner:
                 f"volume generation (primary is on Free)"
             )
 
+        # ── Fund wallets ───────────────────────────────────────
+        # The cart and subscription flows draw on the wallet.
+        # Fund the users those flows use before they run.
+        print("\n" + "=" * 60)
+        print("💰 Funding wallets")
+        print("=" * 60)
+
+        await self.wallets.ensure_funded(
+            volume_user,
+            minimum=profile.wallet_floor,
+        )
+
+        # ── Volume generation ──────────────────────────────────
         print("\n" + "=" * 60)
         print("🧪 Generating volume")
         print("=" * 60)
@@ -179,18 +202,30 @@ class TestRunner:
             volume_user, suppliers,
             count_per_supplier=profile.products_per_supplier,
         )
+        # Services must exist before carts — the cart scenario
+        # may include a service line, and the pool is empty until
+        # this call returns.
         await self.services.create_services(
             volume_user, suppliers,
             count_per_supplier=profile.services_per_supplier,
         )
 
         if suppliers:
+            await self.carts.create_carts(
+                volume_user,
+                supplier_ids=suppliers[:3],
+                count=profile.carts_per_run,
+                product_pool=self.context.created_products,
+                service_pool=self.context.created_services,
+            )
             await self.staff.create_staff_rules(
                 volume_user, suppliers,
                 authenticated[1:6],
                 rules_per_supplier=profile.staff_rules_per_supplier,
             )
 
+        # A few smaller workloads for other users, so the mix of
+        # "lots of data" and "no data" users is realistic.
         for u in authenticated[1:6]:
             small_orgs = await self.organisations.create_organisations(
                 u, count=1,
@@ -199,34 +234,31 @@ class TestRunner:
                 u, small_orgs, count_per_org=2,
             )
 
-
-
         # ── Usage endpoint tests ───────────────────────────────
         print("\n" + "=" * 60)
         print("📊 Usage endpoint tests")
         print("=" * 60)
 
-        # Test the volume user (has a paid plan and generated data).
         await self.usage.run_for_user(volume_user)
 
-        # Test each tiered user. Each is on a different plan, so
-        # the summary should reflect that plan's limits.
         for plan_id, tiered_user in tiered.items():
             await self.usage.run_for_user(tiered_user)
 
-        # Empty state: a user with no subscription.
+        # Empty state: a user with no subscription. Every tiered
+        # user has one by construction, so the search finds someone
+        # the runner didn't touch.
+        tiered_ids = {tu.id for tu in tiered.values()}
         no_sub_user = next(
-            (u for u in authenticated if not u.access_token is None and
-             u.id != volume_user.id and
-             u.id not in {tu.id for tu in tiered.values()}),
+            (
+                u for u in authenticated
+                if u.access_token is not None
+                and u.id != volume_user.id
+                and u.id not in tiered_ids
+            ),
             None,
         )
         if no_sub_user is not None:
-            # The runner gave every tier user a subscription. Pick
-            # a user the runner didn't touch.
             await self.usage.run_empty_state(no_sub_user)
-            
-            
 
         self.context.save(context_file)
         self.print_summary()
@@ -262,7 +294,8 @@ class TestRunner:
             f"orgs={profile.orgs_per_user} "
             f"suppliers={profile.suppliers_per_org} "
             f"products={profile.products_per_supplier} "
-            f"services={profile.services_per_supplier}"
+            f"services={profile.services_per_supplier} "
+            f"carts={profile.carts_per_run}"
         )
         print("=" * 60)
 
@@ -280,8 +313,22 @@ class TestRunner:
         print(f"   🏢 Organisations: {self.stats['organisations']}")
         print(f"   🏥 Suppliers: {self.stats['suppliers']}")
         print(f"   📦 Products: {self.stats['products']}")
+        print(f"   🛒 Carts: {self.stats.get('carts', 0)}")
+        print(
+            f"   💳 Cart payments: "
+            f"{self.stats.get('cart_payments', 0)}"
+        )
+        print(
+            f"   📦 Cart inventory confirmations: "
+            f"{self.stats.get('cart_inventory_confirmations', 0)}"
+        )
         print(f"   🛠️ Services: {self.stats['services']}")
         print(f"   👥 Staff Rules: {self.stats['staff_rules']}")
+        print(
+            f"   💰 Wallet top-ups: "
+            f"{self.stats.get('wallet_topups', 0)} "
+            f"({self.stats.get('wallet_credited_total', 0)} DZD)"
+        )
         print(f"   ❌ Failures: {self.stats['failures']}")
 
         print("\n📊 Distribution:")
@@ -294,6 +341,7 @@ class TestRunner:
             f"   Users with Subscriptions: "
             f"{len(self.context.subscription_user_mapping)}"
         )
+        print(f"   Carts Created: {len(self.context.created_carts)}")
         if self.staff:
             print(
                 f"   Staff Assignments: "

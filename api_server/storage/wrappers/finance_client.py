@@ -421,3 +421,252 @@ class FinanceServiceClient:
         except Exception as e:
             logger.error(f"Health check failed: {e}")
             return {"status": "unhealthy", "error": str(e)}
+
+    # ==================== Wallet reads ====================
+
+    async def get_wallet_by_id(
+        self, wallet_id: int,
+    ) -> Dict[str, Any]:
+        """Fetch a wallet by its primary key.
+
+        Returns the wallet state: id, currency, balance, status,
+        type, and — when the endpoint resolves it — the owner
+        (owner_type, owner_id).
+        """
+        endpoint = f"{self.base_url}/wallets/{wallet_id}"
+        logger.info(f"Getting wallet {wallet_id}")
+        return await self._request_json(
+            "GET", endpoint, action=f"get wallet {wallet_id}",
+        )
+
+
+    async def get_user_wallet(
+        self, user_id: int,
+    ) -> Dict[str, Any]:
+        """Resolve a user's wallet.
+
+        The finance server walks `AppUser.app_user_wallet_id` and
+        returns the wallet. Callers that have a user id but not a
+        wallet id use this to learn the wallet id, then use the
+        id-based methods for subsequent operations.
+        """
+        endpoint = f"{self.base_url}/wallets/user/{user_id}"
+        logger.info(f"Getting wallet for user {user_id}")
+        return await self._request_json(
+            "GET", endpoint, action=f"get user wallet {user_id}",
+        )
+
+
+    async def get_provider_wallet(
+        self, provider_id: int,
+    ) -> Dict[str, Any]:
+        """Resolve a provider's wallet.
+
+        A provider without an explicit wallet resolves to the system
+        wallet, and the response's `type` field reflects that. Callers
+        that need to know whether the provider *has* a wallet should
+        compare `type` against `"system"`.
+        """
+        endpoint = f"{self.base_url}/wallets/provider/{provider_id}"
+        logger.info(f"Getting wallet for provider {provider_id}")
+        return await self._request_json(
+            "GET", endpoint, action=f"get provider wallet {provider_id}",
+        )
+
+
+    async def get_wallet_by_owner(
+        self,
+        *,
+        owner_type: str,
+        owner_id: int,
+    ) -> Dict[str, Any]:
+        """Resolve a wallet from an (owner_type, owner_id) pair.
+
+        The generic version of `get_user_wallet` / `get_provider_wallet`.
+        `owner_type` is one of `user`, `provider`, `organization`,
+        `delivery_broker`. Raises when the owner has no wallet — the
+        system wallet is not a fallback here.
+        """
+        endpoint = f"{self.base_url}/wallets/by-owner"
+        logger.info(
+            f"Resolving wallet for {owner_type} {owner_id}"
+        )
+        return await self._request_json(
+            "POST",
+            endpoint,
+            json_data={
+                "owner_type": owner_type,
+                "owner_id": owner_id,
+            },
+            action=f"resolve wallet for {owner_type} {owner_id}",
+        )
+
+
+    async def get_wallet_transactions(
+        self,
+        wallet_id: int,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[Dict[str, Any]]:
+        """Fetch a wallet's transaction ledger, newest first.
+
+        Each entry carries a `direction` field relative to the queried
+        wallet: `"in"` when it was the destination, `"out"` when it was
+        the source.
+        """
+        endpoint = f"{self.base_url}/wallets/{wallet_id}/transactions"
+        logger.info(
+            f"Getting transactions for wallet {wallet_id} "
+            f"(limit={limit}, offset={offset})"
+        )
+        result = await self._request_json(
+            "GET",
+            endpoint,
+            params={"limit": limit, "offset": offset},
+            action=f"get wallet transactions {wallet_id}",
+        )
+        # The endpoint returns a bare list, but `_request_json` wraps
+        # everything to a dict-compatible shape. Handle both.
+        if isinstance(result, list):
+            return result
+        if isinstance(result, dict) and "items" in result:
+            return result["items"]
+        return []
+
+
+    async def get_system_wallet(self) -> Dict[str, Any]:
+        """Fetch the system wallet.
+
+        The finance server's central account. Created lazily if it
+        doesn't exist. Used by admin tooling and by callers that need
+        to see the counterparty of a payment.
+        """
+        endpoint = f"{self.base_url}/wallets/system"
+        logger.info("Getting system wallet")
+        return await self._request_json(
+            "GET", endpoint, action="get system wallet",
+        )
+
+    # ==================== Wallet writes ====================
+
+    async def transfer_between_wallets(
+        self,
+        *,
+        source_wallet_id: int,
+        destination_wallet_id: int,
+        amount: float,
+        intent: str,
+        reference: str,
+    ) -> Dict[str, Any]:
+        """Move money between two wallets.
+
+        The debit and the credit are one operation on the finance
+        side: two ledger rows inside the same transaction. There is no
+        window where money has left the source and hasn't arrived at
+        the destination.
+
+        Returns both sides of the operation: `source_wallet_id`,
+        `destination_wallet_id`, `amount`, `source_balance_after`,
+        `destination_balance_after`, `source_transaction`,
+        `destination_transaction`.
+        """
+        endpoint = f"{self.base_url}/wallets/transfer"
+        logger.info(
+            f"Transferring {amount} from wallet {source_wallet_id} "
+            f"to wallet {destination_wallet_id} "
+            f"intent={intent!r} reference={reference!r}"
+        )
+        return await self._request_json(
+            "POST",
+            endpoint,
+            json_data={
+                "source_wallet_id": source_wallet_id,
+                "destination_wallet_id": destination_wallet_id,
+                "amount": amount,
+                "intent": intent,
+                "reference": reference,
+            },
+            action=(
+                f"transfer {amount} from wallet {source_wallet_id} "
+                f"to {destination_wallet_id}"
+            ),
+        )
+
+    async def _request_json(
+        self,
+        method: str,
+        endpoint: str,
+        *,
+        json_data: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        action: str = "request",
+    ) -> Any:
+        """Send an HTTP request and return the parsed body.
+
+        Unwraps the `{success, message, data}` envelope the finance
+        server emits: when the response has a `data` key, that's
+        what this returns. When it doesn't, the top-level body is
+        returned as-is.
+
+        Returns `Any` rather than `Dict` because some endpoints
+        (the wallet transaction list) return bare JSON arrays.
+
+        Raises `Exception` with the response's `detail` or
+        `message` on any non-2xx status. Callers that need the
+        status code should call the underlying `send_*_request`
+        directly.
+
+        `action` is a human label — "credit wallet", "fetch
+        invoice" — used in log lines and error messages.
+        """
+        if method == "GET":
+            response = await send_get_request(
+                endpoint=endpoint, params=params or {},
+            )
+        elif method == "POST":
+            response = await send_post_request(
+                endpoint=endpoint,
+                json_data=json_data or {},
+                headers={"Content-Type": "application/json"},
+            )
+        elif method == "PUT":
+            response = await send_put_request(
+                endpoint=endpoint,
+                json_data=json_data or {},
+                headers={"Content-Type": "application/json"},
+            )
+        elif method == "DELETE":
+            response = await send_delete_request(
+                endpoint=endpoint, params=params or {},
+            )
+        else:
+            raise ValueError(f"Unsupported method: {method!r}")
+
+        parsed = self._parse_response(response)
+        status = self._get_status_code(response)
+
+        logger.info(
+            f"Finance client [{action}]: HTTP {status} "
+            f"method={method} endpoint={endpoint}"
+        )
+
+        if status in (200, 201, 204):
+            # Empty-body responses (204) have nothing to unwrap.
+            if not parsed:
+                return {}
+            if isinstance(parsed, dict) and "data" in parsed:
+                return parsed["data"]
+            return parsed
+
+        error_msg = (
+            parsed.get("detail")
+            if isinstance(parsed, dict)
+            else None
+        ) or (
+            parsed.get("message")
+            if isinstance(parsed, dict)
+            else None
+        ) or f"HTTP {status}"
+        logger.error(f"{action} failed: {error_msg}")
+        raise Exception(f"{action} failed: {error_msg}")

@@ -2002,3 +2002,334 @@ class InvoiceFilterParams(BaseModel):
     order_id: Optional[int] = Field(default=None, description="Filter by order ID")
     offset: int = Field(default=0, ge=0, description="Pagination offset")
     limit: int = Field(default=100, ge=1, le=1000, description="Limit")
+
+
+# ============================================================================
+# ACTION LINK MODELS
+# ============================================================================
+#
+# The action-link endpoints mint and redeem JWTs that carry an
+# entity reference and an action. Four actions are supported; the
+# link token itself is opaque to these models — they describe the
+# HTTP bodies, not the token's claims.
+#
+# The token's payload is emitted and decoded by `app/auth.py`
+# (`create_link_token` / `verify_token`). The models here carry
+# what the caller sends and what the endpoint returns.
+
+class ActionType(str, Enum):
+    """The four actions a link token can authorize.
+
+    Mirrors the constants in `services/action_link_service.py` and
+    `app/routers/action_link_router.py`. Adding a value here means
+    adding a branch to the service's dispatch and an entry to the
+    router's supported-actions set.
+    """
+    PAY = "pay"
+    AUTHORIZE_CHARGE = "authorize_charge"
+    ACCEPT_DELIVERY_CHANGE = "accept_delivery_change"
+    RECEIVE_PROPOSAL = "receive_proposal"
+
+    @classmethod
+    def get_valid_actions(cls) -> List[str]:
+        """Every value, for validation error messages."""
+        return [a.value for a in cls]
+
+
+class LinkEntityType(str, Enum):
+    """The kind of entity a link refers to.
+
+    The value is stored in the token's `entity_type` claim. The
+    receiving endpoint uses it, along with `entity_id`, to load
+    the entity and check its state before acting.
+
+    `PROPOSAL` is the outlier: it names a payload carried by the
+    token itself, not a row in a table. The link's `entity_id`
+    for a proposal is `0`.
+    """
+    INVOICE = "invoice"
+    DELIVERY = "delivery"
+    PROPOSAL = "proposal"
+
+
+# ============================================================================
+# ACTION LINK — REQUEST MODELS
+# ============================================================================
+
+class CreateActionLink_API(BaseModel):
+    """Request body for `POST /link/create`.
+
+    The caller says what the link is for and which entity it acts
+    on. The API mints a token and, if `build_url` is set, a full
+    URL the caller can send by email, SMS, or QR code.
+
+    For `RECEIVE_PROPOSAL`, `entity_type` is `"proposal"`,
+    `entity_id` is 0, and `extra_claims` carries the payload the
+    recipient will read. There is no server-side entity for a
+    proposal; the token *is* the payload.
+    """
+
+    entity_type: LinkEntityType = Field(
+        ...,
+        description=(
+            "What the link refers to. 'invoice' and 'delivery' point "
+            "at a row in a table; 'proposal' means the token itself "
+            "carries the payload."
+        ),
+    )
+    entity_id: int = Field(
+        ...,
+        ge=0,
+        description=(
+            "The entity's id in its own table. Pass 0 for 'proposal', "
+            "which has no server-side row."
+        ),
+    )
+    action: ActionType = Field(
+        ...,
+        description=(
+            "What the link does on redemption. "
+            "One of: pay, authorize_charge, accept_delivery_change, "
+            "receive_proposal."
+        ),
+    )
+    issued_to: Optional[int] = Field(
+        default=None,
+        ge=1,
+        description=(
+            "Optional user id the link is issued to. The issuer is "
+            "recorded so the recipient's app can display who sent it "
+            "and so the API can enforce 'same user' checks on "
+            "redemption when desired."
+        ),
+    )
+    ttl_hours: Optional[int] = Field(
+        default=None,
+        gt=0,
+        le=24 * 30,
+        description=(
+            "Override the default lifetime. Defaults to the "
+            "LINK_TOKEN_EXPIRE_HOURS constant. Max 30 days."
+        ),
+    )
+    build_url: bool = Field(
+        default=True,
+        description=(
+            "When true, the response includes a full URL the caller "
+            "can send. When false, only the raw token is returned "
+            "and the caller composes the URL itself."
+        ),
+    )
+    base_url: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description=(
+            "Base URL for the built URL. Required when build_url is "
+            "true. Ignored otherwise."
+        ),
+    )
+    extra_claims: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description=(
+            "Additional claims embedded in the token. For "
+            "'receive_proposal' this is the payload the recipient "
+            "will read. Cannot override reserved claims "
+            "(token_type, iat, exp, nonce, iss, entity_type, "
+            "entity_id, action)."
+        ),
+    )
+
+    # ── Cross-field validation ──────────────────────────────────────
+
+    @model_validator(mode="after")
+    def _validate_url_preconditions(self) -> "CreateActionLink_API":
+        """`base_url` is required when `build_url` is true."""
+        if self.build_url and not self.base_url:
+            raise ValueError(
+                "base_url is required when build_url is true"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _validate_action_entity_pair(self) -> "CreateActionLink_API":
+        """Constrain which actions can be paired with which entities.
+
+        A `pay` link only makes sense for an invoice; a
+        `receive_proposal` link only makes sense for a proposal.
+        Catching the mismatch here means the token is never minted
+        for a combination the redemption path can't handle.
+        """
+        allowed_pairs = {
+            ActionType.PAY: {LinkEntityType.INVOICE},
+            ActionType.AUTHORIZE_CHARGE: {LinkEntityType.INVOICE},
+            ActionType.ACCEPT_DELIVERY_CHANGE: {LinkEntityType.DELIVERY},
+            ActionType.RECEIVE_PROPOSAL: {LinkEntityType.PROPOSAL},
+        }
+        valid_types = allowed_pairs[self.action]
+        if self.entity_type not in valid_types:
+            raise ValueError(
+                f"action {self.action.value!r} cannot be paired with "
+                f"entity_type {self.entity_type.value!r}; "
+                f"expected one of "
+                f"{sorted(t.value for t in valid_types)}"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _validate_proposal_requires_payload(
+        self,
+    ) -> "CreateActionLink_API":
+        """A `receive_proposal` link with no payload is empty.
+
+        The whole point of the proposal action is to carry data
+        the sender wants the recipient to read. A token with no
+        `extra_claims` would return an empty object on redemption,
+        which is almost never what the caller intended — most
+        likely they forgot to pass the payload.
+        """
+        if (
+            self.action == ActionType.RECEIVE_PROPOSAL
+            and not self.extra_claims
+        ):
+            raise ValueError(
+                "receive_proposal links require extra_claims to "
+                "carry the proposal payload"
+            )
+        return self
+
+    class Config:
+        use_enum_values = True
+        populate_by_name = True
+
+
+class RedeemActionLink_API(BaseModel):
+    """Request body for `POST /link/redeem`.
+
+    The token names the entity and the action; the endpoint trusts
+    the token for that. Everything else here is optional context.
+    """
+
+    token: str = Field(
+        ...,
+        min_length=8,
+        max_length=4096,
+        description="The link token from the URL.",
+    )
+    idempotency_key: Optional[str] = Field(
+        default=None,
+        max_length=64,
+        description=(
+            "Optional key. Two redeems with the same key and the "
+            "same token return the same result rather than "
+            "performing the action twice. Useful when the caller "
+            "retries on network errors."
+        ),
+    )
+    notes: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description=(
+            "Free-form notes recorded on the action. For "
+            "accept_delivery_change the notes are stored on the "
+            "delivery's state-change log."
+        ),
+    )
+
+
+# ============================================================================
+# ACTION LINK — RESPONSE MODELS
+# ============================================================================
+
+class CreatedActionLink_API(BaseModel):
+    """Response body for `POST /link/create`.
+
+    Carries the raw token, the URL (when `build_url` was true),
+    and a re-declaration of the entity and action for the caller's
+    convenience — the caller doesn't have to echo back what it
+    just sent.
+    """
+
+    token: str = Field(
+        ..., description="The raw link token.",
+    )
+    url: Optional[str] = Field(
+        default=None,
+        max_length=4096,
+        description=(
+            "Full URL with the token embedded. Null when "
+            "`build_url` was false."
+        ),
+    )
+    entity_type: LinkEntityType = Field(
+        ..., description="What the link refers to.",
+    )
+    entity_id: int = Field(
+        ..., ge=0, description="The entity's id.",
+    )
+    action: ActionType = Field(
+        ..., description="What the link does on redemption.",
+    )
+    expires_at: datetime = Field(
+        ..., description="When the token stops being valid.",
+    )
+
+    class Config:
+        use_enum_values = True
+        populate_by_name = True
+        from_attributes = True
+
+
+class RedeemedActionLink_API(BaseModel):
+    """Response body for `POST /link/redeem`.
+
+    `result` is the action-specific payload. Its shape depends on
+    the action:
+
+      * `pay`                    — { payment_id, invoice_id,
+                                     amount, status }
+      * `authorize_charge`       — { payment_id, invoice_id,
+                                     amount, status,
+                                     next_step }
+      * `accept_delivery_change` — { delivery_id, previous_state,
+                                     new_state }
+      * `receive_proposal`       — { proposal, from_user_id,
+                                     received_at, notes }
+    """
+
+    success: bool = Field(
+        default=True,
+        description=(
+            "True when the action completed or the payload was "
+            "returned. Always true on a 200 response; provided so "
+            "clients can branch consistently."
+        ),
+    )
+    action: ActionType = Field(
+        ..., description="What the link did.",
+    )
+    entity_type: LinkEntityType = Field(
+        ..., description="What the link referred to.",
+    )
+    entity_id: int = Field(
+        ..., ge=0, description="The entity's id.",
+    )
+    result: Dict[str, Any] = Field(
+        ...,
+        description=(
+            "Action-specific payload. See the class docstring for "
+            "the shape each action returns."
+        ),
+    )
+    already_redeemed: bool = Field(
+        default=False,
+        description=(
+            "True when the action was performed previously and this "
+            "response is the cached result of that redemption. Only "
+            "possible when the caller supplied an idempotency_key."
+        ),
+    )
+
+    class Config:
+        use_enum_values = True
+        populate_by_name = True
+        from_attributes = True

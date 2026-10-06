@@ -72,6 +72,8 @@ class TestContext:
     created_suppliers: List[int] = field(default_factory=list)
     created_products: List[int] = field(default_factory=list)
     created_services: List[int] = field(default_factory=list)
+    created_carts: List[int] = field(default_factory=list)
+
     created_staff_rules: List[int] = field(default_factory=list)
     created_subscriptions: List[int] = field(default_factory=list)
     user_org_mapping: Dict[int, List[int]] = field(default_factory=dict)
@@ -80,6 +82,7 @@ class TestContext:
     subscription_user_mapping: Dict[int, List[int]] = field(
         default_factory=dict
     )
+    cart_profiles: Dict[int, str] = field(default_factory=dict)
 
     def save(self, filename: str = "test_context.json") -> None:
         data = {
@@ -87,6 +90,8 @@ class TestContext:
             "created_organisations": self.created_organisations,
             "created_suppliers": self.created_suppliers,
             "created_products": self.created_products,
+                        "created_carts": self.created_carts,
+            "cart_profiles": self.cart_profiles,
             "created_services": self.created_services,
             "created_staff_rules": self.created_staff_rules,
             "created_subscriptions": self.created_subscriptions,
@@ -134,6 +139,8 @@ class TestContext:
         self.created_suppliers = data.get("created_suppliers", [])
         self.created_products = data.get("created_products", [])
         self.created_services = data.get("created_services", [])
+        self.created_carts = data.get("created_carts", [])
+        self.cart_profiles = data.get("cart_profiles", {})
         self.created_staff_rules = data.get("created_staff_rules", [])
         self.created_subscriptions = data.get(
             "created_subscriptions", []
@@ -152,7 +159,6 @@ class TestContext:
 
 @dataclass(frozen=True)
 class VolumeProfile:
-    """How much data to generate per run."""
     name: str
     users: int
     orgs_per_user: int
@@ -160,6 +166,14 @@ class VolumeProfile:
     products_per_supplier: int
     services_per_supplier: int
     staff_rules_per_supplier: int
+
+    # Number of carts to create per run. Split across the four
+    # cart profiles (clean, paid, deposit, finalized) in that order.
+    carts_per_run: int = 20
+
+    # Minimum wallet balance the runner maintains for users that
+    # draw on a wallet. Set higher for profiles with many carts.
+    wallet_floor: float = 1_000_000.0
 
 
 SMOKE = VolumeProfile(
@@ -170,6 +184,8 @@ SMOKE = VolumeProfile(
     products_per_supplier=5,
     services_per_supplier=2,
     staff_rules_per_supplier=2,
+    carts_per_run=4,
+    wallet_floor=200_000.0,
 )
 
 STANDARD = VolumeProfile(
@@ -180,6 +196,8 @@ STANDARD = VolumeProfile(
     products_per_supplier=20,
     services_per_supplier=5,
     staff_rules_per_supplier=3,
+    carts_per_run=20,
+    wallet_floor=1_000_000.0,
 )
 
 STRESS = VolumeProfile(
@@ -190,7 +208,10 @@ STRESS = VolumeProfile(
     products_per_supplier=50,
     services_per_supplier=20,
     staff_rules_per_supplier=5,
+    carts_per_run=100,
+    wallet_floor=5_000_000.0,
 )
+
 
 PROFILES = {
     "smoke": SMOKE,

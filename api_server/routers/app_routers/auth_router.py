@@ -237,7 +237,7 @@ async def login_user(
                 "status_code": 401,
                 "code": e.details.get("error_code", "INVALID_CREDENTIALS"),
                 "message": str(e),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.time().isoformat(),
             },
         )
     except Exception as e:

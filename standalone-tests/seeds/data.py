@@ -758,3 +758,103 @@ def generate_subscription_purchase_data(
     if notes is not None:
         params["notes"] = notes
     return params
+
+# test_runner/data.py — additions
+
+def generate_cart_data(
+    *,
+    status: str = "open",
+    total_amount: float = 0.0,
+    notes: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Build the `cart` sub-object for a create-cart request.
+
+    The payment fields are added by the caller when a specific
+    intent is wanted; this returns the base shape.
+    """
+    return {
+        "cart_status": status,
+        "cart_total_amount": total_amount,
+        "cart_notes": notes or f"Cart created {uuid.uuid4().hex[:6]}",
+        "cart_due_date": None,
+        "cart_payment": False,
+        "cart_deposit": False,
+        "cart_paid_money": 0.0,
+        "cart_payment_method": None,
+    }
+
+
+def generate_ordered_item_data(
+    product_id: int,
+    quantity: int = 1,
+) -> Dict[str, Any]:
+    """Build one entry for the `ordered_items` array.
+
+    `unit_price` here is the client's estimate; the server recomputes
+    the real total from the product's price. The estimate feeds the
+    payment-intent amount, which the client declares up-front.
+    """
+    unit_price = random_price(20.0, 500.0)
+    return {
+        "ordered_product_id": product_id,
+        "ordered_quantity": quantity,
+        "unit_price": unit_price,
+        "product_discount": 0.0,
+        "applied_vat": 19.0,
+        "ordered_item_delivery_fee": 0.0,
+    }
+
+
+def generate_ordered_service_data(
+    service_id: int,
+    quantity: int = 1,
+) -> Dict[str, Any]:
+    """Build one entry for the `ordered_services` array."""
+    unit_price = random_price(50.0, 800.0)
+    return {
+        "ordered_service_service_id": service_id,
+        "ordered_service_quantity": quantity,
+        "ordered_service_unit_price": unit_price,
+        "ordered_service_total_price": unit_price * quantity,
+        "ordered_service_notes": (
+            f"Service line {uuid.uuid4().hex[:6]}"
+        ),
+        "ordered_service_scheduled_at": None,
+    }
+
+
+def generate_delivery_data(
+    provider_id: int,
+    *,
+    shipping_method: str = "standard",
+) -> Dict[str, Any]:
+    """Build the `delivery` sub-object for a create-cart request."""
+    return {
+        "delivery_shipping_method": shipping_method,
+        "delivery_package_count": random.randint(1, 3),
+        "delivery_total_weight": round(random.uniform(0.1, 5.0), 2),
+        "delivery_cargo_dimensions": (
+            f"{random.randint(10, 40)}x"
+            f"{random.randint(10, 40)}x"
+            f"{random.randint(10, 40)} cm"
+        ),
+        "delivery_goods_description": "Cart contents",
+        "delivery_provider_id": provider_id,
+        "delivery_fee": random_price(100.0, 800.0),
+        "delivery_special_instructions": None,
+    }
+
+
+def generate_wallet_reference(
+    user_id: int,
+    *,
+    intent: str = "topup",
+) -> str:
+    """Caller-generated reference for a wallet operation.
+
+    Shape: `<intent>:<user_id>:<short random>`. The random suffix
+    keeps two concurrent operations from the same user from
+    sharing a reference, which would confuse the ledger's
+    correlation but not break the operation.
+    """
+    return f"{intent}:{user_id}:{uuid.uuid4().hex[:8]}"

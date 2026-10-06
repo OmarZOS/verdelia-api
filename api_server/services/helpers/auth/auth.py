@@ -69,27 +69,41 @@ def convert_datetimes(obj):
 
 def create_refresh_token(
     data: Dict[str, Any],
-    expires_delta: Optional[timedelta] = None
+    expires_delta: Optional[timedelta] = None,
 ) -> str:
+    """Create a JWT refresh token.
+
+    Identical structure to an access token except for `token_type`
+    and the default lifetime. Integer Unix timestamps for `iat` and
+    `exp`, same as `create_access_token` — `jose` expects integers,
+    and date-arithmetic on a `time` object is not meaningful.
     """
-    Create JWT refresh token from client data.
-    """
+    import time
+
     to_encode = data.copy()
     to_encode.update({"token_type": "refresh"})
-    
+
+    now = int(time.time())
     if expires_delta:
-        expire = datetime.time() + expires_delta
+        expire = now + int(expires_delta.total_seconds())
     else:
-        expire = datetime.time() + timedelta(days=int(REFRESH_TOKEN_EXPIRE_DAYS))
-    
+        expire = now + int(
+            timedelta(days=int(REFRESH_TOKEN_EXPIRE_DAYS)).total_seconds()
+        )
+
     to_encode.update({"exp": expire})
-    to_encode.update({"iat": datetime.time()})
-    
-    to_encode = convert_datetimes(to_encode)
-    
-    encoded_jwt = jwt.encode(to_encode, API_SECRET_KEY, algorithm=API_ALGORITHM)
-    
-    logger.debug(f"Refresh token created for user {data.get('app_user_id')}")
+    to_encode.update({"iat": now})
+
+    if "iss" not in to_encode:
+        to_encode.update({"iss": "verdelia-auth-server"})
+
+    encoded_jwt = jwt.encode(
+        to_encode, API_SECRET_KEY, algorithm=API_ALGORITHM,
+    )
+
+    logger.debug(
+        f"Refresh token created for user {data.get('app_user_id')}"
+    )
     return encoded_jwt
 
 

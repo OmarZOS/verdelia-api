@@ -36,9 +36,6 @@ class AuthService:
 
     user_repo = UserRepository()
     
-    # Token refresh constants
-    REFRESH_TOKEN_EXPIRE_DAYS = 30
-    ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
     @staticmethod
     def get_supported_providers():
@@ -159,7 +156,7 @@ class AuthService:
         from constants import AUTH_SECRET_KEY, AUTH_ALGORITHM
         
         now = int(datetime.now(timezone.utc).timestamp())
-        expire = now + (self.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+        expire = now + (ACCESS_TOKEN_EXPIRE_MINUTES * 60)
         
         payload = {
             "app_user_id": user_id,
@@ -191,7 +188,7 @@ class AuthService:
         from constants import AUTH_SECRET_KEY, AUTH_ALGORITHM
         
         now = int(datetime.now(timezone.utc).timestamp())
-        expire = now + (self.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60)  # 30 days
+        expire = now + (REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60)  # 30 days
         
         payload = {
             "app_user_id": user_id,
@@ -224,9 +221,9 @@ class AuthService:
         return {
             "access_token": access_token,
             "token_type": "bearer",
-            "expires_in": self.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             "refresh_token": refresh_token,
-            "refresh_token_expires_in": self.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+            "refresh_token_expires_in": REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
             "app_user_id": user_id,
             "username": username,
             "email": email
@@ -807,7 +804,7 @@ class AuthService:
             
             # Add refresh token to response
             result["refresh_token"] = refresh_token
-            result["refresh_token_expires_in"] = self.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+            result["refresh_token_expires_in"] = REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
             
             return result
             
