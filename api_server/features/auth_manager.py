@@ -42,24 +42,56 @@ class AuthManager:
     def __init__(self):
         if self._initialized:
             return
-        
         self._initialized = True
+
         self._auth_client = AuthClient()
-        
-        # System token storage
+
         self._system_token = None
         self._system_token_data = None
         self._system_token_expiry = None
         self._is_system_logged_in = False
         self._system_login_time = None
-        
-        # Token refresh buffer (5 minutes)
+
         self._refresh_buffer = 300
-        
+
         logger.info("AuthManager initialized")
-        
-        # Auto-login with system credentials on initialization
-        self._auto_login_system()
+
+
+    async def ensure_system_login(self) -> bool:
+        """Ensure a valid system token is held, logging in if needed.
+
+        Safe to call multiple times. The second call is a no-op when
+        a valid token is already held.
+
+        Returns True on success, False on failure. Callers that need
+        a hard guarantee should check the return value; callers that
+        treat the system login as best-effort can ignore it.
+        """
+        if self._is_system_token_valid():
+            self._is_system_logged_in = True
+            return True
+
+        try:
+            logger.info("Logging in with system credentials...")
+            result = await self._auth_client.login(
+                username=DEFAULT_ADMIN_USERNAME,
+                user_id=0,
+                password=DEFAULT_ADMIN_PASSWORD,
+            )
+            self._system_token = result.get("access_token")
+            self._system_token_data = result
+            self._system_token_expiry = result.get("expires_at")
+            self._is_system_logged_in = True
+            self._system_login_time = time.time()
+            logger.info(
+                f"System login successful for user: "
+                f"{DEFAULT_ADMIN_USERNAME}"
+            )
+            return True
+        except Exception as e:
+            logger.error(f"System login failed: {e}")
+            self._is_system_logged_in = False
+            return False
     
     def _auto_login_system(self) -> bool:
         """

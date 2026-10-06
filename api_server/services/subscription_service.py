@@ -1,18 +1,27 @@
-# services/subscription_service.py (complete)
+# services/subscription_service.py
 """
 Subscription service: CRUD for subscriptions and plans, plus object
 building and business rules around expiry and quota.
 
-The service does not touch the `AppUser` row. Linking a subscription
-to a user is a two-step operation (create subscription, then point the
-user at it) that belongs in `UserWorkflow` — the workflow is what has
-both services in scope.
+The service owns three things:
+
+  * `subscription` rows — create, update, delete
+  * the expiry rule — a subscription is active when its expiry is
+    null (lifetime) or in the future
+  * the billing period rule — a subscription carries its current
+    period in `current_period_start` / `current_period_end`, and
+    that period is what the usage repository keys usage rows to
+
+The service does not touch `AppUser`. Linking a subscription to a
+user is a two-step operation (create subscription, then point the
+user at it) that belongs in `SubscriptionWorkflow` — the workflow
+has both services in scope.
 """
 
 import datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict
 
-from core.models.models import Subscription, Plan
+from core.models.models import Subscription, Plan, SubscriptionUsage
 from core.exceptions.handler import APIException
 from core.messages.error_codes import ErrorCode
 from core.messages.http_status import (
@@ -27,13 +36,14 @@ from core.logging_config import get_logger
 logger = get_logger(__name__)
 
 
-# Billing cycle → duration in days. Used to compute `subscription_expiry`
-# from the plan's cycle when the caller doesn't supply an explicit date.
+# Billing cycle → duration in days. Used to compute
+# `subscription_expiry` from the plan's cycle when the caller doesn't
+# supply an explicit date. `lifetime` is handled separately: expiry
+# stays None.
 CYCLE_DURATIONS_DAYS: Dict[str, int] = {
     "monthly": 30,
     "semestrial": 180,
     "yearly": 365,
-    # `lifetime` handled separately: expiry stays None.
 }
 
 
@@ -79,13 +89,13 @@ class SubscriptionService:
         expiry: Optional[datetime.datetime] = None,
         quota: Optional[int] = None,
     ) -> Subscription:
-        """Create a subscription row.
+        """Create a subscription with its expiry and current period
+        computed from the plan's billing cycle.
 
-        `expiry` is computed from the plan's billing cycle when not
-        supplied. `lifetime` plans get a null expiry. `quota` defaults
-        to the plan's `subscription_quota` if the plan carries one —
-        currently `Plan` has no quota column, so callers must supply
-        it or accept the schema default of 0.
+        The current period is what `UsageRepository.ensure_current`
+        reads to align usage rows with the subscription's billing
+        interval. A monthly plan gets a month-long period; a yearly
+        plan gets a year-long period; a lifetime plan gets null.
 
         Raises 404 when the plan doesn't exist.
         """
@@ -100,11 +110,25 @@ class SubscriptionService:
         if expiry is None:
             expiry = self._compute_expiry(plan)
 
+        period_start, period_end = self._compute_period(plan)
+
         subscription = Subscription(
             subscription_plan_id=plan_id,
             subscription_payment_id=payment_id,
             subscription_expiry=expiry,
             subscription_quota=quota if quota is not None else 0,
+            current_period_start=period_start,
+            current_period_end=period_end,
+            # subscription_usage = [
+            #     SubscriptionUsage(
+            #         period_start = period_end,
+            #         period_end = period_end,
+            #         ai_credits_used = 0,
+            #         ai_product_searches = 0,
+            #         ai_auto_fills = 0,
+            #         products_created = 0,
+            #     )
+            # ]
         )
 
         try:
@@ -128,9 +152,14 @@ class SubscriptionService:
     ) -> Subscription:
         """Update fields on an existing subscription.
 
-        Only the fields the caller supplies are changed. To clear the
-        expiry (move to lifetime), pass `expiry=datetime.min` — see
-        `set_expiry` for the intended API.
+        Changing `plan_id` recomputes both the expiry (unless the
+        caller supplied one) and the current billing period. A user
+        who upgrades from monthly to yearly must have their period
+        columns follow — otherwise the usage repository keys rows to
+        the wrong interval.
+
+        An explicit `expiry` always wins over the plan-derived value,
+        including when `plan_id` also changes.
         """
         subscription = self.subscription_repo.get_by_id(subscription_id)
         if subscription is None:
@@ -149,6 +178,18 @@ class SubscriptionService:
                     details={"plan_id": plan_id},
                 )
             subscription.subscription_plan_id = plan_id
+
+            # Plan change → period follows. Only recompute expiry if
+            # the caller didn't supply one; an explicit expiry is a
+            # deliberate override and shouldn't be clobbered.
+            if expiry is None:
+                subscription.subscription_expiry = (
+                    self._compute_expiry(plan)
+                )
+
+            period_start, period_end = self._compute_period(plan)
+            subscription.current_period_start = period_start
+            subscription.current_period_end = period_end
 
         if payment_id is not None:
             subscription.subscription_payment_id = payment_id
@@ -179,11 +220,16 @@ class SubscriptionService:
         subscription_id: int,
         additional_days: Optional[int] = None,
     ) -> Subscription:
-        """Extend a subscription's expiry.
+        """Extend a subscription's expiry and advance its period.
 
         When `additional_days` is not supplied, the plan's billing
-        cycle determines the extension. Lifetime plans are left alone
-        (expiry stays None).
+        cycle determines both the expiry extension and the new
+        period's length. Lifetime plans are left alone — no expiry,
+        no period.
+
+        The new period starts the day after the old one ended. If
+        the old end is already in the past, the new period starts
+        today.
         """
         subscription = self.subscription_repo.get_by_id(subscription_id)
         if subscription is None:
@@ -203,23 +249,39 @@ class SubscriptionService:
                 details={"plan_id": subscription.subscription_plan_id},
             )
 
-        # Lifetime plans never expire.
+        # Lifetime plans never expire and have no bounded period.
         if plan.billing_cycle == "lifetime":
             return subscription
 
         if additional_days is None:
-            additional_days = CYCLE_DURATIONS_DAYS.get(plan.billing_cycle, 30)
+            additional_days = CYCLE_DURATIONS_DAYS.get(
+                plan.billing_cycle, 30
+            )
 
         now = datetime.datetime.now()
         base = subscription.subscription_expiry or now
-        # If already expired, extend from now rather than from the old
-        # expiry so renewals never "catch up" an old date.
+        # If already expired, extend from now rather than from the
+        # old expiry so renewals never "catch up" an old date.
         if base < now:
             base = now
 
         subscription.subscription_expiry = base + datetime.timedelta(
             days=additional_days
         )
+
+        # Advance the period too. Start from the day after the old
+        # end, or from today if the old end is already in the past.
+        period_anchor = subscription.current_period_end
+        if period_anchor is None or period_anchor < datetime.date.today():
+            period_anchor = datetime.date.today()
+        else:
+            period_anchor = period_anchor + datetime.timedelta(days=1)
+
+        period_start, period_end = self._compute_period(
+            plan, period_anchor
+        )
+        subscription.current_period_start = period_start
+        subscription.current_period_end = period_end
 
         try:
             return self.subscription_repo.update(subscription)
@@ -239,9 +301,9 @@ class SubscriptionService:
     def delete_subscription(self, subscription_id: int) -> bool:
         """Delete a subscription row.
 
-        Does not unlink the user — that's the workflow's job. The FK on
-        `AppUser.app_user_subscription_ref` will block the delete if a
-        user still points at this subscription.
+        Does not unlink the user — that's the workflow's job. The FK
+        on `AppUser.app_user_subscription_ref` will block the delete
+        if a user still points at this subscription.
         """
         subscription = self.subscription_repo.get_by_id(subscription_id)
         if subscription is None:
@@ -271,8 +333,8 @@ class SubscriptionService:
     def is_active(self, subscription: Subscription) -> bool:
         """Whether a subscription hasn't expired.
 
-        A null expiry means "never expires" — lifetime plans. Anything
-        with an expiry strictly after now is active.
+        A null expiry means "never expires" — lifetime plans.
+        Anything with an expiry strictly after now is active.
         """
         if subscription is None:
             return False
@@ -311,9 +373,9 @@ class SubscriptionService:
     ) -> Subscription:
         """Build a `Subscription` ORM object without persisting it.
 
-        Useful when the caller wants to attach related objects before
-        a single `create`. If you just want a row, use
-        `create_subscription` — it does this and saves in one step.
+        Sets the same columns as `create_subscription`. The two must
+        stay aligned — a subscription built here and persisted must
+        have the period columns that `UsageRepository` expects.
         """
         plan = self.subscription_repo.get_plan_by_id(plan_id)
         if plan is None:
@@ -326,11 +388,15 @@ class SubscriptionService:
         if expiry is None:
             expiry = self._compute_expiry(plan)
 
+        period_start, period_end = self._compute_period(plan)
+
         return Subscription(
             subscription_plan_id=plan_id,
             subscription_payment_id=payment_id,
             subscription_expiry=expiry,
             subscription_quota=quota if quota is not None else 0,
+            current_period_start=period_start,
+            current_period_end=period_end,
         )
 
     def build_plan(
@@ -343,9 +409,9 @@ class SubscriptionService:
     ) -> Plan:
         """Build a `Plan` ORM object without persisting it.
 
-        Validates the billing cycle and plan type against the schema's
-        enums so callers get a clean 400 instead of a DB constraint
-        violation.
+        Validates the billing cycle and plan type against the
+        schema's enums so callers get a clean 400 instead of a DB
+        constraint violation.
         """
         self._validate_billing_cycle(billing_cycle)
         self._validate_plan_type(plan_type)
@@ -515,23 +581,82 @@ class SubscriptionService:
     def _compute_expiry(
         self, plan: Plan
     ) -> Optional[datetime.datetime]:
-        """Compute a subscription's expiry from a plan's billing cycle.
+        """Compute a subscription's expiry from its plan's cycle.
 
-        Returns None for lifetime plans, otherwise now + cycle duration.
+        Returns None for lifetime plans. Otherwise now + N days,
+        where N is the cycle duration. This drives the "is this
+        subscription still active" check.
         """
         if plan.billing_cycle == "lifetime":
             return None
 
         days = CYCLE_DURATIONS_DAYS.get(plan.billing_cycle)
         if days is None:
-            # Unknown cycle — fail loudly rather than silently guessing.
+            raise APIException(
+                status_code=HTTP_400_BAD_REQUEST,
+                error_code=ErrorCode.INVALID_BILLING_CYCLE,
+                details={"billing_cycle": plan.billing_cycle},
+            )
+        return datetime.datetime.now() + datetime.timedelta(days=days)
+
+    def _compute_period(
+        self,
+        plan: Plan,
+        start: Optional[datetime.date] = None,
+    ) -> tuple[
+        Optional[datetime.date], Optional[datetime.date]
+    ]:
+        """Compute a subscription's current billing period.
+
+        Returns `(period_start, period_end)` as dates. For lifetime
+        plans both are None — a lifetime subscription has no bounded
+        period and no usage row to reset.
+
+        The period is calendar-aligned:
+            monthly     → first of this month .. last of this month
+            semestrial  → first of this month .. end of month +5
+            yearly      → first of this month .. end of month +11
+
+        When `start` is supplied (renewal, plan change with an anchor
+        date), the period is anchored there instead of today.
+
+        This matches what the usage repository's `_month_bounds`
+        produces for monthly periods, so a subscription's period and
+        the usage row the repository ensures agree on which row they
+        mean.
+        """
+        if plan.billing_cycle == "lifetime":
+            return (None, None)
+
+        start = start or datetime.date.today()
+
+        if plan.billing_cycle == "monthly":
+            months = 1
+        elif plan.billing_cycle == "semestrial":
+            months = 6
+        elif plan.billing_cycle == "yearly":
+            months = 12
+        else:
             raise APIException(
                 status_code=HTTP_400_BAD_REQUEST,
                 error_code=ErrorCode.INVALID_BILLING_CYCLE,
                 details={"billing_cycle": plan.billing_cycle},
             )
 
-        return datetime.datetime.now() + datetime.timedelta(days=days)
+        first = start.replace(day=1)
+
+        # Advance `months` months. Month arithmetic is done with
+        # month-number math rather than `timedelta`, since months
+        # aren't a fixed number of days.
+        y = first.year
+        m = first.month + months
+        while m > 12:
+            m -= 12
+            y += 1
+        end_of_last = (
+            datetime.date(y, m, 1) - datetime.timedelta(days=1)
+        )
+        return (first, end_of_last)
 
     def _validate_billing_cycle(self, cycle: str) -> None:
         if cycle not in ("monthly", "semestrial", "yearly", "lifetime"):

@@ -6,7 +6,7 @@ import logging
 from typing import Optional
 
 from core.models.api_models import Location_API, ProductProvider_API
-from core.models.models import ProductProvider, ProductProviderType, ProviderDetails, ProviderOrganisation
+from core.models.models import ProductProvider, ProductProviderType, ProviderDetails, ProviderOrganisation, Wallet
 from services.location_service import LocationService
 from .supplier_validator import SupplierValidator
 
@@ -44,7 +44,9 @@ class SupplierBuilder:
     def build_supplier_model(
         self,
         provider: ProductProvider_API,
-        location: Optional[Location_API] = None
+        location: Optional[Location_API] = None,
+        wallet_balance: Optional[float] = 0.0,
+        wallet_type: Optional[str] = 'provider',
     ) -> ProductProvider:
         """
         Build ProductProvider model from API data.
@@ -63,6 +65,14 @@ class SupplierBuilder:
         new_supplier.product_provider_type_id = provider.id_product_provider_type
         new_supplier.product_provider_owner = provider.id_provider_owner
         new_supplier.product_provider_details = self.build_supplier_details(provider)
+
+
+        new_supplier.product_provider_wallet = Wallet(
+                    wallet_balance= wallet_balance,
+                    wallet_type = wallet_type,
+                    wallet_status= 'active'
+                )
+
         
         # Handle location
         if location:
@@ -73,7 +83,12 @@ class SupplierBuilder:
         if provider.id_provider_organisation == 0:
             new_supplier.product_provider_org = ProviderOrganisation(
                 provider_organisation_name=provider.provider_organisation_name,
-                provider_organisation_desc=provider.provider_organisation_desc
+                provider_organisation_desc=provider.provider_organisation_desc,
+                provider_organisation_wallet = Wallet(
+                    wallet_balance= 0.0,
+                    wallet_type = 'organisation',
+                    wallet_status= 'active'
+                )
             )
         else:
             new_supplier.product_provider_org_id = provider.id_provider_organisation

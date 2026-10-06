@@ -2,7 +2,7 @@
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import joinedload, selectinload
 from core.models.persistent_models import Location
-from core.models.models import Address, AppUser,  Person, PersonDetails
+from core.models.models import Address, AppUser,  Person, PersonDetails, Subscription
 import storage.storage_broker as storage_broker
 
 class UserRepository:
@@ -18,8 +18,9 @@ class UserRepository:
         
         if eager_load:
             eager_load_depth = [
-                {AppUser.subscription:[]},
+                {AppUser.subscription:[Subscription.subscription_usage]},
                 {AppUser.app_user_wallet:[]},
+                {AppUser.management_rule:[]},
                 {
                     AppUser.app_user_person: [
 

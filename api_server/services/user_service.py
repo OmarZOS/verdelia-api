@@ -60,6 +60,9 @@ class UserService:
         user_data: AppUser_API,
         person_data: Optional[Person_API] = None,
         location_data: Optional[Location_API] = None,
+        wallet_balance : Optional[float] = 0.0,
+        wallet_type : Optional[str] = "user"
+
     ) -> AppUser:
         """Persist a new AppUser row plus its person/location, if any.
 
@@ -80,7 +83,9 @@ class UserService:
             app_user_creation=str(now),
         )
         app_user.app_user_wallet = Wallet(
-            wallet_balance= 0.00,wallet_status= 'active'
+            wallet_balance= wallet_balance,
+            wallet_type = wallet_type,
+            wallet_status= 'active'
         )
 
         app_user.subscription = Subscription(

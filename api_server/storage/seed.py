@@ -11,6 +11,8 @@ from datetime import datetime
 import random
 import asyncio
 
+from storage.seeds.delivery_broker import seed_delivery_brokers
+from storage.seeds.system_user import ensure_system_user
 from core.logging_config import get_logger
 from core.models.api_models import AppUser_API, Location_API, Person_API, ProductProvider_API
 from services.user_service import UserService
@@ -126,6 +128,11 @@ async def seed_database(
     }
     
     try:
+
+
+        
+
+        
         # Seed product categories
         logger.info("Seeding product categories...")
         results["product_categories"] = seed_product_categories()
@@ -134,6 +141,19 @@ async def seed_database(
         # logger.info("Seeding recipe categories...")
         # results["recipe_categories"] = seed_recipe_categories(use_icons=with_icons)
         
+
+        # Seed plans
+        logger.info("Seeding plans...")
+        results["plans"] = seed_plans()
+
+        logger.info("Ensuring system user exists...")
+        system_user =  ensure_system_user()
+        results["system_user_id"] = system_user.id_app_user
+        results["system_user_created"] = (
+            system_user.id_app_user is not None
+        )
+
+
         # Seed product provider types
         logger.info("Seeding product provider types...")
         results["product_provider_types"] = seed_product_provider_types(use_icons=with_icons)
@@ -146,9 +166,7 @@ async def seed_database(
         logger.info("Seeding staff roles...")
         results["staff_roles"] = seed_staff_roles()
         
-        # Seed plans
-        logger.info("Seeding plans...")
-        results["plans"] = seed_plans()
+        
         
         # # Seed ingredients
         # logger.info("Seeding ingredients...")
@@ -157,6 +175,10 @@ async def seed_database(
         # Seed iproducts
         logger.info("Seeding iproducts...")
         results["iproducts"] = seed_random_iproducts()
+
+
+        logger.info("Seeding delivery brokers...")
+        results["delivery_brokers"] = seed_delivery_brokers()
         
         
         # Calculate total
@@ -165,6 +187,7 @@ async def seed_database(
             results["product_provider_types"],
             results["service_categories"],
             results["iproducts"],
+            results["delivery_brokers"]
             # results["plans"],
         ])
         
@@ -483,6 +506,7 @@ def seed_database_cli():
             print(f"   Ingredients: {results['ingredients']}")
             print(f"   IProducts: {results['iproducts']}")
             print(f"   Plans: {results['plans']}")
+            print(f"   Delviery Brokers: {results['delivery_brokers']}")
             print(f"   Random Users: {results['users_created']}")
             print(f"   Specific Users: {results['specific_users_created']}")
             print(f"   Total: {results['total']}")

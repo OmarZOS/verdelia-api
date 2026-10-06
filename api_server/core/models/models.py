@@ -6,6 +6,7 @@ from geoalchemy2.types import Geometry
 from sqlalchemy.orm import declarative_base, relationship
 
 
+
 class Address(Base):
     __tablename__ = 'address'
 
@@ -67,6 +68,7 @@ class AppUser(Base):
     cart_ = relationship('Cart', foreign_keys='[Cart.cart_selling_user]', back_populates='app_user_')
     conversation = relationship('Conversation', foreign_keys='[Conversation.conversation_destination_user_id]', back_populates='conversation_destination_user')
     conversation_ = relationship('Conversation', foreign_keys='[Conversation.conversation_sender_user_id]', back_populates='conversation_sender_user')
+    delivery = relationship('Delivery', back_populates='delivery_carrying_user')
     management_rule = relationship('ManagementRule', back_populates='app_user')
     product = relationship('Product', back_populates='app_user')
     provider_reaction = relationship('ProviderReaction', back_populates='app_user')
@@ -137,6 +139,7 @@ class NamingContribution(Base):
     naming_contribution_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
     naming_contribution_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
     naming_contribution_type = Column(Enum('product', 'provider', 'ingredient', 'recipe', 'service', 'symptom', 'role', 'plan', 'plan_feature'))
+    naming_contributioncol = Column(String(45))
 
     app_user = relationship('AppUser', back_populates='naming_contribution')
     plan = relationship('Plan', back_populates='plan_naming')
@@ -418,6 +421,9 @@ class Ingredient(Base):
     naming_contribution = relationship('NamingContribution', back_populates='ingredient')
     ingredient_user = relationship('AppUser', back_populates='ingredient')
     recipe_contains_ingredient = relationship('RecipeContainsIngredient', back_populates='contained_ingredient')
+
+
+
 
 
 class Notification(Base):
@@ -1040,11 +1046,13 @@ class Delivery(Base):
     __table_args__ = (
         ForeignKeyConstraint(['delivery_address_id'], ['address.id_address'], name='fk_delivery_1'),
         ForeignKeyConstraint(['delivery_broker_id'], ['delivery_broker.id_delivery_broker'], name='fk_delivery_5'),
+        ForeignKeyConstraint(['delivery_carrying_user_id'], ['app_user.id_app_user'], name='fk_delivery_3'),
         ForeignKeyConstraint(['delivery_current_address_id'], ['address.id_address'], name='fk_delivery_2'),
         ForeignKeyConstraint(['delivery_invoice_ref'], ['invoice.invoice_id'], name='fk_delivery_7'),
         ForeignKeyConstraint(['delivery_provider_id'], ['product_provider.id_product_provider'], name='fk_delivery_4'),
         Index('fk_delivery_1_idx', 'delivery_address_id'),
         Index('fk_delivery_2_idx', 'delivery_current_address_id'),
+        Index('fk_delivery_3_idx', 'delivery_carrying_user_id'),
         Index('fk_delivery_4_idx', 'delivery_provider_id'),
         Index('fk_delivery_5_idx', 'delivery_broker_id'),
         Index('fk_delivery_7_idx', 'delivery_invoice_ref')
@@ -1072,9 +1080,11 @@ class Delivery(Base):
     delivery_invoice_ref = Column(Integer)
     delivery_source_type = Column(Enum('cart', 'placed_order'))
     delivery_source_id = Column(Integer)
+    delivery_carrying_user_id = Column(Integer)
 
     delivery_address = relationship('Address', foreign_keys=[delivery_address_id], back_populates='delivery')
     delivery_broker = relationship('DeliveryBroker', back_populates='delivery')
+    delivery_carrying_user = relationship('AppUser', back_populates='delivery')
     delivery_current_address = relationship('Address', foreign_keys=[delivery_current_address_id], back_populates='delivery_')
     invoice = relationship('Invoice', back_populates='delivery')
     delivery_provider = relationship('ProductProvider', back_populates='delivery')
@@ -1185,6 +1195,7 @@ class Product(Base):
     product_owner = Column(Integer)
     product_origin_id = Column(Integer)
     product_visibility = Column(Enum('VISIBLE', 'HIDDEN', 'DELETED'), server_default=text("'VISIBLE'"))
+    product_vat_value = Column(Float, server_default=text("'0'"))
 
     product_category = relationship('ProductCategory', back_populates='product')
     product_origin = relationship('Iproduct', back_populates='product')
@@ -1223,6 +1234,7 @@ class ProvidedService(Base):
     provided_service_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
     provided_service_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
     provided_service_deleted_at = Column(TIMESTAMP)
+    provided_service_applied_vat = Column(Float, server_default=text("'0'"))
 
     provided_service_category = relationship('ProvidedServiceCategory', back_populates='provided_service')
     provided_service_product_provider = relationship('ProductProvider', back_populates='provided_service')
@@ -1420,6 +1432,7 @@ class OrderedService(Base):
     ordered_service_delivery_status = Column(Enum('pending', 'processing', 'scheduled', 'in_progress', 'completed', 'cancelled', 'no_show'), server_default=text("'pending'"))
     discount_id = Column(Integer)
     service_discount = Column(Float(asdecimal=True))
+    applied_vat = Column(Float, server_default=text("'0'"))
 
     discount = relationship('Discount', back_populates='ordered_service')
     ordered_service_cart = relationship('Cart', back_populates='ordered_service')

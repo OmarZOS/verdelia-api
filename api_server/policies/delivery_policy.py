@@ -87,6 +87,13 @@ def has_provider(delivery: Delivery) -> bool:
     """
     return (delivery.delivery_provider_id or 0) > 0
 
+def has_broker(delivery: Delivery) -> bool:
+    """
+    A delivery cannot be shipped without a provider attached. This is
+    the supplier that owns the goods and hands them to the carrier.
+    """
+    return (delivery.delivery_broker_id or 0) > 0
+
 
 def has_packages(delivery: Delivery) -> bool:
     """
@@ -285,7 +292,7 @@ class DeliveryPolicy(PolicyBase):
                 # is a provider on the delivery. You cannot ship goods
                 # nobody owns.
                 predicate=lambda d, **kw: (
-                    has_provider(d) and carrier_accepted(d, **kw)
+                    has_broker(d) and has_provider(d) and carrier_accepted(d, **kw)
                 ),
                 side_effects=("advance_order_to_shipped",),
                 name="confirmed_to_shipped",
