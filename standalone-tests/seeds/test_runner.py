@@ -14,6 +14,8 @@ from context import VolumeProfile, TestContext, TestUser
 from data import extract_id, short
 from scenarios import (
     CartScenario,
+    DeliveryScenario,
+    OrderScenario,
     OrganisationsScenario,
     ProductsScenario,
     ServicesScenario,
@@ -39,6 +41,16 @@ class TestRunner:
             "carts": 0,
             "cart_payments": 0,
             "cart_inventory_confirmations": 0,
+            "orders": 0,
+            "order_payments": 0,
+            "order_inventory_confirmations": 0,
+            "order_finalizations": 0,
+            "deliveries_terminal": 0,
+            "delivery_transitions": 0,
+            "delivery_detail_updates": 0,
+            "delivery_tracking_pings": 0,
+            "delivery_reroutes": 0,
+            "delivery_archives": 0,
             "services": 0,
             "staff_rules": 0,
             "subscriptions": 0,
@@ -55,6 +67,8 @@ class TestRunner:
         self.products: Optional[ProductsScenario] = None
         self.services: Optional[ServicesScenario] = None
         self.carts: Optional[CartScenario] = None
+        self.orders: Optional[OrderScenario] = None
+        self.deliveries: Optional[DeliveryScenario] = None
         self.wallets: Optional[WalletScenario] = None
         self.staff: Optional[StaffScenario] = None
         self.subscriptions: Optional[SubscriptionsScenario] = None
@@ -83,6 +97,8 @@ class TestRunner:
         self.products = _make(ProductsScenario)
         self.services = _make(ServicesScenario)
         self.carts = _make(CartScenario)
+        self.orders = _make(OrderScenario)
+        self.deliveries = _make(DeliveryScenario)
         self.wallets = _make(WalletScenario)
         self.staff = _make(StaffScenario)
         self.subscriptions = _make(SubscriptionsScenario)
@@ -104,6 +120,9 @@ class TestRunner:
         skip_login: bool = False,
         skip_subscriptions: bool = False,
         skip_boundary: bool = False,
+        skip_carts: bool = False,
+        skip_orders: bool = False,
+        skip_deliveries: bool = False,
         context_file: str = "test_context.json",
     ) -> None:
         self._print_header(profile)
@@ -175,7 +194,7 @@ class TestRunner:
             )
 
         # ── Fund wallets ───────────────────────────────────────
-        # The cart and subscription flows draw on the wallet.
+        # The cart, order, and subscription flows draw on the wallet.
         # Fund the users those flows use before they run.
         print("\n" + "=" * 60)
         print("💰 Funding wallets")
@@ -211,18 +230,64 @@ class TestRunner:
         )
 
         if suppliers:
-            await self.carts.create_carts(
-                volume_user,
-                supplier_ids=suppliers[:3],
-                count=profile.carts_per_run,
-                product_pool=self.context.created_products,
-                service_pool=self.context.created_services,
-            )
+            # ── Cart flow ──────────────────────────────────────
+            if not skip_carts:
+                await self.carts.create_carts(
+                    volume_user,
+                    supplier_ids=suppliers[:3],
+                    count=profile.carts_per_run,
+                    product_pool=self.context.created_products,
+                    service_pool=self.context.created_services,
+                )
+
+            # ── Order flow ─────────────────────────────────────
+            # Orders run against the same product pool. The order
+            # scenario does not carry services, so `service_pool`
+            # is not passed.
+            if not skip_orders:
+                await self.orders.create_orders(
+                    volume_user,
+                    supplier_ids=suppliers[:3],
+                    count=profile.orders_per_run,
+                    product_pool=self.context.created_products,
+                )
+
             await self.staff.create_staff_rules(
                 volume_user, suppliers,
                 authenticated[1:6],
                 rules_per_supplier=profile.staff_rules_per_supplier,
             )
+
+            # ── Delivery flow ──────────────────────────────────
+            # Deliveries are produced as a side effect of cart and
+            # order creation. Fetch the ones that exist for the
+            # providers we just created volume against, then drive
+            # each through its lifecycle.
+            #
+            # Scoped to `suppliers[:3]` — the same providers the
+            # cart and order flows were told to sell through. A
+            # delivery's `delivery_provider_id` is the supplier,
+            # not the buyer, so provider is the correct filter
+            # axis. The list endpoint refuses an unfiltered query.
+            if not skip_deliveries:
+                delivery_ids = await self.deliveries.fetch_deliveries(
+                        volume_user,
+                        provider_ids=suppliers[:3],
+                    )
+                if delivery_ids:
+                    self.context.created_deliveries.extend(
+                        delivery_ids
+                    )
+                    await self.deliveries.run_delivery_flow(
+                        volume_user,
+                        delivery_ids=delivery_ids,
+                    )
+                else:
+                    print(
+                        "\n🚚 No deliveries found for the created "
+                        "providers — skipping delivery state-machine "
+                        "exercises."
+                    )
 
         # A few smaller workloads for other users, so the mix of
         # "lots of data" and "no data" users is realistic.
@@ -295,7 +360,8 @@ class TestRunner:
             f"suppliers={profile.suppliers_per_org} "
             f"products={profile.products_per_supplier} "
             f"services={profile.services_per_supplier} "
-            f"carts={profile.carts_per_run}"
+            f"carts={profile.carts_per_run} "
+            f"orders={profile.orders_per_run}"
         )
         print("=" * 60)
 
@@ -322,6 +388,43 @@ class TestRunner:
             f"   📦 Cart inventory confirmations: "
             f"{self.stats.get('cart_inventory_confirmations', 0)}"
         )
+        print(f"   🧾 Orders: {self.stats.get('orders', 0)}")
+        print(
+            f"   💳 Order payments: "
+            f"{self.stats.get('order_payments', 0)}"
+        )
+        print(
+            f"   📦 Order inventory confirmations: "
+            f"{self.stats.get('order_inventory_confirmations', 0)}"
+        )
+        print(
+            f"   🎯 Order finalizations: "
+            f"{self.stats.get('order_finalizations', 0)}"
+        )
+        print(
+            f"   🚚 Deliveries reaching terminal state: "
+            f"{self.stats.get('deliveries_terminal', 0)}"
+        )
+        print(
+            f"   🔀 Delivery transitions: "
+            f"{self.stats.get('delivery_transitions', 0)}"
+        )
+        print(
+            f"   📝 Delivery detail updates: "
+            f"{self.stats.get('delivery_detail_updates', 0)}"
+        )
+        print(
+            f"   📍 Delivery tracking pings: "
+            f"{self.stats.get('delivery_tracking_pings', 0)}"
+        )
+        print(
+            f"   🔁 Delivery reroutes: "
+            f"{self.stats.get('delivery_reroutes', 0)}"
+        )
+        print(
+            f"   🗄️ Delivery archives: "
+            f"{self.stats.get('delivery_archives', 0)}"
+        )
         print(f"   🛠️ Services: {self.stats['services']}")
         print(f"   👥 Staff Rules: {self.stats['staff_rules']}")
         print(
@@ -342,6 +445,11 @@ class TestRunner:
             f"{len(self.context.subscription_user_mapping)}"
         )
         print(f"   Carts Created: {len(self.context.created_carts)}")
+        print(f"   Orders Created: {len(self.context.created_orders)}")
+        print(
+            f"   Deliveries Created: "
+            f"{len(self.context.created_deliveries)}"
+        )
         if self.staff:
             print(
                 f"   Staff Assignments: "

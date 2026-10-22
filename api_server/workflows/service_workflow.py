@@ -172,7 +172,7 @@ class ServiceWorkflow:
             f"create_service: success user_id={user_id} "
             f"provider_id={provider_id} "
             f"service_id="
-            f"{getattr(created, 'provided_service_id', None)} "
+            f"{getattr(created, 'idprovided_service', None)} "
             f"name={service_data.provided_service_name!r}"
         )
         return created

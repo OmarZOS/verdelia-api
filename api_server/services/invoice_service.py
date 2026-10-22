@@ -52,22 +52,22 @@ class InvoiceService:
         
         try:
             # Generate invoice number if not provided
-            invoice_number = invoice_data.invoice_number
-            if not invoice_number:
-                invoice_number = self._generate_invoice_number()
+            invoice_reference = invoice_data.invoice_reference
+            if not invoice_reference:
+                invoice_reference = self._generate_invoice_reference()
             
             # Build invoice object
             invoice = Invoice(
-                invoice_number=invoice_number,
-                invoice_total_amount=invoice_data.invoice_total_amount,
+                invoice_reference=invoice_reference,
+                grand_total=invoice_data.grand_total,
                 invoice_status=invoice_data.invoice_status.value,
                 invoice_type=invoice_data.invoice_type.value,
                 invoice_issue_date=invoice_data.invoice_issue_date or date.today(),
                 invoice_due_date=invoice_data.invoice_due_date,
                 invoice_notes=invoice_data.invoice_notes,
-                invoice_tax_applied=1 if invoice_data.invoice_tax_applied else 0,
-                invoice_created_at=datetime.now(),
-                invoice_updated_at=datetime.now()
+                tax_amount=0.0 if invoice_data.tax_amount else 0,
+                created_at=datetime.now(),
+                updated_at=datetime.now()
             )
             
             # Save invoice using repository
@@ -113,7 +113,7 @@ class InvoiceService:
             
             # Create invoice
             invoice_data = Invoice_API(
-                invoice_total_amount=total_amount,
+                grand_total=total_amount,
                 invoice_status=InvoiceStatus.UNPAID,
                 invoice_type=InvoiceType.INVOICE,
                 invoice_issue_date=date.today(),
@@ -221,7 +221,7 @@ class InvoiceService:
     
     # ==================== HELPER METHODS ====================
     
-    def _generate_invoice_number(self) -> str:
+    def _generate_invoice_reference(self) -> str:
         """Generate a unique invoice number."""
         prefix = "INV"
         timestamp = datetime.now().strftime("%Y%m%d")

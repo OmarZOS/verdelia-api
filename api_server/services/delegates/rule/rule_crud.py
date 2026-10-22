@@ -14,8 +14,7 @@ from core.exceptions.specific.staff_exceptions import (
     RuleNotFoundException,
     RuleInsertFailedException,
     RuleUpdateFailedException,
-    RuleDeleteFailedException,
-    StaffPermissionDeniedException
+    RuleDeleteFailedException
 )
 from repositories.management_rule_repository import ManagementRuleRepository
 from .rule_validator import RuleValidator
@@ -90,22 +89,27 @@ class RuleCrud:
             logger.info(f"Rule created successfully with ID: {final_rule.id_management_rule}")
             
 
-            destination_users = set()
 
-            destination_users.add(user.id_app_user)
-            destination_users.add(provider.product_provider_owner)
-            destination_users.add(org.app_user_id)
+            destination_users = set()
+            if user.id_app_user is not None:
+                destination_users.add(user.id_app_user)
+            if provider.product_provider_user_id is not None:
+                destination_users.add(provider.product_provider_user_id)
+            if org.user_id is not None:
+                destination_users.add(org.user_id)
             
             notification = self.notification.create_invitation_notification(final_rule, destination_users)
             
-            self.rule_repo.create_invitation(
-                RoleInvitation(
+            invitation =RoleInvitation(
                     provider_id = provider.id_product_provider,
                     app_user_id = user.id_app_user,
-                    notification_id = notification.id_notification,
-                    organisation_id = final_rule.rule_ref_org,
+                    organisation_id = final_rule.rule_org_id,
                     rule_id = final_rule.id_management_rule,
                 )
+            if notification:
+                invitation.notification_id = notification.id_notification,
+            self.rule_repo.create_invitation(
+                notification
             )
 
             return final_rule
@@ -140,9 +144,12 @@ class RuleCrud:
         user,provider,org = self.validator.validate_entities_exist(rule_data)
         
         destination_users = set()
-        destination_users.add(user.id_app_user)
-        destination_users.add(provider.product_provider_owner)
-        destination_users.add(org.app_user_id)
+        if user.id_app_user is not None:
+            destination_users.add(user.id_app_user)
+        if provider.product_provider_user_id is not None:
+            destination_users.add(provider.product_provider_user_id)
+        if org.user_id is not None:
+            destination_users.add(org.user_id)
 
 
         # Get existing rule
@@ -238,7 +245,7 @@ class RuleCrud:
         # Get existing rule
         existing_rule = self.get_by_id(rule_id)
 
-        if user_id != existing_rule.rule_ref_user:
+        if user_id != existing_rule.rule_user_id:
             raise ForbiddenException()
 
 
@@ -246,8 +253,8 @@ class RuleCrud:
         self.validator.check_invitation_expired(existing_rule)
         self.validator.check_invitation_already_processed(existing_rule)
         
-        provider = self.supplier_repo.get_supplier_by_id(existing_rule.rule_ref_provider)
-        org = self.org_repo.get_org_by_id(existing_rule.rule_ref_org)
+        provider = self.supplier_repo.get_supplier_by_id(existing_rule.rule_provider_id)
+        org = self.org_repo.get_org_by_id(existing_rule.rule_org_id)
 
         # Update status
         new_status = 'ACTIVE' if accept else 'REJECTED'
@@ -267,8 +274,8 @@ class RuleCrud:
             
 
             destinations = set()
-            destinations.add(provider.product_provider_owner)
-            destinations.add(org.app_user_id)
+            destinations.add(provider.product_provider_user_id)
+            destinations.add(org.user_id)
             # Create notification
             self.notification.create_invitation_response_notification(final_rule, accept,destinations)
             
@@ -293,9 +300,9 @@ class RuleCrud:
             ManagementRule model instance
         """
         new_rule = ManagementRule(
-            rule_ref_org=rule_data.rule_ref_org,
-            rule_ref_provider=rule_data.rule_ref_provider,
-            rule_ref_user=rule_data.rule_ref_user,
+            rule_org_id=rule_data.rule_ref_org,
+            rule_provider_id=rule_data.rule_ref_provider,
+            rule_user_id=rule_data.rule_ref_user,
             management_rule_code=rule_data.management_rule_code,
             management_rule_status=rule_data.management_rule_status,
             management_rule_expiry=self.helpers.parse_expiry(rule_data.management_rule_expiry),
@@ -310,7 +317,7 @@ class RuleCrud:
         return int(
                     storage_broker.count(
                         ManagementRule,
-                        conditions={ManagementRule.rule_ref_org: org_id},
+                        conditions={ManagementRule.rule_org_id: org_id},
                     )
                     or 0
                 )

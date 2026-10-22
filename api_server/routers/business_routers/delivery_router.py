@@ -11,12 +11,30 @@ Every route does three things and no more:
 No reads against DeliveryService, no state checks, no policy
 consultation, no `Delivery_API` construction. Those all live on the
 workflow.
+
+Signal fields
+-------------
+The policy gates several transitions on *signal predicates* — fields
+the caller must assert on the request body, defaulting to False.
+The names in `SIGNAL_FIELDS` must match the keyword arguments the
+policy predicates accept, or `_extract_signals` will pick up the
+field but the predicate will see its default and deny the
+transition. The current set:
+
+    confirmed → shipped          : delivery_confirmed
+    shipped   → in_transit       : in_transit_acknowledged
+    out_for_delivery → delivered : proof_captured
+    * → failed                   : incident_reported
+    delivered/failed → returned  : return_confirmed
+    delivered → refunded         : refund_completed
 """
 
 from fastapi import APIRouter, Depends, Query, Body, status, HTTPException
 from typing import Optional, Any, Dict
 import logging
 
+from services.delivery_broker_service import DeliveryBrokerService
+from workflows.order_workflow import OrderWorkflow
 from core.models.api_models import Delivery_API
 from core.response_models import ErrorResponseModel, get_crud_error_responses
 from core.exceptions.specific.delivery_exceptions import (
@@ -42,11 +60,13 @@ delivery_router = APIRouter()
 
 def get_delivery_workflow() -> DeliveryWorkflow:
     try:
-        from services.order_workflow import OrderWorkflow
         order_wf = OrderWorkflow()
     except Exception:
         order_wf = None
     return DeliveryWorkflow(order_workflow=order_wf)
+
+def get_broker_service() -> DeliveryBrokerService:
+    return DeliveryBrokerService()
 
 
 TARGET_STATUSES = {
@@ -55,11 +75,15 @@ TARGET_STATUSES = {
     "failed", "cancelled", "returned", "refunded",
 }
 
+# Signal field names must match the keyword arguments the policy's
+# signal predicates accept. A mismatch means the field is silently
+# dropped and the predicate sees its default (False), denying the
+# transition. See the module docstring for the mapping.
 SIGNAL_FIELDS = (
     "delivery_confirmed",
     "in_transit_acknowledged",
     "proof_captured",
-    "failure_reported",
+    "incident_reported",
     "return_confirmed",
     "refund_completed",
 )
@@ -121,6 +145,42 @@ def _run_transition(
 # ============================================================================
 # READ
 # ============================================================================
+
+
+@delivery_router.get(
+    "/brokers",
+    summary="List delivery brokers",
+    description=(
+        "List delivery brokers. Optionally filter to verified ones "
+        "only. Paginated."
+    ),
+    responses={
+        200: {"description": "Brokers retrieved successfully"},
+        **get_crud_error_responses(include_404=False),
+    },
+)
+def list_brokers(
+    verified_only: bool = Query(
+        False, description="Return only verified brokers",
+    ),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    workflow: DeliveryBrokerService = Depends(get_broker_service),
+):
+    """List brokers.
+
+    The workflow owns the service. The router doesn't touch the
+    database directly — it asks the workflow for the list, and the
+    workflow delegates to `DeliveryBrokerService.list_brokers`.
+    """
+    return workflow.list_brokers(
+        verified_only=verified_only,
+        offset=offset,
+        limit=limit,
+    )
+
+
+
 
 @delivery_router.get(
     "",
@@ -517,3 +577,25 @@ def archive_delivery(
                 ),
             },
         )
+    
+
+# ============================================================================
+# BROKER READS
+# ============================================================================
+
+
+@delivery_router.get(
+    "/brokers/details/{broker_id}",
+    summary="Get a delivery broker",
+    responses={
+        200: {"description": "Broker retrieved successfully"},
+        **get_crud_error_responses(include_404=True),
+    },
+)
+def get_broker(
+    broker_id: int,
+    workflow: DeliveryBrokerService = Depends(get_broker_service),
+):
+    """Get a broker by id."""
+    return workflow.get_by_id(broker_id)
+

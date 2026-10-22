@@ -209,15 +209,15 @@ from core.models.persistent_models import (
 #     def test_update_record_product(self, db_module, db_engine_with_data, populated_db):
 #         """Test updating a product record."""
 #         product = populated_db['product']
-#         original_price = product.product_price
+#         original_price = product.unit_price
         
 #         # Update the product
-#         product.product_price = original_price + 10.00
+#         product.unit_price = original_price + 10.00
 #         product.product_quantity = product.product_quantity - 5
         
 #         updated = db_module.update_record(db_engine_with_data, product)
         
-#         assert updated.product_price == original_price + 10.00
+#         assert updated.unit_price == original_price + 10.00
         
 #         # Verify update persisted
 #         retrieved = db_module.get_record_by_id(
@@ -225,7 +225,7 @@ from core.models.persistent_models import (
 #             Product,
 #             product.id_product
 #         )
-#         assert retrieved.product_price == original_price + 10.00
+#         assert retrieved.unit_price == original_price + 10.00
     
 #     # Test delete_record
 #     def test_delete_record_product(self, db_module, db_engine_with_data):
@@ -395,7 +395,7 @@ from core.models.persistent_models import (
         
 #         # Order by price descending
 #         from sqlalchemy import desc
-#         ordering_attr = [desc(Product.product_price)]
+#         ordering_attr = [desc(Product.unit_price)]
         
 #         results = db_module.get_records_by_filter(
 #             db_engine_with_data,

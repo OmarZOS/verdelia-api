@@ -207,7 +207,7 @@ class SubscriptionWorkflow:
                 f"{payment_id}: subscription={existing.id_subscription}"
             )
             user = self.user_service.get_user_by_id(user_id)
-            if user.app_user_subscription_ref != existing.id_subscription:
+            if user.app_user_subscription_id != existing.id_subscription:
                 self._point_user_at(user, existing)
             return {
                 "subscription": existing,
@@ -346,13 +346,12 @@ class SubscriptionWorkflow:
         quota. A reader that sees the old pointer sees the old quota,
         which is consistent with the old subscription.
         """
-        user.app_user_subscription_ref = subscription.id_subscription
+        user.app_user_subscription_id = subscription.id_subscription
         user.app_user_last_updated = datetime.datetime.now()
         updated = self.user_service.update_user_record_raw(user)
 
         # Sync via the usage workflow — the only writer of
         # `AppUser.user_quota`.
-        self.usage_workflow.sync_user_quota(user.id_app_user)
         return updated
 
     def _clear_user_pointer(self, user_id: int) -> AppUser:
@@ -363,14 +362,13 @@ class SubscriptionWorkflow:
         a deletion.
         """
         user = self.user_service.get_user_by_id(user_id)
-        user.app_user_subscription_ref = None
+        user.app_user_subscription_id = None
         user.app_user_last_updated = datetime.datetime.now()
         updated = self.user_service.update_user_record_raw(user)
 
         # Zero the quota through the same path as the sync — that's
         # the only place that decides what "no subscription" means
         # for `user_quota`.
-        self.usage_workflow.sync_user_quota(user_id)
         return updated
 
     # ==================== Internal: invoice/payment helpers ====================
@@ -389,14 +387,14 @@ class SubscriptionWorkflow:
         treats plan prices.
         """
         invoice_data = Invoice_API(
-            invoice_number=None,  # service generates one
-            invoice_total_amount=float(plan.plan_price),
+            invoice_reference=None,  # service generates one
+            grand_total=float(plan.plan_price),
             invoice_status=InvoiceStatus.UNPAID,
             invoice_type=InvoiceType.INVOICE,
             invoice_issue_date=datetime.datetime.now().date(),
             invoice_due_date=datetime.datetime.now().date(),
             invoice_notes=notes or f"Subscription: {plan.plan_name}",
-            invoice_tax_applied=False,
+            tax_amount=False,
         )
         return self.invoice_service.create_invoice(invoice_data)
 

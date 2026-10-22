@@ -19,13 +19,13 @@ def _visible_filter():
     """
     SQLAlchemy clause that matches rows visible to buyers.
 
-    Treats a NULL `product_visibility` as visible: rows that predate the
+    Treats a NULL `visibility` as visible: rows that predate the
     visibility column are public by default. Anything else must be the
     literal `'VISIBLE'`.
     """
     return or_(
-        Product.product_visibility.is_(None),
-        Product.product_visibility == 'VISIBLE'
+        Product.visibility.is_(None),
+        Product.visibility == 'VISIBLE'
     )
 
 
@@ -39,7 +39,7 @@ def _category_key_filter(domain: Optional[str], subdomain: Optional[str]):
     - `subdomain` only  → rejected at the service layer; if reached,
                           match any domain that carries that subdomain.
 
-    The key lives in `ProductCategory.product_category_name` (per the
+    The key lives in `ProductCategory.category_name` (per the
     naming convention where the column stores the dotted key).
     """
     if domain and subdomain:
@@ -81,10 +81,10 @@ class ProductRepository:
         eager = (
             [
                 Product.product_reaction,
-                Product.product_category,
-                Product.product_provider,
+                Product.category,
+                Product.provider,
                 Product.product_image,
-                {Product.product_origin: [{Iproduct: [Iproduct.naming_contribution]}]},
+                {Product.origin: [{Iproduct: [Iproduct.naming]}]},
             ]
             if eager_load
             else []
@@ -115,17 +115,17 @@ class ProductRepository:
             return []
 
         conditions = [Product.id_product.in_(product_ids)]
-        conditions.append(not_(Product.product_visibility == "DELETED"))
+        conditions.append(not_(Product.visibility == "DELETED"))
         if not include_hidden:
             conditions.append(_visible_filter())
 
         eager = (
             [
                 Product.product_reaction,
-                Product.product_category,
-                Product.product_provider,
+                Product.category,
+                Product.provider,
                 Product.product_image,
-                {Product.product_origin: [{Iproduct: [Iproduct.naming_contribution]}]},
+                {Product.origin: [{Iproduct: [Iproduct.naming]}]},
             ]
             if eager_load
             else []
@@ -165,16 +165,16 @@ class ProductRepository:
         in explicitly.
         """
         conditions = []
-        conditions.append(not_(Product.product_visibility == "DELETED"))
+        conditions.append(not_(Product.visibility == "DELETED"))
 
         if user_id != 0:
-            conditions.append(Product.product_owner == user_id)
+            conditions.append(Product.user_id == user_id)
         if category_id != 0:
-            conditions.append(Product.product_category_id == category_id)
+            conditions.append(Product.category_id == category_id)
         if provider_id != 0:
-            conditions.append(Product.product_provider_id == provider_id)
+            conditions.append(Product.provider_id == provider_id)
         if product_barcode :
-            conditions.append(Product.product_barcode == product_barcode)
+            conditions.append(Product.barcode == product_barcode)
         if not include_hidden:
             conditions.append(_visible_filter())
 
@@ -191,15 +191,15 @@ class ProductRepository:
             conditions=conditions,
             join_tables=join_tables,
             eager_load_depth=[
-                Product.product_category,
-                Product.product_provider,
+                Product.category,
+                Product.provider,
                 {
                     Product.product_image: [
                         ProductImage.id_product_image,
                         ProductImage.product_image_url,
                     ]
                 },
-                {Product.product_origin: [{Iproduct.naming_contribution: [NamingContribution]}]},
+                {Product.origin: [{Iproduct.naming: [NamingContribution]}]},
             ],
             offset=offset,
             limit=limit,
@@ -213,8 +213,8 @@ class ProductRepository:
         include_hidden: bool = False,
     ) -> List[Product]:
         """Get products by category ID."""
-        conditions = [Product.product_category_id == category_id]
-        conditions.append(not_(Product.product_visibility == "DELETED"))
+        conditions = [Product.category_id == category_id]
+        conditions.append(not_(Product.visibility == "DELETED"))
         if not include_hidden:
             conditions.append(_visible_filter())
 
@@ -224,9 +224,9 @@ class ProductRepository:
             [ProductCategory, ProductProvider],
             [
                 Product.product_image,
-                Product.product_category,
-                Product.product_provider,
-                {Product.product_origin: [{Iproduct: [Iproduct.naming_contribution]}]},
+                Product.category,
+                Product.provider,
+                {Product.origin: [{Iproduct: [Iproduct.naming]}]},
             ],
             None,
             offset,
@@ -259,12 +259,12 @@ class ProductRepository:
             ProductCategory,
             conditions=None,
             join_tables=None,
-            eager_load_depth=[ProductCategory.naming_contribution],
+            eager_load_depth=[ProductCategory.naming],
             offset=0,
             limit=300,
         )
 
-    def get_product_category_by_id(
+    def get_category_by_id(
         self, category_id: int
     ) -> Optional[ProductCategory]:
         """Get product category by ID."""
@@ -316,7 +316,7 @@ class ProductRepository:
         avoids relying on outer joins that the storage broker does not
         currently expose.
         """
-        conditions = [not_(Product.product_visibility == "DELETED")]
+        conditions = [not_(Product.visibility == "DELETED")]
 
         pattern = f"%{token}%"
 
@@ -324,9 +324,9 @@ class ProductRepository:
         # naming row whose EN / FR / AR text matches the pattern.
         naming_exists = exists().where(
             and_(
-                Iproduct.id_iproduct == Product.product_origin_id,
-                NamingContribution.id_naming_contribution
-                == Iproduct.iproduct_naming_ref,
+                Iproduct.id_iproduct == Product.origin_id,
+                NamingContribution.id_naming
+                == Iproduct.naming_id,
                 or_(
                     NamingContribution.naming_contribution_en.ilike(pattern),
                     NamingContribution.naming_contribution_fr.ilike(pattern),
@@ -337,8 +337,8 @@ class ProductRepository:
 
         conditions.append(
             or_(
-                Product.product_name.ilike(pattern),
-                Product.product_brand.ilike(pattern),
+                Product.generic_name.ilike(pattern),
+                Product.brand.ilike(pattern),
                 Product.product_description.ilike(pattern),
                 naming_exists,
             )
@@ -362,8 +362,8 @@ class ProductRepository:
             conditions=conditions,
             join_tables=join_tables,
             eager_load_depth=[
-                Product.product_category,
-                Product.product_provider,
+                Product.category,
+                Product.provider,
                 {
                     Product.product_image: [
                         ProductImage.id_product_image,
@@ -371,8 +371,8 @@ class ProductRepository:
                     ]
                 },
                 {
-                    Product.product_origin: [
-                        {Iproduct.naming_contribution: [NamingContribution]}
+                    Product.origin: [
+                        {Iproduct.naming: [NamingContribution]}
                     ]
                 },
             ],

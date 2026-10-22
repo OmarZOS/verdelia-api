@@ -163,8 +163,8 @@ class FinancialDocument(Base):
     days_overdue = Column(BigInteger)
     
     # Timestamp columns
-    invoice_created_at = Column(TIMESTAMP)
-    invoice_updated_at = Column(TIMESTAMP)
+    created_at = Column(TIMESTAMP)
+    updated_at = Column(TIMESTAMP)
     # Define composite primary key
 
     

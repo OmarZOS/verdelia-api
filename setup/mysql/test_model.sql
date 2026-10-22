@@ -197,16 +197,16 @@ DROP TABLE IF EXISTS `ordered_item`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `ordered_item` (
   `id_ordered_item` int NOT NULL AUTO_INCREMENT,
-  `ordered_product_id` int DEFAULT NULL,
+  `product_id` int DEFAULT NULL,
   `ordered_quantity` varchar(100) DEFAULT NULL,
-  `applied_vat` double DEFAULT NULL,
+  `vat_rate` double DEFAULT NULL,
   `order_ref` int DEFAULT NULL,
   `unit_price` double DEFAULT NULL,
   `product_discount` double DEFAULT NULL,
   PRIMARY KEY (`id_ordered_item`),
-  KEY `fk_ordered_item_1_idx` (`ordered_product_id`),
+  KEY `fk_ordered_item_1_idx` (`product_id`),
   KEY `fk_ordered_item_3_idx` (`order_ref`),
-  CONSTRAINT `fk_ordered_item_1` FOREIGN KEY (`ordered_product_id`) REFERENCES `product` (`id_product`),
+  CONSTRAINT `fk_ordered_item_1` FOREIGN KEY (`product_id`) REFERENCES `product` (`id_product`),
   CONSTRAINT `fk_ordered_item_3` FOREIGN KEY (`order_ref`) REFERENCES `placed_order` (`id_placed_order`)
 ) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;

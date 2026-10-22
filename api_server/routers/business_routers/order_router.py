@@ -16,6 +16,7 @@ from typing import List
 
 import logging
 
+from storage.wrappers.inventory_exceptions import InsufficientStockError
 from services.helpers.auth.auth_dependencies import get_current_user_id
 from core.models.api_models import (
     Delivery_Info_API,
@@ -37,7 +38,7 @@ from core.exceptions.specific.product_exceptions import (
     ProductNotFoundException,
     ProductQuantityNotEnoughException,
 )
-from core.exceptions.handler import UserNotFoundException
+from core.exceptions.handler import InsufficientStockException, UserNotFoundException
 from services.order_service import OrderService
 from workflows.order_workflow import OrderWorkflow
 
@@ -155,16 +156,8 @@ async def create_order(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
                 f"Insufficient stock for product {e.product_id}. "
-                f"Available: {e.available}, Requested: {e.requested}"
+                f"Available: {e.requested}, Requested: {e.available}"
             ),
-        )
-    except (OrderCreationFailedException, OrderConflictException):
-        raise
-    except Exception as e:
-        logger.error(f"Failed to create order: {e}")
-        raise OrderCreationFailedException(
-            error=str(e),
-            user_id=submitted_order.ordering_user_id,
         )
 
 
@@ -242,6 +235,17 @@ async def confirm_order_inventory(
         return await workflow.confirm_inventory_for_order(order_id)
     except OrderNotFoundException:
         raise
+    except InsufficientStockError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "error_code": "INSUFFICIENT_STOCK",
+                "message": str(e),
+                "product_id": e.details.get("product_id"),
+                "requested": e.details.get("requested"),
+                "available": e.details.get("available"),
+            },
+        )
     except Exception as e:
         logger.error(f"Failed to confirm inventory for order {order_id}: {e}")
         raise HTTPException(
@@ -409,20 +413,20 @@ def get_order_items(
         for item in items:
             item_dict = {
                 "id": item.id_ordered_item,
-                "product_id": item.ordered_product_id,
+                "product_id": item.product_id,
                 "quantity": item.ordered_quantity,
                 "unit_price": item.unit_price,
-                "applied_vat": item.applied_vat,
+                "vat_rate": item.vat_rate,
                 "total_price": (
                     item.ordered_quantity
                     * item.unit_price
-                    * (1 + item.applied_vat)
+                    * (1 + item.vat_rate)
                 ),
             }
 
             try:
                 product = order_service.product_repo.get_product_by_id(
-                    item.ordered_product_id
+                    item.product_id
                 )
                 if product:
                     item_dict["product_name"] = product.product_name
@@ -430,7 +434,7 @@ def get_order_items(
                     item_dict["product_category"] = product.product_category_id
             except Exception as e:
                 logger.warning(
-                    f"Could not fetch product {item.ordered_product_id}: {e}"
+                    f"Could not fetch product {item.product_id}: {e}"
                 )
 
             items_with_details.append(item_dict)
@@ -642,9 +646,9 @@ def update_order_status(
 
         return {
             "order_id": updated_order.id_placed_order,
-            "previous_status": order.placed_order_state,
-            "new_status": updated_order.placed_order_state,
-            "updated_at": updated_order.placed_order_last_mod,
+            "previous_status": order.order_state,
+            "new_status": updated_order.order_state,
+            "updated_at": updated_order.updated_at,
         }
 
     except OrderNotFoundException:
@@ -708,10 +712,10 @@ async def get_order_inventory_status(
         for item in items:
             try:
                 status = await workflow.inventory_client.get_stock_status(
-                    product_id=item.ordered_product_id
+                    product_id=item.product_id
                 )
                 inventory_status.append({
-                    "product_id": item.ordered_product_id,
+                    "product_id": item.product_id,
                     "ordered_quantity": item.ordered_quantity,
                     "available_quantity": status.get('available_quantity', 0),
                     "reserved_quantity": status.get('reserved_quantity', 0),
@@ -723,10 +727,10 @@ async def get_order_inventory_status(
             except Exception as e:
                 logger.warning(
                     f"Could not check inventory for product "
-                    f"{item.ordered_product_id}: {e}"
+                    f"{item.product_id}: {e}"
                 )
                 inventory_status.append({
-                    "product_id": item.ordered_product_id,
+                    "product_id": item.product_id,
                     "ordered_quantity": item.ordered_quantity,
                     "error": str(e),
                 })

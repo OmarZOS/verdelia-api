@@ -18,15 +18,14 @@ class AIService:
                 "role": "system",
                 "content": (
                     "Identify product in image. Return JSON only: "
-                    "{name, brand, barcode, confidence, gluten_status, source}. "
-                    "gluten_status ∈ [gluten_free, contains_gluten, may_contain_gluten, unknown]. "
+                    "{name, brand, barcode, confidence,  source}. "
                     "If unclear, estimate from packaging. No extra text. "
                     f"Language: {language}."
                 )
             },
             {
                 "role": "user",
-                "content": "Analyze and search for this product and return ONLY the JSON {name, brand, barcode, confidence, gluten_status, info_source}, confidence is a decimal."
+                "content": "Analyze and search for this product and return ONLY the JSON {name, brand, barcode, confidence,  info_source}, confidence is a decimal."
             }
         ]
 
@@ -54,17 +53,16 @@ class AIService:
                 "content": (
                     "You are a product database. "
                     "Barcode → JSON only: "
-                    "{name, brand, description, price_DA, gluten_status, image_url}. "
+                    "{name, brand, description, price_DA,  image_url}. "
                     "price_DA is an integer in Algerian dinar. "
                     "confidence is a decimal. "
-                    "gluten_status ∈ [gluten_free, contains_gluten, may_contain_gluten, unknown]. "
                     "If product not found, estimate from similar products. "
                     f"Language: {language}. No other text."
                 )
             },
             {
                 "role": "user",
-                "content": f"Barcode {barcode}. Return ONLY JSON (name, brand, barcode, confidence, gluten_status, info_source), confidence is a decimal."
+                "content": f"Barcode {barcode}. Return ONLY JSON (name, brand, barcode, confidence,  info_source), confidence is a decimal."
             }
         ]
 
@@ -90,19 +88,18 @@ class AIService:
         
         return Iproduct_API(
             id_iproduct=None,
-            iproduct_name=ai_result.get('name'),
-            iproduct_barcode=ai_result.get('barcode'),
-            iproduct_brand=ai_result.get('brand'),
-            iproduct_estimated_price=ai_result.get('price_DA'),
-            iproduct_price_currency="DZD",
-            iproduct_gluten_status=ai_result.get('gluten_status', 'unknown'),
-            iproduct_info_source=model_name,
-            iproduct_info_confidence=ai_result.get('confidence', 0.0),
-            iproduct_last_price_update=now,
-            iproduct_created_at=now,
-            iproduct_last_update=now,
-            iproduct_model_name=model_name,
-            iproduct_image_url=None
+            generic_name=ai_result.get('name'),
+            barcode=ai_result.get('barcode'),
+            brand=ai_result.get('brand'),
+            estimated_price=ai_result.get('price_DA'),
+            price_currency="DZD",
+            info_source=model_name,
+            info_confidence=ai_result.get('confidence', 0.0),
+            last_price_update=now,
+            created_at=now,
+            last_update=now,
+            model_name=model_name,
+            image_url=None
         )
     
     def _get_fallback_response(self, error_message: str = "") -> Dict[str, Any]:
@@ -113,7 +110,6 @@ class AIService:
             "brand": "Unknown",
             "category": "Unknown",
             "confidence": 0,
-            "gluten_status": "unknown",
             "price_DA": 0.0,
             "source": "fallback"
         }

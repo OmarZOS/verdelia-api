@@ -159,7 +159,7 @@ Important rules:
 
 - The authenticated user ID replaces the user ID supplied in the order body.
 - Every product must exist and every requested quantity must be available.
-- Item total is quantity times product price times `(1 + applied_vat)`; order discount is subtracted and the result is clamped at zero.
+- Item total is quantity times product price times `(1 + vat_rate)`; order discount is subtracted and the result is clamped at zero.
 - Orders can have multiple provider-specific deliveries. A new destination address can be created when no existing address ID is supplied.
 - Invoice due date is 30 days after issue date and the invoice tax field is set to 19.
 - Payment is created and immediately confirmed through Finance, then the local invoice is marked paid.

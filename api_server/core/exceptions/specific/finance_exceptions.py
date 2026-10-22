@@ -534,6 +534,53 @@ class FeeUpdateFailedException(FeeException):
         )
 
 
+
+class PaymentNotConfirmedException(PaymentException):
+    """
+    Raised when the finance service returns a payment whose status is
+    not a confirmed/completed/paid state.
+
+    Used by `OrderWorkflow.process_payment` after `confirm_payment`
+    returns: the payment exists, the remote call succeeded, but the
+    status on the returned row is not one of the terminal-success
+    statuses, so the workflow must not mark the invoice paid.
+    """
+
+    def __init__(
+        self,
+        payment_id: int = None,
+        status: str = None,
+        invoice_id: int = None,
+        details: Dict[str, Any] = None,
+    ):
+        error_details = details or {}
+
+        if payment_id:
+            error_details["payment_id"] = payment_id
+        if status is not None:
+            error_details["status"] = status
+        if invoice_id:
+            error_details["invoice_id"] = invoice_id
+
+        message = "Payment could not be confirmed"
+        if payment_id and status is not None:
+            message = (
+                f"Payment '{payment_id}' was not confirmed "
+                f"(status='{status}')"
+            )
+        elif payment_id:
+            message = f"Payment '{payment_id}' was not confirmed"
+        elif status is not None:
+            message = f"Payment confirmation failed (status='{status}')"
+
+        super().__init__(
+            message=message,
+            error_code=ErrorCode.PAYMENT_FAILED,
+            status_code=HTTP_409_CONFLICT,
+            details=error_details,
+        )
+
+        
 class FeeAlreadyExistsException(FeeException):
     """Exception when a fee already exists for a provider"""
     
@@ -626,7 +673,7 @@ class InvoiceNotFoundException(InvoiceException):
     def __init__(
         self,
         invoice_id: int = None,
-        invoice_number: str = None,
+        invoice_reference: str = None,
         cart_id: int = None,
         details: Dict[str, Any] = None
     ):
@@ -634,16 +681,16 @@ class InvoiceNotFoundException(InvoiceException):
         
         if invoice_id:
             error_details["invoice_id"] = invoice_id
-        if invoice_number:
-            error_details["invoice_number"] = invoice_number
+        if invoice_reference:
+            error_details["invoice_reference"] = invoice_reference
         if cart_id:
             error_details["cart_id"] = cart_id
         
         message = "Invoice not found"
         if invoice_id:
             message = f"Invoice with ID '{invoice_id}' not found"
-        elif invoice_number:
-            message = f"Invoice number '{invoice_number}' not found"
+        elif invoice_reference:
+            message = f"Invoice number '{invoice_reference}' not found"
         elif cart_id:
             message = f"Invoice for cart ID '{cart_id}' not found"
         
@@ -728,7 +775,7 @@ class InvoiceAlreadyPaidException(InvoiceException):
     def __init__(
         self,
         invoice_id: int = None,
-        invoice_number: str = None,
+        invoice_reference: str = None,
         action: str = None,
         details: Dict[str, Any] = None
     ):
@@ -736,16 +783,16 @@ class InvoiceAlreadyPaidException(InvoiceException):
         
         if invoice_id:
             error_details["invoice_id"] = invoice_id
-        if invoice_number:
-            error_details["invoice_number"] = invoice_number
+        if invoice_reference:
+            error_details["invoice_reference"] = invoice_reference
         if action:
             error_details["attempted_action"] = action
         
         message = "Cannot modify paid invoice"
         if invoice_id:
             message = f"Invoice '{invoice_id}' has already been paid and cannot be modified"
-        elif invoice_number:
-            message = f"Invoice '{invoice_number}' has already been paid and cannot be modified"
+        elif invoice_reference:
+            message = f"Invoice '{invoice_reference}' has already been paid and cannot be modified"
         
         super().__init__(
             message=message,
@@ -955,4 +1002,204 @@ class FinancialItemNotFoundException(FinancialException):
             error_code=ErrorCode.FINANCIAL_ITEM_NOT_FOUND,
             status_code=HTTP_404_NOT_FOUND,
             details=error_details
+        )
+
+class FinanceClientError(Exception):
+    """
+    Base class for every finance-client failure.
+
+    Attributes:
+        action:  Human label for the operation that failed, e.g.
+                 "create payment" or "confirm payment 42".
+        status:  HTTP status code returned by the finance server,
+                 or None when the failure was at the transport
+                 layer (DNS, TCP, timeout) and no response
+                 arrived.
+        detail:  The finance server's own error message, when it
+                 sent one. Falls back to a generic string.
+        error_code: Optional application error code, mirroring
+                 `ErrorCode` from the finance server when it's
+                 present in the response body. Nullable.
+    """
+
+    def __init__(
+        self,
+        action: str = "finance request",
+        status: Optional[int] = None,
+        detail: Optional[str] = None,
+        error_code: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        self.action = action
+        self.status = status
+        self.detail = detail or "unknown error"
+        self.error_code = error_code
+        self.details = details or {}
+
+        # Build a readable default message. Subclasses may override
+        # it but the base already carries enough context for a log.
+        if status is not None:
+            super().__init__(
+                f"{action} failed (HTTP {status}): {self.detail}"
+            )
+        else:
+            super().__init__(f"{action} failed: {self.detail}")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialise for structured logging."""
+        return {
+            "error_type": type(self).__name__,
+            "action": self.action,
+            "status": self.status,
+            "detail": self.detail,
+            "error_code": self.error_code,
+            **({"details": self.details} if self.details else {}),
+        }
+
+
+# ==================== Subclasses ====================
+
+class FinanceValidationError(FinanceClientError):
+    """
+    400 / 422 — the finance server rejected the payload.
+
+    The client sent a well-formed request but the server considered
+    the values invalid: a non-positive amount, a missing required
+    field, a malformed reference.
+
+    Maps to HTTP 422 (or 400) at the boundary.
+    """
+
+    def __init__(
+        self,
+        action: str = "finance request",
+        status: int = 422,
+        detail: Optional[str] = None,
+        error_code: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(
+            action=action,
+            status=status,
+            detail=detail or "The finance server rejected the request",
+            error_code=error_code,
+            details=details,
+        )
+
+
+class FinanceNotFoundError(FinanceClientError):
+    """
+    404 — the referenced entity doesn't exist on the finance side.
+
+    Most often: an invoice referenced by `PaymentCreate` that the
+    finance service has never seen, or a payment id that has no row.
+    """
+
+    def __init__(
+        self,
+        action: str = "finance request",
+        status: int = 404,
+        detail: Optional[str] = None,
+        error_code: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(
+            action=action,
+            status=status,
+            detail=detail or "The referenced resource was not found",
+            error_code=error_code,
+            details=details,
+        )
+
+
+class FinanceConflictError(FinanceClientError):
+    """
+    409 — the finance server rejected the operation because of the
+    current state of the resource.
+
+    The classic case is confirming a payment that has already been
+    confirmed, or creating a payment for an invoice that is already
+    marked `paid`. The request was well-formed and the resource
+    existed; the operation just doesn't apply in that state.
+    """
+
+    def __init__(
+        self,
+        action: str = "finance request",
+        status: int = 409,
+        detail: Optional[str] = None,
+        error_code: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(
+            action=action,
+            status=status,
+            detail=detail or "The operation conflicts with current state",
+            error_code=error_code,
+            details=details,
+        )
+
+
+class FinanceServerError(FinanceClientError):
+    """
+    5xx — the finance server faulted; the client's request was fine.
+
+    Distinct from `FinanceUnavailableError` because the server did
+    respond. A 5xx carries the server's own error message in
+    `detail`, which is often the only clue about what went wrong.
+    """
+
+    def __init__(
+        self,
+        action: str = "finance request",
+        status: int = 500,
+        detail: Optional[str] = None,
+        error_code: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(
+            action=action,
+            status=status,
+            detail=detail or "The finance server returned an error",
+            error_code=error_code,
+            details=details,
+        )
+
+
+class FinanceUnavailableError(FinanceClientError):
+    """
+    Transport-level failure — no HTTP response was received.
+
+    DNS resolution failed, the TCP connection was refused, the
+    request timed out, or TLS negotiation failed. `status` is
+    always None because there was no status code to record.
+
+    The distinction from `FinanceServerError` matters: a 5xx means
+    the server is running but broken; an unavailable error means
+    we couldn't reach it at all. The retry policy is different
+    (backoff vs. fix-the-server).
+    """
+
+    def __init__(
+        self,
+        action: str = "finance request",
+        status: Optional[int] = None,
+        detail: Optional[str] = None,
+        error_code: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(
+            action=action,
+            status=status,
+            detail=detail or "The finance service is unreachable",
+            error_code=error_code,
+            details=details,
+        )
+
+    def __init_subclass__(cls, **kwargs):
+        # Prevent accidental subclassing that would silently drop
+        # the transport-only semantics.
+        raise TypeError(
+            "FinanceUnavailableError is terminal; subclassing would "
+            "lose the 'no HTTP response' guarantee."
         )

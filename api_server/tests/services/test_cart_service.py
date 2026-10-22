@@ -74,7 +74,7 @@
 #         product = Product()
 #         product.id_product = 1
 #         product.product_name = 'Test Product'
-#         product.product_price = Decimal('100.00')
+#         product.unit_price = Decimal('100.00')
 #         product.product_quantity = 50
 #         product.product_description = 'Test description'
 #         return product
@@ -110,12 +110,12 @@
 #         """Create sample ordered item API data"""
 #         return OrderedItem_API(
 #             id_ordered_item=None,
-#             ordered_product_id=1,
+#             product_id=1,
 #             order_ref=None,
 #             product_discount=0.0,
 #             ordered_quantity=2,
 #             unit_price=100.00,
-#             applied_vat=0.2
+#             vat_rate=0.2
 #         )
     
 #     @pytest.fixture
@@ -255,7 +255,7 @@
 #         expected_invoice = Invoice()
 #         expected_invoice.invoice_id = 1
 #         expected_invoice.invoice_cart_id = sample_cart.cart_id
-#         expected_invoice.invoice_total_amount = total_amount
+#         expected_invoice.grand_total = total_amount
 #         expected_invoice.invoice_status = 'unpaid'
         
 #         cart_service.mock_financial_repo.create_invoice.return_value = expected_invoice
@@ -263,7 +263,7 @@
 #         result = cart_service._create_invoice_for_cart(sample_cart, total_amount)
         
 #         assert result == expected_invoice
-#         assert result.invoice_total_amount == total_amount
+#         assert result.grand_total == total_amount
 #         assert result.invoice_status == 'unpaid'
 #         cart_service.mock_financial_repo.create_invoice.assert_called_once()
     
@@ -307,7 +307,7 @@
 #         """Test creating payment that fully pays an invoice"""
 #         invoice = Invoice()
 #         invoice.invoice_id = 1
-#         invoice.invoice_total_amount = Decimal('500.00')
+#         invoice.grand_total = Decimal('500.00')
 #         invoice.invoice_status = 'unpaid'
 #         amount = Decimal('500.00')
         
@@ -329,7 +329,7 @@
 #         """Test creating partial payment for an invoice"""
 #         invoice = Invoice()
 #         invoice.invoice_id = 1
-#         invoice.invoice_total_amount = Decimal('500.00')
+#         invoice.grand_total = Decimal('500.00')
 #         invoice.invoice_status = 'unpaid'
 #         amount = Decimal('200.00')
         
@@ -447,7 +447,7 @@
 #     def test_delete_cart_success(self, cart_service, sample_cart, sample_product):
 #         """Test successful cart deletion with stock restoration"""
 #         ordered_item = OrderedItem()
-#         ordered_item.ordered_product_id = sample_product.id_product
+#         ordered_item.product_id = sample_product.id_product
 #         ordered_item.ordered_quantity = 2
 #         sample_cart.ordered_item = [ordered_item]
         
@@ -518,7 +518,7 @@
         
 #         ordered_item_model = OrderedItem()
 #         ordered_item_model.id_ordered_item = 1
-#         ordered_item_model.ordered_product_id = 999
+#         ordered_item_model.product_id = 999
 #         ordered_item_model.ordered_quantity = 2
         
 #         cart_service.mock_order_service._build_ordered_item_model.return_value = ordered_item_model
@@ -545,7 +545,7 @@
         
 #         ordered_item_model = OrderedItem()
 #         ordered_item_model.id_ordered_item = 1
-#         ordered_item_model.ordered_product_id = sample_product.id_product
+#         ordered_item_model.product_id = sample_product.id_product
 #         ordered_item_model.ordered_quantity = 5
         
 #         cart_service.mock_order_service._build_ordered_item_model.return_value = ordered_item_model
@@ -571,7 +571,7 @@
         
 #         ordered_item_model = OrderedItem()
 #         ordered_item_model.id_ordered_item = 1
-#         ordered_item_model.ordered_product_id = sample_product.id_product
+#         ordered_item_model.product_id = sample_product.id_product
 #         ordered_item_model.ordered_quantity = 2
         
 #         cart_service.mock_order_service._build_ordered_item_model.return_value = ordered_item_model
@@ -615,10 +615,10 @@
 #         # Mock ordered item building
 #         ordered_item_model = OrderedItem()
 #         ordered_item_model.id_ordered_item = 1
-#         ordered_item_model.ordered_product_id = sample_product.id_product
+#         ordered_item_model.product_id = sample_product.id_product
 #         ordered_item_model.ordered_quantity = 2
-#         ordered_item_model.applied_vat = 0.2
-#         ordered_item_model.unit_price = sample_product.product_price
+#         ordered_item_model.vat_rate = 0.2
+#         ordered_item_model.unit_price = sample_product.unit_price
         
 #         cart_service.mock_order_service._build_ordered_item_model.return_value = ordered_item_model
         
@@ -627,10 +627,10 @@
 #         new_cart.cart_id = 1
 #         cart_service.mock_cart_repo.create_cart.return_value = new_cart
         
-#         # Mock financial documents with proper invoice_total_amount
+#         # Mock financial documents with proper grand_total
 #         mock_invoice = Invoice()
 #         mock_invoice.invoice_id = 1
-#         mock_invoice.invoice_total_amount = Decimal('500.00')
+#         mock_invoice.grand_total = Decimal('500.00')
 #         mock_invoice.invoice_status = 'unpaid'
         
 #         mock_payment = Payment()
@@ -674,9 +674,9 @@
         
 #         ordered_item_model = OrderedItem()
 #         ordered_item_model.id_ordered_item = 1
-#         ordered_item_model.ordered_product_id = sample_product.id_product
+#         ordered_item_model.product_id = sample_product.id_product
 #         ordered_item_model.ordered_quantity = 2
-#         ordered_item_model.unit_price = sample_product.product_price
+#         ordered_item_model.unit_price = sample_product.unit_price
         
 #         cart_service.mock_order_service._build_ordered_item_model.return_value = ordered_item_model
         
@@ -746,7 +746,7 @@
         
 #         ordered_item_model = OrderedItem()
 #         ordered_item_model.id_ordered_item = 1
-#         ordered_item_model.ordered_product_id = sample_product.id_product
+#         ordered_item_model.product_id = sample_product.id_product
 #         ordered_item_model.ordered_quantity = 2
         
 #         cart_service.mock_order_service._build_ordered_item_model.return_value = ordered_item_model
@@ -785,7 +785,7 @@
         
 #         ordered_item_model = OrderedItem()
 #         ordered_item_model.id_ordered_item = 1
-#         ordered_item_model.ordered_product_id = sample_product.id_product
+#         ordered_item_model.product_id = sample_product.id_product
 #         ordered_item_model.ordered_quantity = 2
         
 #         cart_service.mock_order_service._build_ordered_item_model.return_value = ordered_item_model

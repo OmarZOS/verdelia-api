@@ -40,7 +40,7 @@ def wire_domain_counters(service: DomainLimitService) -> None:
         ResourceCode.ORGANIZATION_OWNED,
         lambda user_id: storage_broker.count(
             ProviderOrganisation,
-            {ProviderOrganisation.app_user_id: user_id},
+            {ProviderOrganisation.user_id: user_id},
         ),
     )
 
@@ -48,7 +48,7 @@ def wire_domain_counters(service: DomainLimitService) -> None:
         ResourceCode.PROVIDER_OWNED,
         lambda user_id: storage_broker.count(
             ProductProvider,
-            {ProductProvider.product_provider_owner: user_id},
+            {ProductProvider.product_provider_user_id: user_id},
         ),
     )
 
@@ -61,7 +61,7 @@ def wire_domain_counters(service: DomainLimitService) -> None:
         ResourceCode.PRODUCTS_PER_PROVIDER,
         lambda provider_id: storage_broker.count(
             Product,
-            {Product.product_provider_id: provider_id},
+            {Product.provider_id: provider_id},
         ),
     )
 
@@ -70,7 +70,7 @@ def wire_domain_counters(service: DomainLimitService) -> None:
         lambda provider_id: storage_broker.count(
             ProvidedService,
             {
-                ProvidedService.provided_service_product_provider_id:
+                ProvidedService.provider_id:
                     provider_id
             },
         ),
@@ -96,7 +96,7 @@ def _count_team_members(user_id: int) -> int:
     """
     orgs = storage_broker.get(
         ProviderOrganisation,
-        {ProviderOrganisation.app_user_id: user_id},
+        {ProviderOrganisation.user_id: user_id},
         None,
         [],
     )
@@ -107,6 +107,6 @@ def _count_team_members(user_id: int) -> int:
     for org in orgs:
         total += storage_broker.count(
             ManagementRule,
-            {ManagementRule.rule_ref_org: org.idprovider_organisation},
+            {ManagementRule.rule_org_id: org.id_provider_organisation},
         )
     return total

@@ -272,7 +272,8 @@ class ProductFetchNotFoundException(ProductException):
 
 class ProductQuantityNotEnoughException(ProductException):
     """Exception when product quantity is insufficient"""
-    
+    available=0
+    requested= 0
     def __init__(
         self,
         product_id: int = None,
@@ -284,12 +285,15 @@ class ProductQuantityNotEnoughException(ProductException):
         error_details = details or {}
         
         if product_id:
+            self.product_id = product_id
             error_details["product_id"] = product_id
         if product_name:
             error_details["product_name"] = product_name
         if requested_quantity:
+            self.requested = requested_quantity
             error_details["requested_quantity"] = requested_quantity
         if available_quantity:
+            self.available = available_quantity
             error_details["available_quantity"] = available_quantity
         
         message = "Insufficient product quantity"

@@ -438,7 +438,7 @@ def update_product_visibility(
         product_name=current.product_name,
         product_brand=current.product_brand,
         product_barcode=current.product_barcode,
-        product_price=current.product_price,
+        product_price=current.unit_price,
         product_base_price=current.product_base_price,
         product_quantifier=current.product_quantifier,
         product_quantity=current.product_quantity,
@@ -446,7 +446,7 @@ def update_product_visibility(
         product_visibility=visibility,
         product_description=current.product_description,
         product_owner=current.product_owner,
-        product_provider_id=current.product_provider_id,
+        product_provider_id=current.provider_id,
         product_category_id=current.product_category_id,
         product_origin_id=current.product_origin_id,
     )

@@ -15,6 +15,9 @@ from .cart import CartScenario
 from .users import UsersScenario
 from .usage import UsageScenario
 from .wallet import WalletScenario
+from .order import OrderScenario
+from .delivery import DeliveryScenario
+
 
 __all__ = [
     "OrganisationsScenario",
@@ -23,6 +26,8 @@ __all__ = [
     "StaffScenario",
     "CartScenario",
     "WalletScenario",
+    "DeliveryScenario",
+    "OrderScenario",
     "SubscriptionsScenario",
     "SuppliersScenario",
     "UsersScenario",

@@ -78,9 +78,9 @@ class OrganisationCrud:
         self.validator.validate_org_name_unique(org.provider_organisation_name)
 
         model_org = ProviderOrganisation(
-            app_user_id=org.app_user_id,
+            user_id=org.app_user_id,
             provider_organisation_name=org.provider_organisation_name,
-            provider_organisation_desc=org.provider_organisation_desc,
+            provider_organisation_description=org.provider_organisation_desc,
         )
 
         # The FK column is `provider_organisation_naming`, not
@@ -98,7 +98,7 @@ class OrganisationCrud:
             result = self.org_repo.create_org(model_org)
             logger.info(
                 f"Organisation created successfully with ID: "
-                f"{result.idprovider_organisation}"
+                f"{result.id_provider_organisation}"
             )
             return result
         except Exception as e:
@@ -152,7 +152,7 @@ class OrganisationCrud:
             result = self.org_repo.update_org(org_old)
             logger.info(
                 f"Organisation updated successfully with ID: "
-                f"{result.idprovider_organisation}"
+                f"{result.id_provider_organisation}"
             )
             return result
         except Exception as e:

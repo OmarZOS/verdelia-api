@@ -603,17 +603,17 @@ class Iproduct_API(BaseModel):
 
     Two ways to supply the name:
 
-    1. **Flat.** Set `iproduct_name` (English). The server creates or
+    1. **Flat.** Set `generic_name` (English). The server creates or
        reuses a NamingContribution whose `en` is that string and whose
        `ar` / `fr` default to it.
 
     2. **Nested.** Set `naming` with all three languages. The server
        creates or reuses a NamingContribution from those values and
-       copies `naming.en` into `iproduct_name` for backward
+       copies `naming.en` into `generic_name` for backward
        compatibility with code that reads the flat column.
 
-    When both are supplied, `naming.en` wins and `iproduct_name` is
-    overwritten server-side. That keeps `iproduct_name` and
+    When both are supplied, `naming.en` wins and `generic_name` is
+    overwritten server-side. That keeps `generic_name` and
     `naming.en` from ever drifting.
     """
 
@@ -623,7 +623,7 @@ class Iproduct_API(BaseModel):
     )
 
     # ---------- Name (flat form) ----------
-    iproduct_name: Optional[str] = Field(
+    generic_name: Optional[str] = Field(
         default="",
         max_length=200,
         description=(
@@ -637,65 +637,61 @@ class Iproduct_API(BaseModel):
         default=None,
         description=(
             "Trilingual name contribution. When provided, drives the "
-            "NamingContribution row and sets `iproduct_name`."
+            "NamingContribution row and sets `generic_name`."
         ),
     )
 
     # ---------- Barcode ----------
-    iproduct_barcode: Optional[str] = Field(
+    barcode: Optional[str] = Field(
         default="", max_length=100, description="Barcode",
     )
 
     # ---------- Brand ----------
-    iproduct_brand: Optional[str] = Field(
+    brand: Optional[str] = Field(
         default="", max_length=100, description="Brand name",
     )
 
     # ---------- Pricing ----------
-    iproduct_estimated_price: Optional[float] = Field(
+    estimated_price: Optional[float] = Field(
         default=0.0, ge=0, description="Estimated price",
     )
-    iproduct_price_currency: Optional[str] = Field(
+    price_currency: Optional[str] = Field(
         default="DZD", max_length=3, description="Currency code",
     )
-    iproduct_last_price_update: Optional[datetime] = Field(
+    last_price_update: Optional[datetime] = Field(
         default_factory=datetime.now,
         description="Last price update",
     )
 
-    # ---------- Classification ----------
-    iproduct_gluten_status: Optional[GlutenStatus] = Field(
-        default=GlutenStatus.UNKNOWN, description="Gluten status",
-    )
 
     # ---------- Provenance ----------
-    iproduct_info_source: Optional[str] = Field(
+    info_source: Optional[str] = Field(
         default="openai", max_length=50,
         description="Information source",
     )
-    iproduct_info_confidence: Optional[float] = Field(
+    info_confidence: Optional[float] = Field(
         default=0.0, ge=0, le=1, description="Confidence score",
     )
-    iproduct_model_name: Optional[str] = Field(
+    model_name: Optional[str] = Field(
         default="None", max_length=100, description="AI model used",
     )
 
     # ---------- Media ----------
-    iproduct_image_url: Optional[str] = Field(
+    image_url: Optional[str] = Field(
         default="", max_length=500, description="Product image URL",
     )
 
     # ---------- Timestamps ----------
-    iproduct_created_at: Optional[datetime] = Field(
+    created_at: Optional[datetime] = Field(
         default_factory=datetime.now, description="Creation timestamp",
     )
-    iproduct_last_update: Optional[datetime] = Field(
+    last_update: Optional[datetime] = Field(
         default_factory=datetime.now, description="Last update timestamp",
     )
 
     # ==================== Validators ====================
 
-    @field_validator("iproduct_barcode")
+    @field_validator("barcode")
     @classmethod
     def _barcode_shape(cls, v: Optional[str]) -> Optional[str]:
         """Barcodes are digits-only when non-empty; empty normalises to
@@ -703,10 +699,10 @@ class Iproduct_API(BaseModel):
         if v is None or v == "":
             return ""
         if not v.isdigit():
-            raise ValueError("iproduct_barcode must contain digits only")
+            raise ValueError("barcode must contain digits only")
         return v
 
-    @field_validator("iproduct_price_currency")
+    @field_validator("price_currency")
     @classmethod
     def _currency_shape(cls, v: Optional[str]) -> str:
         """Upper-case three-letter currency code."""
@@ -715,7 +711,7 @@ class Iproduct_API(BaseModel):
         upper = v.strip().upper()
         if len(upper) != 3 or not upper.isalpha():
             raise ValueError(
-                "iproduct_price_currency must be a 3-letter ISO code"
+                "price_currency must be a 3-letter ISO code"
             )
         return upper
 
@@ -736,7 +732,7 @@ class Iproduct_API(BaseModel):
     def resolved_naming(self) -> NamingContribution_API:
         """
         Return the naming object to persist, synthesising one from the
-        flat `iproduct_name` when `naming` is absent.
+        flat `generic_name` when `naming` is absent.
 
         Guarantees the returned object has a non-empty `en`. Falls back
         to a placeholder when both inputs are empty, so the caller
@@ -745,7 +741,7 @@ class Iproduct_API(BaseModel):
         """
         if self.naming is not None:
             return self.naming
-        flat = (self.iproduct_name or "").strip() or "Unnamed product"
+        flat = (self.generic_name or "").strip() or "Unnamed product"
         return NamingContribution_API(
             en=flat,
             ar=None,
@@ -835,7 +831,10 @@ class Product_API(BaseModel):
 
     # ==================== Pricing & stock ====================
 
-    product_price: Optional[float] = Field(
+    unit_price: Optional[float] = Field(
+        default=0.0, ge=0, description="Customer-facing price (VAT-inclusive)",
+    )
+    product_vat_value: Optional[float] = Field(
         default=0.0, ge=0, description="Customer-facing price (VAT-inclusive)",
     )
     product_base_price: Optional[float] = Field(
@@ -1000,7 +999,7 @@ class ProvidedService_API(BaseModel):
     provided_service_id: Optional[int] = Field(default=0, ge=0, description="Service ID")
     provided_service_name: Optional[str] = Field(default="", max_length=200, description="Service name")
     provided_service_description: Optional[str] = Field(default="", max_length=1000, description="Service description")
-    provided_service_category_id: Optional[int] = Field(default=0, description="Service category ID")
+    category_id: Optional[int] = Field(default=0, description="Service category ID")
     provided_service_base_price: Optional[float] = Field(default=0.0, ge=0, description="Base price")
     provided_service_final_price: Optional[float] = Field(default=0.0, ge=0, description="Final price")
     provided_service_actual_duration: Optional[float] = Field(default=0.0, ge=0, description="Duration in minutes")
@@ -1092,13 +1091,13 @@ class DeliverySourceType(str, Enum):
 class OrderedItem_API(BaseModel):
     """Ordered item model"""
     id_ordered_item: Optional[int] = Field(default=0, description="Ordered item ID")
-    ordered_product_id: Optional[int] = Field(default=None, description="Product ID")
+    product_id: Optional[int] = Field(default=None, description="Product ID")
     order_ref: Optional[int] = Field(default=None, description="Order reference")
     
-    product_discount: Optional[float] = Field(default=0.0, ge=0, le=100, description="Product discount percentage")
+    product_discount: Optional[float] = Field(default=0.0, description="Product discount percentage")
     ordered_quantity: Optional[int] = Field(default=1, gt=0, description="Quantity ordered")
     unit_price: Optional[float] = Field(default=0.0, ge=0, description="Unit price")
-    applied_vat: Optional[float] = Field(default=0.0, ge=0, le=100, description="VAT percentage")
+    vat_rate: Optional[float] = Field(default=0.0, ge=0, le=100, description="VAT percentage")
     
     @field_validator('ordered_quantity')
     @classmethod
@@ -1110,13 +1109,6 @@ class OrderedItem_API(BaseModel):
             raise ValueError('Quantity must be greater than 0')
         return v
     
-    @field_validator('product_discount', 'applied_vat')
-    @classmethod
-    def validate_percentage(cls, v: Optional[float]) -> Optional[float]:
-        """Validate percentage values are between 0 and 100"""
-        if v is not None and (v < 0 or v > 100):
-            raise ValueError('Value must be between 0 and 100')
-        return v
     
     @model_validator(mode='after')
     def validate_total_price_consistency(self) -> 'OrderedItem_API':
@@ -1346,7 +1338,7 @@ class DeliveryResponse_API(Delivery_API):
     
     provider_name: Optional[str] = Field(default=None, description="Provider name")
     broker_name: Optional[str] = Field(default=None, description="Broker name")
-    invoice_number: Optional[str] = Field(default=None, description="Invoice number")
+    invoice_reference: Optional[str] = Field(default=None, description="Invoice number")
     address_details: Optional[Dict[str, Any]] = Field(default=None, description="Address details")
     current_address_details: Optional[Dict[str, Any]] = Field(default=None, description="Current address details")
     
@@ -1932,20 +1924,20 @@ class InvoiceType(str, Enum):
 class Invoice_API(BaseModel):
     """Invoice API model"""
     invoice_id: Optional[int] = Field(default=0, ge=0, description="Invoice ID")
-    invoice_number: Optional[str] = Field(default="", max_length=100, description="Invoice number")
-    invoice_total_amount: Optional[float] = Field(default=0.0, ge=0, description="Total amount")
+    invoice_reference: Optional[str] = Field(default="", max_length=100, description="Invoice number")
+    grand_total: Optional[float] = Field(default=0.0, ge=0, description="Total amount")
     invoice_status: InvoiceStatus = Field(default=InvoiceStatus.UNPAID, description="Invoice status")
     invoice_type: InvoiceType = Field(default=InvoiceType.INVOICE, description="Invoice type")
     invoice_issue_date: Optional[date] = Field(default_factory=date.today, description="Issue date")
     invoice_due_date: Optional[date] = Field(default=None, description="Due date")
     invoice_notes: Optional[str] = Field(default="", max_length=65535, description="Notes")
-    invoice_tax_applied: Optional[bool] = Field(default=False, description="Tax applied")
+    tax_amount: Optional[bool] = Field(default=False, description="Tax applied")
     
     # Relationships
     invoice_cart_id: Optional[int] = Field(default=None, description="Cart ID")
     invoice_order_id: Optional[int] = Field(default=None, description="Order ID")
     
-    @field_validator('invoice_total_amount')
+    @field_validator('grand_total')
     @classmethod
     def validate_amount(cls, v: float) -> float:
         """Validate total amount is not negative"""
@@ -1963,14 +1955,14 @@ class Invoice_API(BaseModel):
 
 class InvoiceUpdate_API(BaseModel):
     """Invoice update model - all fields optional"""
-    invoice_number: Optional[str] = Field(default=None, max_length=100, description="Invoice number")
-    invoice_total_amount: Optional[float] = Field(default=None, ge=0, description="Total amount")
+    invoice_reference: Optional[str] = Field(default=None, max_length=100, description="Invoice number")
+    grand_total: Optional[float] = Field(default=None, ge=0, description="Total amount")
     invoice_status: Optional[InvoiceStatus] = Field(default=None, description="Invoice status")
     invoice_type: Optional[InvoiceType] = Field(default=None, description="Invoice type")
     invoice_issue_date: Optional[date] = Field(default=None, description="Issue date")
     invoice_due_date: Optional[date] = Field(default=None, description="Due date")
     invoice_notes: Optional[str] = Field(default=None, max_length=65535, description="Notes")
-    invoice_tax_applied: Optional[bool] = Field(default=None, description="Tax applied")
+    tax_amount: Optional[bool] = Field(default=None, description="Tax applied")
     invoice_cart_id: Optional[int] = Field(default=None, description="Cart ID")
     invoice_order_id: Optional[int] = Field(default=None, description="Order ID")
 

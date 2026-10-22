@@ -264,7 +264,7 @@ class StockManager:
         """
         products = []
         for item in items:
-            product = self.product_repo.get_product_by_id(item.ordered_product_id)
+            product = self.product_repo.get_product_by_id(item.product_id)
             if product:
                 products.append((product, item.ordered_quantity))
         

@@ -265,7 +265,7 @@ class UsageRepository:
     def _subscription_id_for_user(self, user_id: int) -> Optional[int]:
         """Resolve a user's subscription id, or None.
 
-        Reads `AppUser.app_user_subscription_ref`, which is a single
+        Reads `AppUser.app_user_subscription_id`, which is a single
         FK — so a user points at exactly one subscription, and this
         returns at most one row.
         """
@@ -276,7 +276,7 @@ class UsageRepository:
         )
         if not users:
             return None
-        return users[0].app_user_subscription_ref
+        return users[0].app_user_subscription_id
 
     # ==================== User-scoped reads ====================
 

@@ -726,7 +726,7 @@ def _get_or_create_service_category(
         provided_service_category_icon_url=icon_url,
         provided_service_category_avg_duration=avg_duration,
         provided_service_category_description=description,
-        provided_service_category_naming_ref=naming_contribution_id,
+        naming_id=naming_contribution_id,
     )
     result = insert_record(category)
     return _first_or_none(result)
@@ -780,12 +780,12 @@ def seed_service_categories() -> int:
             if (
                 getattr(
                     existing_category,
-                    "provided_service_category_naming_ref",
+                    "naming_id",
                     None,
                 )
                 is None
             ):
-                existing_category.provided_service_category_naming_ref = (
+                existing_category.naming_id = (
                     contribution.id_naming_contribution
                 )
                 logger.debug(
@@ -953,7 +953,7 @@ def get_all_seeded_service_categories() -> List[Dict[str, Any]]:
             )
             .outerjoin(
                 models.NamingContribution,
-                models.ProvidedServiceCategory.provided_service_category_naming_ref
+                models.ProvidedServiceCategory.naming_id
                 == models.NamingContribution.id_naming_contribution,
             )
             .all()
@@ -969,7 +969,7 @@ def get_all_seeded_service_categories() -> List[Dict[str, Any]]:
             )
             result.append(
                 {
-                    "id": category.provided_service_category_id,
+                    "id": category.category_id,
                     "key": key,
                     "name": name_en,
                     "en": name_en,
@@ -986,7 +986,7 @@ def get_all_seeded_service_categories() -> List[Dict[str, Any]]:
                     if category.provided_service_category_avg_duration
                     else None,
                     "description": category.provided_service_category_description,
-                    "naming_ref": category.provided_service_category_naming_ref,
+                    "naming_ref": category.naming_id,
                 }
             )
         return result
@@ -1028,7 +1028,7 @@ def get_service_category_by_id(
     return _first_or_none(
         get(
             table=models.ProvidedServiceCategory,
-            conditions={"provided_service_category_id": category_id},
+            conditions={"category_id": category_id},
         )
     )
 

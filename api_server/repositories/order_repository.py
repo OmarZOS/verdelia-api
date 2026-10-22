@@ -51,9 +51,9 @@ class OrderRepository:
         """Get all items for an order"""
         return storage_broker.get(
             OrderedItem,
-            {OrderedItem.order_ref: order_id},
+            {OrderedItem.order_id: order_id},
             [],
-            [OrderedItem.ordered_product],
+            [OrderedItem.product],
             None
         )
     
@@ -74,7 +74,7 @@ class OrderRepository:
         limit: int = 100
     ) -> List[Product]:
         """Get orders containing products from a specific provider"""
-        conditions = {Product.product_provider_id: provider_id}
+        conditions = {Product.provider_id: provider_id}
         
         return storage_broker.get(
             Product,
@@ -82,7 +82,7 @@ class OrderRepository:
             [OrderedItem],
             [{
                 Product.ordered_item: [{
-                    OrderedItem.placed_order: [{
+                    OrderedItem.order: [{
                         PlacedOrder.ordering_user: [{
                             AppUser.app_user_person: [Person.person_details]
                         }]
@@ -131,7 +131,7 @@ class OrderRepository:
         
         stats = {}
         for order in orders:
-            status = order.placed_order_state or 'UNKNOWN'
+            status = order.order_state or 'UNKNOWN'
             stats[status] = stats.get(status, 0) + 1
         
         return stats
@@ -158,18 +158,18 @@ class OrderItemRepository:
         """Get all items for an order"""
         return storage_broker.get(
             OrderedItem,
-            {OrderedItem.order_ref: order_id},
+            {OrderedItem.order_id: order_id},
             [],
-            [OrderedItem.ordered_product]
+            [OrderedItem.product]
         )
     
     def get_by_product(self, product_id: int) -> List[OrderedItem]:
         """Get all order items for a product"""
         return storage_broker.get(
             OrderedItem,
-            {OrderedItem.ordered_product_id: product_id},
+            {OrderedItem.product_id: product_id},
             [],
-            [OrderedItem.placed_order]
+            [OrderedItem.order]
         )
     
     def create(self, item: OrderedItem) -> OrderedItem:

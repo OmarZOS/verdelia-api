@@ -175,7 +175,7 @@ def create_service(
         created_service = service_service.create_service(
             service, requirements, staff_requirements
         )
-        logger.info(f"Service created with ID: {getattr(created_service, 'provided_service_id', 'unknown')}")
+        logger.info(f"Service created with ID: {getattr(created_service, 'idprovided_service', 'unknown')}")
         return created_service
         
     except (ServiceCreationFailedException, ServiceRequirementCreationException) as e:
@@ -211,8 +211,8 @@ def update_service(
         if not existing_service:
             raise ServiceNotFoundException(service_id=service_id)
         
-        if hasattr(service, 'provided_service_id'):
-            service.provided_service_id = service_id
+        if hasattr(service, 'idprovided_service'):
+            service.idprovided_service = service_id
         
         updated_service = service_service.update_service(service_id, service)
         logger.info(f"Service {service_id} updated successfully")

@@ -75,7 +75,6 @@ class DeliveryBrokerRepository:
 
     def get_all(
         self,
-        *,
         verified_only: bool = False,
         offset: int = 0,
         limit: int = 100,
@@ -94,7 +93,7 @@ class DeliveryBrokerRepository:
             DeliveryBroker,
             conditions,
             [],
-            [DeliveryBroker.delivery_broker_wallet],
+            [],
             offset,
             limit,
         )

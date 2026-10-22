@@ -35,7 +35,7 @@ logger = get_logger(__name__)
 # `en` is the English name and the lookup anchor (paired with
 # `category_ref` when resolving the StaffRole row). `ar` / `fr` carry
 # the translations. `category_ref` matches
-# `provided_service_category_id` in the category seed.
+# `category_id` in the category seed.
 SEED_STAFF_ROLES: List[Dict[str, Any]] = [
     # ---------- Medical Doctors (category 1) ----------
     {
@@ -868,7 +868,7 @@ def get_staff_roles_by_category_name(
             )
             .filter(
                 models.StaffRole.staff_role_service_category_ref
-                == category.provided_service_category_id
+                == category.category_id
             )
             .all()
         )

@@ -78,6 +78,11 @@ class TestContext:
     created_subscriptions: List[int] = field(default_factory=list)
     user_org_mapping: Dict[int, List[int]] = field(default_factory=dict)
     user_supplier_mapping: Dict[int, List[int]] = field(default_factory=dict)
+    created_orders: List[int] = field(default_factory=list)
+    order_profiles: Dict[int, str] = field(default_factory=dict)
+    created_deliveries: List[int] = field(default_factory=list)
+    delivery_profiles: Dict[int, str] = field(default_factory=dict)
+    created_addresses: List[int] = field(default_factory=list)
     user_roles: Dict[int, List[str]] = field(default_factory=dict)
     subscription_user_mapping: Dict[int, List[int]] = field(
         default_factory=dict
@@ -90,9 +95,14 @@ class TestContext:
             "created_organisations": self.created_organisations,
             "created_suppliers": self.created_suppliers,
             "created_products": self.created_products,
-                        "created_carts": self.created_carts,
-            "cart_profiles": self.cart_profiles,
             "created_services": self.created_services,
+            "created_carts": self.created_carts,
+            "cart_profiles": self.cart_profiles,
+            "created_orders": self.created_orders,
+            "order_profiles": self.order_profiles,
+            "created_deliveries": self.created_deliveries,
+            "delivery_profiles": self.delivery_profiles,
+            "created_addresses": self.created_addresses,
             "created_staff_rules": self.created_staff_rules,
             "created_subscriptions": self.created_subscriptions,
             "user_org_mapping": self.user_org_mapping,
@@ -113,6 +123,11 @@ class TestContext:
         when the file does not exist. Raises on malformed JSON — a
         corrupt context file is a bug worth surfacing, not silently
         skipping.
+
+        JSON object keys are always strings; in-memory the id-keyed
+        mappings use int keys. Every int-keyed dict is re-normalized
+        on load so callers can look up by `delivery_id` (int) without
+        a str conversion.
         """
         path = Path(filename)
         if not path.exists():
@@ -140,19 +155,47 @@ class TestContext:
         self.created_products = data.get("created_products", [])
         self.created_services = data.get("created_services", [])
         self.created_carts = data.get("created_carts", [])
-        self.cart_profiles = data.get("cart_profiles", {})
+
+        # Id-keyed dicts: JSON gives string keys back. Normalize
+        # every one to int so lookups by integer id work.
+        self.cart_profiles = {
+            int(k): v
+            for k, v in data.get("cart_profiles", {}).items()
+        }
+        self.created_orders = data.get("created_orders", [])
+        self.order_profiles = {
+            int(k): v
+            for k, v in data.get("order_profiles", {}).items()
+        }
+        self.created_deliveries = data.get("created_deliveries", [])
+        self.delivery_profiles = {
+            int(k): v
+            for k, v in data.get("delivery_profiles", {}).items()
+        }
+        self.created_addresses = data.get("created_addresses", [])
+
         self.created_staff_rules = data.get("created_staff_rules", [])
         self.created_subscriptions = data.get(
             "created_subscriptions", []
         )
-        self.user_org_mapping = data.get("user_org_mapping", {})
-        self.user_supplier_mapping = data.get(
-            "user_supplier_mapping", {}
-        )
-        self.user_roles = data.get("user_roles", {})
-        self.subscription_user_mapping = data.get(
-            "subscription_user_mapping", {}
-        )
+        self.user_org_mapping = {
+            int(k): v
+            for k, v in data.get("user_org_mapping", {}).items()
+        }
+        self.user_supplier_mapping = {
+            int(k): v
+            for k, v in data.get("user_supplier_mapping", {}).items()
+        }
+        self.user_roles = {
+            int(k): v
+            for k, v in data.get("user_roles", {}).items()
+        }
+        self.subscription_user_mapping = {
+            int(k): v
+            for k, v in data.get(
+                "subscription_user_mapping", {}
+            ).items()
+        }
         print(f"📂 Test context loaded from {filename}")
         return True
 
@@ -167,9 +210,12 @@ class VolumeProfile:
     services_per_supplier: int
     staff_rules_per_supplier: int
 
-    # Number of carts to create per run. Split across the four
-    # cart profiles (clean, paid, deposit, finalized) in that order.
+    # Number of carts and orders to create per run.
+    # Carts are split across the four cart profiles (clean, paid,
+    # deposit, finalized) in that order. Orders are split across
+    # (clean, paid, confirmed, finalized).
     carts_per_run: int = 20
+    orders_per_run: int = 0
 
     # Minimum wallet balance the runner maintains for users that
     # draw on a wallet. Set higher for profiles with many carts.
@@ -178,13 +224,14 @@ class VolumeProfile:
 
 SMOKE = VolumeProfile(
     name="smoke",
-    users=10,
-    orgs_per_user=3,
-    suppliers_per_org=3,
-    products_per_supplier=5,
-    services_per_supplier=2,
-    staff_rules_per_supplier=2,
+    users=2,
+    orgs_per_user=1,
+    suppliers_per_org=1,
+    products_per_supplier=1,
+    services_per_supplier=1,
+    staff_rules_per_supplier=1,
     carts_per_run=4,
+    orders_per_run=10,
     wallet_floor=200_000.0,
 )
 
@@ -197,6 +244,7 @@ STANDARD = VolumeProfile(
     services_per_supplier=5,
     staff_rules_per_supplier=3,
     carts_per_run=20,
+    orders_per_run=40,
     wallet_floor=1_000_000.0,
 )
 
@@ -209,6 +257,7 @@ STRESS = VolumeProfile(
     services_per_supplier=20,
     staff_rules_per_supplier=5,
     carts_per_run=100,
+    orders_per_run=300,
     wallet_floor=5_000_000.0,
 )
 

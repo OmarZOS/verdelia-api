@@ -8,7 +8,7 @@ Arabic / French / English names. Seeding is idempotent: re-running
 inserts nothing.
 
 Barcode is the natural key for iproducts — it is the only stable
-identifier across imports. `iproduct_name` is not unique on purpose
+identifier across imports. `generic_name` is not unique on purpose
 (two brands can have the same product name), so the naming lookup
 keys on the English name and the barcode is what actually
 distinguishes rows.
@@ -51,7 +51,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "HealthyLife",
         "estimated_price": 2.99,
         "currency": "DZD",
-        "gluten_status": "contains_gluten",
         "category_id": 1,
         "image_url": "https://example.com/images/whole_wheat_bread.jpg",
         "info_source": "openai",
@@ -66,7 +65,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "Baker's Delight",
         "estimated_price": 4.50,
         "currency": "DZD",
-        "gluten_status": "contains_gluten",
         "category_id": 1,
         "image_url": "https://example.com/images/sourdough.jpg",
         "info_source": "openai",
@@ -81,7 +79,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "FreeLife",
         "estimated_price": 5.99,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 1,
         "image_url": "https://example.com/images/gluten_free_bread.jpg",
         "info_source": "openai",
@@ -98,7 +95,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "NutriSpread",
         "estimated_price": 3.49,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 2,
         "image_url": "https://example.com/images/peanut_butter.jpg",
         "info_source": "openai",
@@ -113,7 +109,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "FruitSpread",
         "estimated_price": 2.99,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 2,
         "image_url": "https://example.com/images/strawberry_jam.jpg",
         "info_source": "openai",
@@ -128,7 +123,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "PureHoney",
         "estimated_price": 6.99,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 2,
         "image_url": "https://example.com/images/honey.jpg",
         "info_source": "openai",
@@ -145,7 +139,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "MorningOats",
         "estimated_price": 3.99,
         "currency": "DZD",
-        "gluten_status": "contains_gluten",
         "category_id": 3,
         "image_url": "https://example.com/images/oatmeal.jpg",
         "info_source": "openai",
@@ -160,7 +153,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "CrispyCorn",
         "estimated_price": 2.49,
         "currency": "DZD",
-        "gluten_status": "contains_gluten",
         "category_id": 3,
         "image_url": "https://example.com/images/corn_flakes.jpg",
         "info_source": "openai",
@@ -175,7 +167,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "GranolaHealth",
         "estimated_price": 4.99,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 3,
         "image_url": "https://example.com/images/granola.jpg",
         "info_source": "openai",
@@ -192,7 +183,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "PastaItalia",
         "estimated_price": 1.99,
         "currency": "DZD",
-        "gluten_status": "contains_gluten",
         "category_id": 4,
         "image_url": "https://example.com/images/spaghetti.jpg",
         "info_source": "openai",
@@ -207,7 +197,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "FreePasta",
         "estimated_price": 3.99,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 4,
         "image_url": "https://example.com/images/gluten_free_pasta.jpg",
         "info_source": "openai",
@@ -222,7 +211,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "PastaItalia",
         "estimated_price": 2.49,
         "currency": "DZD",
-        "gluten_status": "contains_gluten",
         "category_id": 4,
         "image_url": "https://example.com/images/lasagna.jpg",
         "info_source": "openai",
@@ -239,7 +227,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "CrispySnack",
         "estimated_price": 1.49,
         "currency": "DZD",
-        "gluten_status": "contains_gluten",
         "category_id": 5,
         "image_url": "https://example.com/images/potato_chips.jpg",
         "info_source": "openai",
@@ -254,7 +241,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "FreeSnack",
         "estimated_price": 3.99,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 5,
         "image_url": "https://example.com/images/crackers.jpg",
         "info_source": "openai",
@@ -269,7 +255,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "NutriMix",
         "estimated_price": 4.99,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 5,
         "image_url": "https://example.com/images/trail_mix.jpg",
         "info_source": "openai",
@@ -286,7 +271,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "FreshSqueeze",
         "estimated_price": 2.99,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 6,
         "image_url": "https://example.com/images/orange_juice.jpg",
         "info_source": "openai",
@@ -301,7 +285,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "PlantMilk",
         "estimated_price": 3.49,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 6,
         "image_url": "https://example.com/images/almond_milk.jpg",
         "info_source": "openai",
@@ -316,7 +299,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "TeaLeaf",
         "estimated_price": 2.49,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 6,
         "image_url": "https://example.com/images/green_tea.jpg",
         "info_source": "openai",
@@ -333,7 +315,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "SweetTreat",
         "estimated_price": 2.99,
         "currency": "DZD",
-        "gluten_status": "contains_gluten",
         "category_id": 7,
         "image_url": "https://example.com/images/brownie.jpg",
         "info_source": "openai",
@@ -348,7 +329,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "FreeCookie",
         "estimated_price": 4.99,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 7,
         "image_url": "https://example.com/images/gluten_free_cookies.jpg",
         "info_source": "openai",
@@ -365,7 +345,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "FrostFresh",
         "estimated_price": 3.99,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 8,
         "image_url": "https://example.com/images/frozen_veg.jpg",
         "info_source": "openai",
@@ -380,7 +359,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "PizzaFast",
         "estimated_price": 5.99,
         "currency": "DZD",
-        "gluten_status": "contains_gluten",
         "category_id": 8,
         "image_url": "https://example.com/images/frozen_pizza.jpg",
         "info_source": "openai",
@@ -397,7 +375,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "BakeMaster",
         "estimated_price": 1.99,
         "currency": "DZD",
-        "gluten_status": "contains_gluten",
         "category_id": 9,
         "image_url": "https://example.com/images/flour.jpg",
         "info_source": "openai",
@@ -412,7 +389,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "NutriFlour",
         "estimated_price": 7.99,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 9,
         "image_url": "https://example.com/images/almond_flour.jpg",
         "info_source": "openai",
@@ -429,7 +405,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "CanFresh",
         "estimated_price": 1.49,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 10,
         "image_url": "https://example.com/images/canned_tomatoes.jpg",
         "info_source": "openai",
@@ -444,7 +419,6 @@ SEED_IPRODUCTS: List[Dict[str, Any]] = [
         "brand": "BeanGood",
         "estimated_price": 1.99,
         "currency": "DZD",
-        "gluten_status": "gluten_free",
         "category_id": 10,
         "image_url": "https://example.com/images/canned_beans.jpg",
         "info_source": "openai",
@@ -510,7 +484,6 @@ def generate_random_iproduct_data(
         "brand": random.choice(_RANDOM_BRAND_POOL),
         "estimated_price": round(random.uniform(1.99, 29.99), 2),
         "currency": "DZD",
-        "gluten_status": random.choice(_GLUTEN_STATUSES),
         "category_id": category_id or random.randint(1, 10),
         "image_url": (
             f"https://example.com/images/"
@@ -532,7 +505,6 @@ def _get_or_create_iproduct(
     brand: Optional[str],
     estimated_price: Optional[float],
     currency: str,
-    gluten_status: str,
     category_id: Optional[int],
     image_url: Optional[str],
     info_source: Optional[str],
@@ -546,7 +518,7 @@ def _get_or_create_iproduct(
     existing = first(
         get(
             table=models.Iproduct,
-            conditions={"iproduct_barcode": barcode},
+            conditions={"barcode": barcode},
         )
     )
     if existing:
@@ -554,21 +526,20 @@ def _get_or_create_iproduct(
 
     now = datetime.now()
     iproduct = models.Iproduct(
-        iproduct_name=name_en,
-        iproduct_barcode=barcode,
-        iproduct_brand=brand,
-        iproduct_estimated_price=Decimal(str(estimated_price or 0.00)),
-        iproduct_price_currency=currency,
-        iproduct_gluten_status=gluten_status,
-        iproduct_category_id=category_id,
-        iproduct_image_url=image_url,
-        iproduct_info_source=info_source,
-        iproduct_info_confidence=Decimal(str(info_confidence or 0.00)),
-        iproduct_model_name=model_name,
-        iproduct_naming_ref=naming_contribution_id,
-        iproduct_last_price_update=now,
-        iproduct_created_at=now,
-        iproduct_last_update=now,
+        generic_name=name_en,
+        barcode=barcode,
+        brand=brand,
+        estimated_price=Decimal(str(estimated_price or 0.00)),
+        price_currency=currency,
+        category_id=category_id,
+        image_url=image_url,
+        info_source=info_source,
+        info_confidence=Decimal(str(info_confidence or 0.00)),
+        model_name=model_name,
+        naming_id=naming_contribution_id,
+        last_price_update=now,
+        created_at=now,
+        last_update=now,
     )
     return first(insert_record(iproduct))
 
@@ -580,27 +551,24 @@ def _entry_to_fields(entry: Dict[str, Any]) -> Dict[str, Any]:
     `estimated_price`, ...) and the old `iproduct_*` keys.
     """
     return {
-        "barcode": entry.get("barcode") or entry.get("iproduct_barcode"),
-        "name_en": entry.get("en") or entry.get("iproduct_name"),
-        "brand": entry.get("brand") or entry.get("iproduct_brand"),
+        "barcode": entry.get("barcode") or entry.get("barcode"),
+        "name_en": entry.get("en") or entry.get("generic_name"),
+        "brand": entry.get("brand") or entry.get("brand"),
         "estimated_price": entry.get("estimated_price")
-        or entry.get("iproduct_estimated_price"),
+        or entry.get("estimated_price"),
         "currency": entry.get("currency")
-        or entry.get("iproduct_price_currency")
+        or entry.get("price_currency")
         or "DZD",
-        "gluten_status": entry.get("gluten_status")
-        or entry.get("iproduct_gluten_status")
-        or "unknown",
         "category_id": entry.get("category_id")
-        or entry.get("iproduct_category_id"),
+        or entry.get("category_id"),
         "image_url": entry.get("image_url")
-        or entry.get("iproduct_image_url"),
+        or entry.get("image_url"),
         "info_source": entry.get("info_source")
-        or entry.get("iproduct_info_source"),
+        or entry.get("info_source"),
         "info_confidence": entry.get("info_confidence")
-        or entry.get("iproduct_info_confidence"),
+        or entry.get("info_confidence"),
         "model_name": entry.get("model_name")
-        or entry.get("iproduct_model_name"),
+        or entry.get("model_name"),
     }
 
 
@@ -638,7 +606,7 @@ def seed_iproducts() -> int:
         existing_product = first(
             get(
                 table=models.Iproduct,
-                conditions={"iproduct_barcode": entry["barcode"]},
+                conditions={"barcode": entry["barcode"]},
             )
         )
         if existing_product:
@@ -652,7 +620,6 @@ def seed_iproducts() -> int:
             brand=fields["brand"],
             estimated_price=fields["estimated_price"],
             currency=fields["currency"],
-            gluten_status=fields["gluten_status"],
             category_id=fields["category_id"],
             image_url=fields["image_url"],
             info_source=fields["info_source"],
@@ -696,7 +663,7 @@ def seed_random_iproducts(count: int = 10) -> int:
         existing_product = first(
             get(
                 table=models.Iproduct,
-                conditions={"iproduct_barcode": entry["barcode"]},
+                conditions={"barcode": entry["barcode"]},
             )
         )
         if existing_product:
@@ -710,7 +677,6 @@ def seed_random_iproducts(count: int = 10) -> int:
             brand=fields["brand"],
             estimated_price=fields["estimated_price"],
             currency=fields["currency"],
-            gluten_status=fields["gluten_status"],
             category_id=fields["category_id"],
             image_url=fields["image_url"],
             info_source=fields["info_source"],
@@ -744,7 +710,7 @@ def seed_iproduct(product_data: Dict[str, Any]) -> bool:
     existing = first(
         get(
             table=models.Iproduct,
-            conditions={"iproduct_barcode": barcode},
+            conditions={"barcode": barcode},
         )
     )
     if existing:
@@ -769,7 +735,6 @@ def seed_iproduct(product_data: Dict[str, Any]) -> bool:
         brand=fields["brand"],
         estimated_price=fields["estimated_price"],
         currency=fields["currency"],
-        gluten_status=fields["gluten_status"],
         category_id=fields["category_id"],
         image_url=fields["image_url"],
         info_source=fields["info_source"],
@@ -802,7 +767,7 @@ def seed_iproducts_from_list(products: List[Dict[str, Any]]) -> int:
         existing = first(
             get(
                 table=models.Iproduct,
-                conditions={"iproduct_barcode": barcode},
+                conditions={"barcode": barcode},
             )
         )
         if existing:
@@ -829,7 +794,6 @@ def seed_iproducts_from_list(products: List[Dict[str, Any]]) -> int:
             brand=fields["brand"],
             estimated_price=fields["estimated_price"],
             currency=fields["currency"],
-            gluten_status=fields["gluten_status"],
             category_id=fields["category_id"],
             image_url=fields["image_url"],
             info_source=fields["info_source"],
@@ -860,7 +824,7 @@ def get_all_seeded_iproducts() -> List[Dict[str, Any]]:
             session.query(models.Iproduct, models.NamingContribution)
             .outerjoin(
                 models.NamingContribution,
-                models.Iproduct.iproduct_naming_ref
+                models.Iproduct.naming_id
                 == models.NamingContribution.id_naming_contribution,
             )
             .all()
@@ -871,24 +835,23 @@ def get_all_seeded_iproducts() -> List[Dict[str, Any]]:
             result.append(
                 {
                     "id": product.id_iproduct,
-                    "name": product.iproduct_name,
-                    "en": product.iproduct_name,
+                    "name": product.generic_name,
+                    "en": product.generic_name,
                     "ar": getattr(naming, "naming_contribution_ar", None)
                     if naming
                     else None,
                     "fr": getattr(naming, "naming_contribution_fr", None)
                     if naming
                     else None,
-                    "barcode": product.iproduct_barcode,
-                    "brand": product.iproduct_brand,
-                    "price": float(product.iproduct_estimated_price)
-                    if product.iproduct_estimated_price
+                    "barcode": product.barcode,
+                    "brand": product.brand,
+                    "price": float(product.estimated_price)
+                    if product.estimated_price
                     else 0,
-                    "currency": product.iproduct_price_currency,
-                    "gluten_status": product.iproduct_gluten_status,
-                    "category_id": product.iproduct_category_id,
-                    "image_url": product.iproduct_image_url,
-                    "naming_ref": product.iproduct_naming_ref,
+                    "currency": product.price_currency,
+                    "category_id": product.category_id,
+                    "image_url": product.image_url,
+                    "naming_ref": product.naming_id,
                 }
             )
         return result
@@ -901,7 +864,7 @@ def iproduct_exists(barcode: str) -> bool:
     existing = first(
         get(
             table=models.Iproduct,
-            conditions={"iproduct_barcode": barcode},
+            conditions={"barcode": barcode},
         )
     )
     return bool(existing)
@@ -916,7 +879,7 @@ def get_iproduct_by_barcode(
     return first(
         get(
             table=models.Iproduct,
-            conditions={"iproduct_barcode": barcode},
+            conditions={"barcode": barcode},
         )
     )
 
@@ -944,25 +907,11 @@ def get_iproducts_by_category(
     with session_scope() as session:
         return (
             session.query(models.Iproduct)
-            .filter(models.Iproduct.iproduct_category_id == category_id)
+            .filter(models.Iproduct.category_id == category_id)
             .all()
         )
 
 
-def get_iproducts_by_gluten_status(
-    gluten_status: str,
-) -> List[models.Iproduct]:
-    """
-    Return iproducts matching a given gluten status.
-    """
-    with session_scope() as session:
-        return (
-            session.query(models.Iproduct)
-            .filter(
-                models.Iproduct.iproduct_gluten_status == gluten_status
-            )
-            .all()
-        )
 
 
 def delete_all_iproducts() -> int:
@@ -986,7 +935,7 @@ def update_iproduct_price(barcode: str, new_price: float) -> bool:
     with session_scope() as session:
         product = (
             session.query(models.Iproduct)
-            .filter(models.Iproduct.iproduct_barcode == barcode)
+            .filter(models.Iproduct.barcode == barcode)
             .first()
         )
 
@@ -994,8 +943,8 @@ def update_iproduct_price(barcode: str, new_price: float) -> bool:
             logger.warning("Iproduct not found with barcode: %s", barcode)
             return False
 
-        product.iproduct_estimated_price = Decimal(str(new_price))
-        product.iproduct_last_price_update = datetime.now()
+        product.estimated_price = Decimal(str(new_price))
+        product.last_price_update = datetime.now()
         session.commit()
         logger.debug("Updated price for product: %s -> %s", barcode, new_price)
         return True
@@ -1008,7 +957,7 @@ def update_iproduct_image(barcode: str, image_url: str) -> bool:
     with session_scope() as session:
         product = (
             session.query(models.Iproduct)
-            .filter(models.Iproduct.iproduct_barcode == barcode)
+            .filter(models.Iproduct.barcode == barcode)
             .first()
         )
 
@@ -1016,7 +965,7 @@ def update_iproduct_image(barcode: str, image_url: str) -> bool:
             logger.warning("Iproduct not found with barcode: %s", barcode)
             return False
 
-        product.iproduct_image_url = image_url
+        product.image_url = image_url
         session.commit()
         logger.debug("Updated image for product: %s", barcode)
         return True

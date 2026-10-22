@@ -40,14 +40,14 @@ class LocationService:
         
         if delivery.delivery_address_id:
             address.id_address = delivery.delivery_address_id
-        if delivery.address_street:
-            address.address_street = delivery.address_street
-        if delivery.address_city:
-            address.address_city = delivery.address_city
-        if delivery.address_postal_code:
-            address.address_postal_code = delivery.address_postal_code
-        if delivery.address_country:
-            address.address_country = delivery.address_country
+        # if delivery.address_street:
+        #     address.address_street = delivery.address_street
+        # if delivery.address_city:
+        #     address.address_city = delivery.address_city
+        # if delivery.address_postal_code:
+        #     address.address_postal_code = delivery.address_postal_code
+        # if delivery.address_country:
+        #     address.address_country = delivery.address_country
         
         return address
     

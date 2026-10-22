@@ -58,7 +58,7 @@
 #         product.product_name = "Test Product"
 #         product.product_brand = "Test Brand"
 #         product.product_barcode = "123456789"
-#         product.product_price = 19.99
+#         product.unit_price = 19.99
 #         product.product_quantity = 100
 #         product.product_quantifier = "piece"
 #         product.product_description = "Test description"
@@ -76,16 +76,16 @@
 #         """Sample Iproduct_API data"""
 #         return Iproduct_API(
 #             id_iproduct=0,
-#             iproduct_name="AI Recognized Product",
-#             iproduct_barcode="987654321",
-#             iproduct_brand="AI Brand",
-#             iproduct_estimated_price=29.99,
-#             iproduct_price_currency="USD",
+#             generic_name="AI Recognized Product",
+#             barcode="987654321",
+#             brand="AI Brand",
+#             estimated_price=29.99,
+#             price_currency="USD",
 #             iproduct_gluten_status="gluten_free",
-#             iproduct_info_source="openai",
-#             iproduct_info_confidence=0.95,
-#             iproduct_model_name="gpt-4",
-#             iproduct_image_url="http://example.com/product.jpg"
+#             info_source="openai",
+#             info_confidence=0.95,
+#             model_name="gpt-4",
+#             image_url="http://example.com/product.jpg"
 #         )
     
 #     @pytest.fixture
@@ -266,7 +266,7 @@
         
 #         assert result == sample_product_model
 #         assert sample_product_model.product_name == sample_product_api.product_name
-#         assert sample_product_model.product_price == sample_product_api.product_price
+#         assert sample_product_model.unit_price == sample_product_api.unit_price
     
 #     def test_update_product_invalid_category(self, product_service, sample_product_api):
 #         """Test updating a product with invalid category"""
@@ -527,7 +527,7 @@
 #         assert result.product_name == sample_product_api.product_name
 #         assert result.product_brand == sample_product_api.product_brand
 #         assert result.product_barcode == sample_product_api.product_barcode
-#         assert result.product_price == sample_product_api.product_price
+#         assert result.unit_price == sample_product_api.unit_price
 #         assert result.product_quantifier == sample_product_api.product_quantifier
 #         assert result.product_quantity == sample_product_api.product_quantity
 #         assert result.product_description == sample_product_api.product_description
@@ -539,66 +539,66 @@
 #         """Test creating Iproduct from API data"""
 #         result = product_service._create_iproduct_from_api(sample_iproduct_api)
         
-#         assert result.iproduct_name == "AI Recognized Product"
-#         assert result.iproduct_barcode == "987654321"
-#         assert result.iproduct_brand == "AI Brand"
-#         assert result.iproduct_estimated_price == 29.99
-#         assert result.iproduct_price_currency == "USD"
+#         assert result.generic_name == "AI Recognized Product"
+#         assert result.barcode == "987654321"
+#         assert result.brand == "AI Brand"
+#         assert result.estimated_price == 29.99
+#         assert result.price_currency == "USD"
 #         assert result.iproduct_gluten_status == "gluten_free"
-#         assert result.iproduct_info_source == "openai"
-#         assert result.iproduct_info_confidence == 0.95
+#         assert result.info_source == "openai"
+#         assert result.info_confidence == 0.95
     
 #     def test_create_iproduct_from_api_defaults(self, product_service):
 #         """Test creating Iproduct from API with missing values"""
 #         empty_api = Iproduct_API(
 #             id_iproduct=0,
-#             iproduct_name=None,
-#             iproduct_barcode="123",
-#             iproduct_brand=None,
-#             iproduct_estimated_price=None,
-#             iproduct_price_currency=None,
+#             generic_name=None,
+#             barcode="123",
+#             brand=None,
+#             estimated_price=None,
+#             price_currency=None,
 #             iproduct_gluten_status=None,
-#             iproduct_info_source=None,
-#             iproduct_info_confidence=None,
-#             iproduct_model_name=None,
-#             iproduct_image_url=None
+#             info_source=None,
+#             info_confidence=None,
+#             model_name=None,
+#             image_url=None
 #         )
         
 #         result = product_service._create_iproduct_from_api(empty_api)
         
-#         assert result.iproduct_name == "Unknown"
-#         assert result.iproduct_brand == "Unknown"
-#         assert result.iproduct_estimated_price == 0.0
-#         assert result.iproduct_price_currency == "DZD"
+#         assert result.generic_name == "Unknown"
+#         assert result.brand == "Unknown"
+#         assert result.estimated_price == 0.0
+#         assert result.price_currency == "DZD"
 #         assert result.iproduct_gluten_status == "unknown"
-#         assert result.iproduct_info_source == "ai_analysis"
-#         assert result.iproduct_info_confidence == 0.0
+#         assert result.info_source == "ai_analysis"
+#         assert result.info_confidence == 0.0
     
 #     def test_update_iproduct(self, product_service):
 #         """Test updating existing Iproduct"""
 #         existing = MagicMock()
-#         existing.iproduct_name = "Old Name"
-#         existing.iproduct_brand = "Old Brand"
-#         existing.iproduct_estimated_price = 10.0
+#         existing.generic_name = "Old Name"
+#         existing.brand = "Old Brand"
+#         existing.estimated_price = 10.0
         
 #         new_data = Iproduct_API(
 #             id_iproduct=1,
-#             iproduct_name="New Name",
-#             iproduct_brand="New Brand",
-#             iproduct_estimated_price=20.0,
+#             generic_name="New Name",
+#             brand="New Brand",
+#             estimated_price=20.0,
 #             iproduct_gluten_status="contains_gluten",
-#             iproduct_info_source="manual",
-#             iproduct_info_confidence=0.8
+#             info_source="manual",
+#             info_confidence=0.8
 #         )
         
 #         product_service._update_iproduct(existing, new_data)
         
-#         assert existing.iproduct_name == "New Name"
-#         assert existing.iproduct_brand == "New Brand"
-#         assert existing.iproduct_estimated_price == 20.0
+#         assert existing.generic_name == "New Name"
+#         assert existing.brand == "New Brand"
+#         assert existing.estimated_price == 20.0
 #         assert existing.iproduct_gluten_status == "contains_gluten"
-#         assert existing.iproduct_info_source == "manual"
-#         assert existing.iproduct_info_confidence == 0.8
+#         assert existing.info_source == "manual"
+#         assert existing.info_confidence == 0.8
 #         product_service.iproduct_repo.update.assert_called_once_with(existing)
     
 #     def test_handle_product_image_new(self, product_service, sample_product_model, sample_image_api):

@@ -17,6 +17,7 @@ import logging
 
 from services.helpers.auth.auth_dependencies import get_current_user_id
 from core.exceptions.specific.cart_exceptions import (
+    CartInsufficientStockException,
     CartServiceException,
     CartNotFoundException,
     CartCreationFailedException,
@@ -157,28 +158,28 @@ def _serialize_cart_short(cart) -> Dict[str, Any]:
     """Compact cart representation used by list endpoints."""
     return {
         "cart_id": cart.cart_id,
-        "provider_id": cart.cart_product_provider_id,
-        "selling_user": cart.cart_selling_user,
-        "client_user": cart.cart_client_user,
+        "provider_id": cart.provider_id,
+        "selling_user": cart.selling_user_id,
+        "client_user": cart.client_user_id,
         "status": cart.cart_status,
-        "total_amount": float(cart.cart_total_amount or 0),
-        "notes": cart.cart_notes,
-        "created_at": cart.cart_created_at.isoformat() if cart.cart_created_at else None,
-        "updated_at": cart.cart_updated_at.isoformat() if cart.cart_updated_at else None,
+        "total_amount": float(cart.subtotal or 0),
+        "notes": cart.notes,
+        "created_at": cart.created_at.isoformat() if cart.cart_created_at else None,
+        "updated_at": cart.updated_at.isoformat() if cart.cart_updated_at else None,
         "due_date": cart.cart_due_date.isoformat() if cart.cart_due_date else None,
-        "invoice_id": cart.cart_invoice,
-        "person_ref": cart.cart_person_ref,
+        "invoice_id": cart.invoice_id,
+        "person_ref": cart.client_person_id,
     }
 
 
 def _serialize_ordered_item(item) -> Dict[str, Any]:
     return {
         "id": item.id_ordered_item,
-        "product_id": item.ordered_product_id,
+        "product_id": item.product_id,
         "quantity": item.ordered_quantity,
         "unit_price": float(item.unit_price) if item.unit_price else 0,
         "total_price": float(item.unit_price * item.ordered_quantity) if item.unit_price else 0,
-        "vat": float(item.applied_vat) if item.applied_vat else 0,
+        "vat": float(item.vat_rate) if item.vat_rate else 0,
         "discount": float(item.product_discount) if item.product_discount else 0,
         "delivery_status": item.ordered_item_delivery_status,
         "delivery_fee": float(item.ordered_item_delivery_fee) if item.ordered_item_delivery_fee else 0,
@@ -359,8 +360,8 @@ async def create_cart(
 
         logger.info(
             f"✅ Cart {created_cart.cart_id} created "
-            f"(total={created_cart.cart_total_amount}, "
-            f"invoice={created_cart.cart_invoice})"
+            f"(total={created_cart.subtotal}, "
+            f"invoice={created_cart.invoice_id})"
         )
 
         financial_payload = _build_financial_documents_payload(financial_docs)
@@ -371,32 +372,28 @@ async def create_cart(
             "message": "Cart created successfully",
             "data": {
                 "cart_id": created_cart.cart_id,
-                "cart_invoice": created_cart.cart_invoice,
+                "cart_invoice": created_cart.invoice_id,
                 "status": created_cart.cart_status,
                 "total_amount": (
-                    float(created_cart.cart_total_amount)
-                    if created_cart.cart_total_amount is not None
+                    float(created_cart.subtotal)
+                    if created_cart.subtotal is not None
                     else 0
                 ),
                 "created_at": (
-                    created_cart.cart_created_at.isoformat()
-                    if created_cart.cart_created_at
+                    created_cart.created_at.isoformat()
+                    if created_cart.created_at
                     else None
                 ),
                 "financial_documents": financial_payload,
             },
         }
 
-    except (CartCreationFailedException, CartPaymentRequiredException):
+    except (
+        CartCreationFailedException,
+        CartPaymentRequiredException,
+        CartInsufficientStockException,
+    ):
         raise
-    except Exception as e:
-        logger.error(f"Failed to create cart: {e}")
-        raise CartCreationFailedException(
-            error=str(e),
-            provider_id=request.provider_id,
-            seller_id=request.seller_user_id,
-            buyer_id=request.buyer_user_id or 0,
-        )
 
 
 # ==================== Payment / Inventory (workflow) ====================
@@ -816,7 +813,7 @@ def get_cart_summary(
                 items.append(
                     {
                         "id": item.id_ordered_item,
-                        "product_id": item.ordered_product_id,
+                        "product_id": item.product_id,
                         "quantity": item.ordered_quantity,
                         "unit_price": float(item.unit_price) if item.unit_price else 0,
                         "total": item_total,

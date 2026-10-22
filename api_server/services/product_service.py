@@ -122,8 +122,8 @@ class ProductService:
                 # Origin Iproduct — the AI-derived metadata plus the
                 # trilingual name and the reference category.
                 {
-                    Product.product_origin: [
-                        Iproduct.naming_contribution,
+                    Product.origin: [
+                        Iproduct.naming,
                     ]
                 },
 
@@ -133,7 +133,7 @@ class ProductService:
             ]
             if eager_load
             else [
-                Product.product_category,
+                Product.category,
                 Product.product_image,
             ]
         )
@@ -200,7 +200,7 @@ class ProductService:
         return int(
             storage_broker.count(
                 Product,
-                conditions={Product.product_provider_id: provider_id},
+                conditions={Product.provider_id: provider_id},
             )
             or 0
         )
@@ -212,7 +212,7 @@ class ProductService:
         limit: int = 10,
         include_hidden: bool = False,
     ) -> List[Product]:
-        category = self.product_repo.get_product_category_by_id(category_id)
+        category = self.product_repo.get_category_by_id(category_id)
         if not category:
             raise ProductCategoryNotFoundException(category_id=category_id)
         return self.product_repo.get_products_by_category(
@@ -237,7 +237,7 @@ class ProductService:
 
     def validate_category(self, category_id: int) -> Any:
         """Local: fetch the category or raise."""
-        category = self.product_repo.get_product_category_by_id(category_id)
+        category = self.product_repo.get_category_by_id(category_id)
         if not category:
             logger.warning(f"Product category not found with ID: {category_id}")
             raise ProductCategoryNotFoundException(category_id=category_id)
@@ -275,7 +275,7 @@ class ProductService:
         )
 
         product = self.build_product_model(product_api)
-        product.product_category_id = product_category.id_product_category
+        product.category_id = product_category.id_product_category
 
         if image and image.product_image_url:
             product.product_image = [
@@ -316,28 +316,29 @@ class ProductService:
 
         changes = self._collect_changes(product, product_api)
 
-        product.product_name = product_api.product_name
-        product.product_brand = product_api.product_brand
-        product.product_barcode = product_api.product_barcode
-        product.product_price = product_api.product_price
-        product.product_base_price = getattr(
+        product.generic_name = product_api.product_name
+        product.brand = product_api.product_brand
+        product.barcode = product_api.product_barcode
+        product.unit_price = product_api.unit_price
+        product.vat_rate = product_api.product_vat_value
+        product.base_price = getattr(
             product_api, "product_base_price", product.product_base_price
         )
-        product.product_quantity = product_api.product_quantity
-        product.product_reserved_quantity = getattr(
+        product.available_quantity = product_api.product_quantity
+        product.reserved_quantity = getattr(
             product_api,
             "product_reserved_quantity",
             product.product_reserved_quantity,
         )
-        product.product_quantifier = product_api.product_quantifier
+        product.quantifier = product_api.product_quantifier
         product.product_description = product_api.product_description
-        product.product_visibility = getattr(
-            product_api, "product_visibility", product.product_visibility
+        product.visibility = getattr(
+            product_api, "product_visibility", product.visibility
         )
-        product.product_origin_id = getattr(
-            product_api, "product_origin_id", product.product_origin_id
+        product.origin_id = getattr(
+            product_api, "product_origin_id", product.origin_id
         )
-        product.product_category_id = product_category.id_product_category
+        product.category_id = product_category.id_product_category
         product.last_updated = datetime.now()
 
         if image and image.product_image_url:
@@ -378,15 +379,15 @@ class ProductService:
 
         product = self.get_product_by_id(product_id, include_hidden=True)
 
-        if product.product_visibility == normalized:
+        if product.visibility == normalized:
             logger.info(
                 f"Product {product_id} visibility already '{normalized}'; "
                 f"no change."
             )
             return product
 
-        previous = product.product_visibility
-        product.product_visibility = normalized
+        previous = product.visibility
+        product.visibility = normalized
         product.last_updated = datetime.now()
 
         try:
@@ -414,7 +415,7 @@ class ProductService:
         )
         product = self.get_product_by_id(product_id, include_hidden=True)
 
-        product.product_visibility = VISIBILITY_DELETED
+        product.visibility = VISIBILITY_DELETED
 
         try:
             result = self.product_repo.update_product(product)
@@ -456,21 +457,22 @@ class ProductService:
 
     def build_product_model(self, product_api: Product_API) -> Product:
         return Product(
-            product_name=product_api.product_name,
-            product_brand=product_api.product_brand,
-            product_barcode=product_api.product_barcode,
-            product_price=product_api.product_price,
-            product_base_price=product_api.product_base_price,
-            product_quantifier=product_api.product_quantifier,
-            product_quantity=product_api.product_quantity,
-            product_reserved_quantity=product_api.product_reserved_quantity,
-            product_visibility=getattr(
+            generic_name=product_api.product_name,
+            brand=product_api.product_brand,
+            barcode=product_api.product_barcode,
+            unit_price=product_api.unit_price,
+            vat_rate= product_api.product_vat_value,
+            base_price=product_api.product_base_price,
+            quantifier=product_api.product_quantifier,
+            available_quantity=product_api.product_quantity,
+            reserved_quantity=product_api.product_reserved_quantity,
+            visibility=getattr(
                 product_api, "product_visibility", VISIBILITY_VISIBLE
             ),
             product_description=product_api.product_description,
-            product_owner=product_api.product_owner,
-            product_provider_id=product_api.product_provider_id,
-            product_origin_id=getattr(
+            user_id=product_api.product_owner,
+            provider_id=product_api.product_provider_id,
+            origin_id=getattr(
                 product_api, "product_origin_id", None
             ),
             created=datetime.now(),
@@ -493,7 +495,7 @@ class ProductService:
             existing = self.iproduct_repo.get_by_id(iproduct_api.id_iproduct)
             if existing:
                 self.update_iproduct(existing, iproduct_api)
-                product.product_origin_id = existing.id_iproduct
+                product.origin_id = existing.id_iproduct
                 logger.debug(
                     f"Linked existing IProduct {existing.id_iproduct}"
                 )
@@ -503,14 +505,14 @@ class ProductService:
         # the flow roll back if the insert fails.
         with self._naming_flow.for_payload(
             naming=getattr(iproduct_api, "naming", None),
-            fallback=iproduct_api.iproduct_name,
+            fallback=iproduct_api.generic_name,
             context="iproduct insert",
         ) as resolved:
             new_iproduct = self.create_iproduct_from_api(
                 iproduct_api,
                 naming_contribution_id=resolved.id,
             )
-            product.product_origin_id = new_iproduct.id_iproduct
+            product.origin_id = new_iproduct.id_iproduct
             logger.debug("Linked new IProduct to product")
 
     def create_iproduct_from_api(
@@ -521,7 +523,7 @@ class ProductService:
         """
         Build and persist an Iproduct.
 
-        `iproduct_name` is set from `naming.en` when a naming block is
+        `generic_name` is set from `naming.en` when a naming block is
         present, so the flat column and the naming row never drift.
         """
         now = datetime.now()
@@ -529,40 +531,37 @@ class ProductService:
         nested: Optional[NamingContribution_API] = getattr(
             iproduct_api, "naming", None
         )
-        flat_name = (iproduct_api.iproduct_name or "").strip()
+        flat_name = (iproduct_api.generic_name or "").strip()
         resolved_name = (
             (nested.en or "").strip() if nested is not None else ""
         ) or flat_name or "Unknown"
 
         iproduct = Iproduct(
-            iproduct_name=resolved_name,
-            iproduct_barcode=iproduct_api.iproduct_barcode,
-            iproduct_brand=iproduct_api.iproduct_brand or "Unknown",
-            iproduct_estimated_price=(
-                iproduct_api.iproduct_estimated_price or 0.0
+            generic_name=resolved_name,
+            barcode=iproduct_api.barcode,
+            brand=iproduct_api.brand or "Unknown",
+            estimated_price=(
+                iproduct_api.estimated_price or 0.0
             ),
-            iproduct_price_currency=(
-                iproduct_api.iproduct_price_currency or "DZD"
+            price_currency=(
+                iproduct_api.price_currency or "DZD"
             ),
-            iproduct_gluten_status=(
-                iproduct_api.iproduct_gluten_status or "unknown"
+            info_source=(
+                iproduct_api.info_source or "ai_analysis"
             ),
-            iproduct_info_source=(
-                iproduct_api.iproduct_info_source or "ai_analysis"
+            info_confidence=(
+                iproduct_api.info_confidence or 0.0
             ),
-            iproduct_info_confidence=(
-                iproduct_api.iproduct_info_confidence or 0.0
+            last_price_update=(
+                iproduct_api.last_price_update or now
             ),
-            iproduct_last_price_update=(
-                iproduct_api.iproduct_last_price_update or now
+            created_at=iproduct_api.created_at or now,
+            last_update=(
+                iproduct_api.last_update or now.isoformat()
             ),
-            iproduct_created_at=iproduct_api.iproduct_created_at or now,
-            iproduct_last_update=(
-                iproduct_api.iproduct_last_update or now.isoformat()
-            ),
-            iproduct_model_name=iproduct_api.iproduct_model_name,
-            iproduct_image_url=iproduct_api.iproduct_image_url,
-            iproduct_naming_ref=naming_contribution_id,
+            model_name=iproduct_api.model_name,
+            image_url=iproduct_api.image_url,
+            naming_id=naming_contribution_id,
         )
 
         self.iproduct_repo.create(iproduct)
@@ -592,16 +591,16 @@ class ProductService:
                 context="iproduct update",
             ) as resolved:
                 if resolved.is_usable:
-                    existing.iproduct_naming_ref = resolved.id
-                    existing.iproduct_name = (nested.en or "").strip()
+                    existing.naming_id = resolved.id
+                    existing.generic_name = (nested.en or "").strip()
                     self._apply_iproduct_fields(existing, new_data, now)
                     self.iproduct_repo.update(existing)
                     logger.debug(f"Updated IProduct {existing.id_iproduct}")
                     return existing
                 # Flow could not resolve a name; fall through to the
                 # no-naming path below.
-        elif new_data.iproduct_name:
-            existing.iproduct_name = new_data.iproduct_name
+        elif new_data.generic_name:
+            existing.generic_name = new_data.generic_name
 
         self._apply_iproduct_fields(existing, new_data, now)
         self.iproduct_repo.update(existing)
@@ -615,26 +614,22 @@ class ProductService:
         now: datetime,
     ) -> None:
         """Copy the flat fields that aren't naming-related."""
-        if new_data.iproduct_brand:
-            existing.iproduct_brand = new_data.iproduct_brand
-        if new_data.iproduct_estimated_price is not None:
-            existing.iproduct_estimated_price = (
-                new_data.iproduct_estimated_price
+        if new_data.brand:
+            existing.brand = new_data.brand
+        if new_data.estimated_price is not None:
+            existing.estimated_price = (
+                new_data.estimated_price
             )
-            existing.iproduct_last_price_update = now
-        if new_data.iproduct_gluten_status:
-            existing.iproduct_gluten_status = (
-                new_data.iproduct_gluten_status
+            existing.last_price_update = now
+        if new_data.info_source:
+            existing.info_source = new_data.info_source
+        if new_data.info_confidence is not None:
+            existing.info_confidence = (
+                new_data.info_confidence
             )
-        if new_data.iproduct_info_source:
-            existing.iproduct_info_source = new_data.iproduct_info_source
-        if new_data.iproduct_info_confidence is not None:
-            existing.iproduct_info_confidence = (
-                new_data.iproduct_info_confidence
-            )
-        if new_data.iproduct_image_url:
-            existing.iproduct_image_url = new_data.iproduct_image_url
-        existing.iproduct_last_update = now.isoformat()
+        if new_data.image_url:
+            existing.image_url = new_data.image_url
+        existing.last_update = now.isoformat()
 
     # ==================== Images ====================
 
@@ -695,24 +690,24 @@ class ProductService:
         self, product: Product, product_api: Product_API
     ) -> List[str]:
         changes: List[str] = []
-        if product.product_name != product_api.product_name:
+        if product.generic_name != product_api.product_name:
             changes.append(
-                f"name: {product.product_name} -> {product_api.product_name}"
+                f"name: {product.generic_name} -> {product_api.product_name}"
             )
-        if product.product_price != product_api.product_price:
+        if product.unit_price != product_api.unit_price:
             changes.append(
-                f"price: {product.product_price} -> {product_api.product_price}"
+                f"price: {product.unit_price} -> {product_api.unit_price}"
             )
-        if product.product_quantity != product_api.product_quantity:
+        if product.available_quantity != product_api.product_quantity:
             changes.append(
-                f"quantity: {product.product_quantity} -> "
+                f"quantity: {product.available_quantity} -> "
                 f"{product_api.product_quantity}"
             )
-        if product.product_visibility != getattr(
-            product_api, "product_visibility", product.product_visibility
+        if product.visibility != getattr(
+            product_api, "product_visibility", product.visibility
         ):
             changes.append(
-                f"visibility: {product.product_visibility} -> "
+                f"visibility: {product.visibility} -> "
                 f"{getattr(product_api, 'product_visibility', None)}"
             )
         return changes

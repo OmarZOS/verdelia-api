@@ -41,8 +41,7 @@ logger = logging.getLogger(__name__)
 class DeliveryBrokerService:
     """Business logic for delivery brokers."""
 
-    def __init__(self, session: Session):
-        self.session = session
+    def __init__(self):
         self.repo = DeliveryBrokerRepository()
 
     # ==================== Reads ====================
@@ -83,7 +82,6 @@ class DeliveryBrokerService:
 
     def list_brokers(
         self,
-        *,
         verified_only: bool = False,
         offset: int = 0,
         limit: int = 100,

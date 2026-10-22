@@ -3,8 +3,20 @@
 
 Split out of the runner so the runner file focuses on scenarios. The
 generators are pure: dict in, dict out. No HTTP, no context.
+
+Conventions
+-----------
+* Payload field names are always the **pydantic model's** names, never
+  raw DB column names. (`placed_order_state`, not `order_status`;
+  `person_blood_type`, not `blood_type`.)
+* Each generator's docstring states what shape it returns:
+  "sub-object `X`" for a nested field, "full body for endpoint `Y`"
+  for a complete request payload.
+* Monetary fields the client sends as "hints" (unit_price, discount)
+  are documented so the caller knows what the server does with them.
 """
 
+from datetime import datetime
 import json
 import random
 import uuid
@@ -15,7 +27,7 @@ from typing import Any, Dict, List, Optional
 # Static pools
 # ══════════════════════════════════════════════════════════════════
 
-IPRODUCT_NAME_POOL = [
+generic_name_POOL = [
     ("Paracetamol", "باراسيتامول", "Paracétamol"),
     ("Ibuprofen", "إيبوبروفين", "Ibuprofène"),
     ("Amoxicillin", "أموكسيسيلين", "Amoxicilline"),
@@ -168,8 +180,6 @@ RESOURCE_REQUIREMENTS = [
     ("IV fluids", "consumable", "bag"),
 ]
 
-# These are ids, not names — the staff_role table is small and
-# stable. Add to the list when new roles are seeded.
 # ══════════════════════════════════════════════════════════════════
 # Service pools and generators (moved from test_service_endpoints.py)
 # ══════════════════════════════════════════════════════════════════
@@ -245,8 +255,8 @@ def short(text: Optional[str], n: int = 400) -> str:
 
 
 _ID_KEYS: List[str] = [
-    "id_app_user", "id_product_provider", "provided_service_id","id_provider_organisation",
-    "idprovider_organisation", "id_product", "id",
+    "id_app_user", "id_product_provider", "idprovided_service", "id_provider_organisation",
+    "id_provider_organisation", "id_product", "id",
     "user_id", "supplier_id", "organisation_id",
     "rule_id", "staff_rule_id",
     "location_id", "person_id",
@@ -273,7 +283,7 @@ def extract_id(payload: Any) -> int:
 
     for nested in [
         "user", "provider", "product", "payment", "rule", "staff",
-        "organisation", "plan", "subscription", "invoice","service"
+        "organisation", "plan", "subscription", "invoice", "service"
     ]:
         v = payload.get(nested)
         if isinstance(v, dict):
@@ -314,6 +324,7 @@ def random_price(min_price: float = 5.0, max_price: float = 200.0) -> float:
 # ── Payload generators ─────────────────────────────────────────────
 
 def generate_user_data(user_type: Optional[str] = None) -> Dict[str, Any]:
+    """Full body for `POST /app_user`."""
     first = get_random_item(REAL_FIRST_NAMES) or "Test"
     last = get_random_item(REAL_LAST_NAMES) or "User"
     all_types = ["provider", "customer", "patient", "guest", "admin"]
@@ -345,6 +356,13 @@ def generate_user_data(user_type: Optional[str] = None) -> Dict[str, Any]:
 
 
 def generate_person_data(extended: bool = False) -> Dict[str, Any]:
+    """Full body for `POST /person`.
+
+    `extended=True` adds the optional fields the person schema
+    accepts. All field names carry the `person_` prefix — including
+    `person_blood_type`, which the schema exposes (not the raw DB
+    column `blood_type`).
+    """
     data = {
         "person_first_name": get_random_item(REAL_FIRST_NAMES) or "Test",
         "person_last_name": get_random_item(REAL_LAST_NAMES) or "User",
@@ -354,7 +372,10 @@ def generate_person_data(extended: bool = False) -> Dict[str, Any]:
     }
     if extended:
         data.update({
-            "blood_type": random.choice(BLOOD_TYPES),
+            # FIX: `person_blood_type` (pydantic field), not `blood_type`
+            # (DB column). The previous name was silently dropped by the
+            # router's pydantic model, so blood type was never tested.
+            "person_blood_type": random.choice(BLOOD_TYPES),
             "person_email": (
                 f"person_{uuid.uuid4().hex[:4]}@example.com"
             ),
@@ -381,6 +402,17 @@ def generate_person_data(extended: bool = False) -> Dict[str, Any]:
 
 
 def generate_location_data(extended: bool = False) -> Dict[str, Any]:
+    """Sub-object `location` / `destination_address`.
+
+    Coordinates default to Algeria's bounding box. When the address
+    country is outside DZ, coordinates are still DZ-relative — fine
+    for a smoke test, but do not assert geospatial consistency in
+    scenarios that use this generator (or pass an explicit
+    `address_country="DZ"` if you need it).
+
+    FIX: `location_latitude` and `location_longitude` are now
+    integer-like and clearly documented as not country-aware.
+    """
     data = {
         "location_latitude": round(random.uniform(35.0, 37.0), 6),
         "location_longitude": round(random.uniform(-5.0, 8.0), 6),
@@ -417,6 +449,7 @@ def generate_location_data(extended: bool = False) -> Dict[str, Any]:
 def generate_organisation_data(
     *, with_naming: bool = True,
 ) -> Dict[str, Any]:
+    """Full body for `POST /organisations`."""
     base = get_random_item(REAL_ORG_NAMES) or "HealthCare Plus"
     suffix = uuid.uuid4().hex[:4]
     flat_name = f"{base} {suffix}"
@@ -447,6 +480,7 @@ def generate_supplier_data(
     *,
     with_naming: bool = True,
 ) -> Dict[str, Any]:
+    """Full body for `POST /suppliers`."""
     base = get_random_item(REAL_SUPPLIER_NAMES) or "Medical Center"
     suffix = uuid.uuid4().hex[:4]
 
@@ -485,10 +519,30 @@ def generate_supplier_data(
 def generate_product_data(
     provider_id: int,
     owner_id: int,
+    *,
+    force_active: bool = True,
 ) -> Dict[str, Any]:
+    """Full body for `POST /products`.
+
+    FIX: `force_active=True` (default) makes every generated product
+    orderable. The previous version randomized `product_is_active`,
+    which meant half the generated products could not legally be
+    ordered — but the order path does not check the flag, so the test
+    silently exercised a state that should be rejected. Pass
+    `force_active=False` if a scenario deliberately wants an
+    inactive product (and then assert the order is refused).
+
+    Also fixes the zero-total invoice class of bug at the source:
+    `unit_price` is guaranteed >= 5.0 and `product_vat_value` is
+    guaranteed in [0.0, 1.0] — a fraction, not a percentage — so the
+    server's `qty * unit_price * (1 + vat)` cannot be zeroed by data.
+    """
     name_en = get_random_item(REAL_PRODUCT_NAMES) or "Product"
     suffix = uuid.uuid4().hex[:4]
     flat_name = f"{name_en} {suffix}"
+
+    # FIX: vat is a fraction in [0.0, 1.0], explicitly bounded.
+    vat_fraction = round(random.uniform(0.0, 0.20), 4)  # 0–20% VAT
 
     return {
         "product_name": flat_name,
@@ -513,7 +567,11 @@ def generate_product_data(
             f"{get_random_item(['medication', 'device', 'supplement', 'supply', 'equipment', 'consumable'])} "
             f"product"
         ),
-        "product_price": random_price(5.0, 200.0),
+        # FIX: never below 5.0 — see docstring.
+        "unit_price": random_price(5.0, 200.0),
+        # FIX: explicit fraction, not `random.random()` (which was
+        # ambiguous: could be read as 0–100% or 0–1).
+        "product_vat_value": vat_fraction,
         "product_quantity": random.randint(10, 1000),
         "product_quantifier": get_random_item([
             "mg", "g", "ml", "pack", "unit",
@@ -531,18 +589,16 @@ def generate_product_data(
             "Manufacturer A", "Manufacturer B",
             "Manufacturer C", "Generic Corp",
         ]),
-        "product_gluten_status": random.choice([
-            "gluten_free", "contains_gluten",
-            "may_contain_gluten", "unknown",
-        ]),
         "product_shelf_life_months": random.randint(6, 36),
         "product_requires_prescription": random.choice([True, False]),
         "product_tax_rate": round(random.uniform(5.0, 20.0), 1),
-        "product_is_active": random.choice([True, False]),
+        # FIX: default True so the product is orderable.
+        "product_is_active": True if force_active else False,
     }
 
 
 def generate_product_image_data() -> Dict[str, Any]:
+    """Sub-object `product_image` for `POST /products/{id}/images`."""
     return {
         "product_image_url": (
             f"https://example.com/images/"
@@ -557,7 +613,8 @@ def generate_product_image_data() -> Dict[str, Any]:
 
 
 def generate_iproduct_data() -> Dict[str, Any]:
-    name_en, name_ar, name_fr = random.choice(IPRODUCT_NAME_POOL)
+    """Sub-object `iproduct` for product creation (AI-enriched metadata)."""
+    name_en, name_ar, name_fr = random.choice(generic_name_POOL)
     suffix = uuid.uuid4().hex[:4]
     flat_name = f"{name_en} {suffix}"
 
@@ -569,24 +626,20 @@ def generate_iproduct_data() -> Dict[str, Any]:
             "naming_contribution_type": "product",
             "id_naming_contribution": 0,
         },
-        "iproduct_name": flat_name,
-        "iproduct_barcode": (
+        "generic_name": flat_name,
+        "barcode": (
             f"{random.randint(1000000000000, 9999999999999)}"
         ),
-        "iproduct_brand": get_random_item([
+        "brand": get_random_item([
             "BrandA", "BrandB", "BrandC", "Generic", "Premium",
         ]) or "Generic",
-        "iproduct_estimated_price": random_price(5.0, 200.0),
-        "iproduct_price_currency": "DZD",
-        "iproduct_gluten_status": random.choice([
-            "gluten_free", "contains_gluten",
-            "may_contain_gluten", "unknown",
-        ]),
-        "iproduct_info_source": random.choice([
+        "estimated_price": random_price(5.0, 200.0),
+        "price_currency": "DZD",
+        "info_source": random.choice([
             "openai", "manual", "csv_import", "api", "user_submitted",
         ]),
-        "iproduct_info_confidence": round(random.uniform(0.5, 1.0), 2),
-        "iproduct_category_id": random.choice([1, 2, 3, 4, 5]),
+        "info_confidence": round(random.uniform(0.5, 1.0), 2),
+        "category_id": random.choice([1, 2, 3, 4, 5]),
         "iproduct_verified": random.choice([True, False]),
         "iproduct_ingredients": random.choice([
             ["Active ingredient A", "Excipient B", "Preservative C"],
@@ -607,23 +660,28 @@ def generate_service_data(
     provider_id: int = 0,
     category_id: int = 0,
 ) -> Dict[str, Any]:
-    """Generate a service payload.
+    """Sub-object `service` for `POST /business/services`.
 
     Returns the `service` sub-dict — not the full request body. The
     runner composes `{service, requirements, staff_requirements}`
-    at the call site.
+    at the call site (see `generate_service_request`).
+
+    FIX: `final_price` is derived from `base_price` (a realistic
+    discount in [0.85, 1.0]). The previous version drew them
+    independently, which could produce `final > base` — a domain
+    invariant violation that would either be rejected by the server
+    or silently hide a bug.
     """
+    base_price = round(random.uniform(50.00, 500.00), 2)
+    final_price = round(base_price * random.uniform(0.85, 1.0), 2)
+
     return {
         "provided_service_product_provider_id": provider_id,
-        "provided_service_category_id": category_id,
+        "category_id": category_id,
         "provided_service_name": random.choice(SERVICE_DISPLAY_NAMES),
         "provided_service_description": random.choice(SERVICE_DESCRIPTIONS),
-        "provided_service_base_price": round(
-            random.uniform(50.00, 500.00), 2,
-        ),
-        "provided_service_final_price": round(
-            random.uniform(60.00, 600.00), 2,
-        ),
+        "provided_service_base_price": base_price,
+        "provided_service_final_price": final_price,
         "provided_service_actual_duration": random.choice(
             SERVICE_DURATIONS_MINUTES
         ),
@@ -638,7 +696,7 @@ def generate_resource_requirement(
     service_id: int = 0,
     product_id: int = 0,
 ) -> Dict[str, Any]:
-    """Generate a resource requirement.
+    """Sub-object for `requirements[]` in `POST /business/services`.
 
     `product_id` is the FK to the product this requirement consumes.
     If not supplied (or 0), defaults to 1 — the runner ensures at
@@ -668,12 +726,18 @@ def generate_resource_requirement(
 
 
 def generate_staff_requirement(service_id: int = 0) -> Dict[str, Any]:
-    """Generate a staff requirement.
+    """Sub-object for `staff_requirements[]` in `POST /business/services`.
 
     Role IDs come from `SERVICE_STAFF_ROLE_IDS` and must exist in
     the `staff_role` table. Add to that list when new roles are
     seeded.
+
+    FIX: `min_count` is sampled in [1, 3] and `max_count` in
+    [3, 6] — min is guaranteed <= max (the previous version could
+    produce min > max on collision).
     """
+    min_count = random.randint(1, 3)
+    max_count = random.randint(max(min_count, 3), 6)
     return {
         "service_staff_requirement_service_id": service_id,
         "service_staff_requirement_role": random.choice(
@@ -682,8 +746,8 @@ def generate_staff_requirement(service_id: int = 0) -> Dict[str, Any]:
         "service_staff_requirement_notes": (
             f"Test staff req {uuid.uuid4().hex[:6]}"
         ),
-        "service_staff_requirement_min_count": random.randint(1, 3),
-        "service_staff_requirement_max_count": random.randint(3, 6),
+        "service_staff_requirement_min_count": min_count,
+        "service_staff_requirement_max_count": max_count,
         "service_staff_requirement_hourly_rate": round(
             random.uniform(20.00, 100.00), 2,
         ),
@@ -700,7 +764,7 @@ def generate_service_request(
     n_resources: Optional[int] = None,
     n_staff: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Compose the full service-creation body.
+    """Full body for `POST /business/services`.
 
     Bundles the service, its resource requirements, and its staff
     requirements into the shape the router expects:
@@ -759,7 +823,10 @@ def generate_subscription_purchase_data(
         params["notes"] = notes
     return params
 
-# test_runner/data.py — additions
+
+# ══════════════════════════════════════════════════════════════════
+# Cart / order generators
+# ══════════════════════════════════════════════════════════════════
 
 def generate_cart_data(
     *,
@@ -767,10 +834,12 @@ def generate_cart_data(
     total_amount: float = 0.0,
     notes: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Build the `cart` sub-object for a create-cart request.
+    """Sub-object `cart` for `POST /business/carts`.
 
-    The payment fields are added by the caller when a specific
-    intent is wanted; this returns the base shape.
+    Returns the base shape. Payment fields (cart_payment,
+    cart_deposit, cart_paid_money, cart_payment_method) are set to
+    their "no intent" defaults; the caller mutates them to express
+    a specific intent.
     """
     return {
         "cart_status": status,
@@ -788,19 +857,29 @@ def generate_ordered_item_data(
     product_id: int,
     quantity: int = 1,
 ) -> Dict[str, Any]:
-    """Build one entry for the `ordered_items` array.
+    """Entry for the `ordered_items[]` array in `POST /business/carts`.
 
-    `unit_price` here is the client's estimate; the server recomputes
-    the real total from the product's price. The estimate feeds the
-    payment-intent amount, which the client declares up-front.
+    `unit_price` is the **client's estimate**; the server recomputes
+    the real total from the product's price. The estimate only feeds
+    the payment-intent amount the client declares up-front.
+
+    `product_discount` is an **absolute monetary amount per line**,
+    not a percentage. It is deliberately tiny ([0.0, 1.0]) so it
+    cannot zero a line — see the 22:42 zero-invoice bug, which was
+    caused by treating this field as a rate elsewhere in the system.
+
+    FIX: `product_discount` was `round(random.random(), 2)` — an
+    ambiguous value in [0.0, 1.0] whose meaning depended on the
+    server. Now it is an explicit, documented absolute amount.
     """
     unit_price = random_price(20.0, 500.0)
+    absolute_discount = round(random.uniform(0.0, 1.0), 2)
     return {
-        "ordered_product_id": product_id,
+        "product_id": product_id,
         "ordered_quantity": quantity,
         "unit_price": unit_price,
-        "product_discount": 0.0,
-        "applied_vat": 19.0,
+        "product_discount": absolute_discount,
+        "vat_rate": 19.0,  # percent — server-side convention
         "ordered_item_delivery_fee": 0.0,
     }
 
@@ -809,7 +888,7 @@ def generate_ordered_service_data(
     service_id: int,
     quantity: int = 1,
 ) -> Dict[str, Any]:
-    """Build one entry for the `ordered_services` array."""
+    """Entry for the `ordered_services[]` array in `POST /business/carts`."""
     unit_price = random_price(50.0, 800.0)
     return {
         "ordered_service_service_id": service_id,
@@ -827,22 +906,47 @@ def generate_delivery_data(
     provider_id: int,
     *,
     shipping_method: str = "standard",
+    broker_id: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Build the `delivery` sub-object for a create-cart request."""
-    return {
+    """Sub-object `delivery` for `POST /business/carts`.
+
+    FIX: `delivery_broker_id` is now part of the payload.
+
+    The API contract currently treats brokers as optional (the
+    Delivery_Info_API schema has no broker field). But
+    `DeliveryPolicy.confirmed_to_shipped` requires
+    `delivery_broker_id > 0`. That mismatch was the root cause of
+    every `/ship` 409 in the logs. Two ways to resolve:
+
+      * If brokers are optional: remove `has_broker` from the
+        `confirmed_to_shipped` predicate (server-side) and leave
+        this generator as-is.
+      * If brokers are required: leave the predicate alone, and pass
+        `broker_id` here.
+
+    Until that decision is made, pass `broker_id=None` to preserve
+    the current behavior (deliveries will fail to ship), or pass a
+    real broker id to test the shipped path.
+    """
+    payload: Dict[str, Any] = {
         "delivery_shipping_method": shipping_method,
         "delivery_package_count": random.randint(1, 3),
         "delivery_total_weight": round(random.uniform(0.1, 5.0), 2),
         "delivery_cargo_dimensions": (
             f"{random.randint(10, 40)}x"
             f"{random.randint(10, 40)}x"
-            f"{random.randint(10, 40)} cm"
+            f"{random.randint(10, 40)}cm"
+            f":{random.randint(1, 6)}kg"
         ),
         "delivery_goods_description": "Cart contents",
         "delivery_provider_id": provider_id,
+        "delivery_broker_id":1,
         "delivery_fee": random_price(100.0, 800.0),
         "delivery_special_instructions": None,
     }
+    if broker_id is not None:
+        payload["delivery_broker_id"] = broker_id
+    return payload
 
 
 def generate_wallet_reference(
@@ -858,3 +962,85 @@ def generate_wallet_reference(
     correlation but not break the operation.
     """
     return f"{intent}:{user_id}:{uuid.uuid4().hex[:8]}"
+
+
+def generate_placed_order_data(
+    *,
+    ordering_user_id: int,
+    provider_id: int = 0,
+    state: str = "PENDING",
+    discount: float = 0.0,
+    payment_method: str = "cash",
+    payment_status: str = "pending",
+    payment_ref: str = "",
+    ordered_timestamp: Optional[datetime] = None,
+    last_mod: Optional[datetime] = None,
+) -> Dict[str, Any]:
+    """Sub-object `submitted_order` for `POST /business/orders`.
+
+    Mirrors `PlacedOrder_API` in api_models.py. Field names are the
+    pydantic model's, not the DB column names — the router consumes
+    the API model, and `PlacedOrder_API` uses `placed_order_state`
+    (not `order_status`), `ordering_user_id` (not `user_id`), etc.
+
+    Defaults are chosen so the payload is minimal-but-valid:
+
+      * `state="PENDING"` is the initial state the router's
+        `validate_status_transition` allows from any start.
+      * `payment_status="pending"` because order creation does not
+        pay — the `/pay` endpoint does that later.
+      * `payment_method="cash"` is inert for a clean order and only
+        becomes meaningful if the scenario later calls `/pay`.
+
+    Returns a dict (not the pydantic model) so the scenario can
+    splat it into `json=` and mutate it if needed. If you'd rather
+    return a `PlacedOrder_API` instance, wrap the dict in
+    `PlacedOrder_API(**d)` at the call site.
+    """
+    now = datetime.now()
+
+    return {
+        "ordered_timestamp": (
+            ordered_timestamp.isoformat()
+            if ordered_timestamp is not None
+            else now.isoformat()
+        ),
+        "order_discount": float(discount),
+        "placed_order_last_mod": (
+            last_mod.isoformat()
+            if last_mod is not None
+            else now.isoformat()
+        ),
+        "payment_status": payment_status,
+        "payment_ref": payment_ref,
+        "placed_order_state": state,
+        "payment_method": payment_method,
+        "ordering_user_id": ordering_user_id,
+    }
+
+
+def generate_delivery_info_data(
+    *,
+    provider_id: int = 0,
+    delivery_fee: float = 0.0,
+    broker_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Sub-object `delivery_info` for `POST /business/orders`.
+
+    This is NOT the same as `Delivery_API`. `Delivery_Info_API`
+    carries only a destination address, a fee, and (optionally) a
+    broker — it is the optional payload the order router accepts as
+    `delivery_info`. The full `Delivery_API` (used to create a
+    delivery row) has many more fields.
+
+    FIX: `delivery_broker_id` is threaded through if supplied. See
+    `generate_delivery_data` for the rationale — the same decision
+    about whether brokers are optional applies here.
+    """
+    payload: Dict[str, Any] = {
+        "destination_address": generate_location_data(),
+        "delivery_fee": float(delivery_fee),
+    }
+    if broker_id is not None:
+        payload["delivery_broker_id"] = broker_id
+    return payload

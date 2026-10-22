@@ -27,7 +27,7 @@ class SupplierRepository:
                     ]},
                     ProductProvider.product_provider_type,
                     {ProductProvider.product_provider_details:[{ProviderDetails.naming_contribution:[]}]},
-                    {ProductProvider.product_provider_org : [{ProviderOrganisation.naming_contribution:[]}]},
+                    {ProductProvider.product_provider_org : [{ProviderOrganisation.naming:[]}]},
                     ProductProvider.provider_image,
                     ProductProvider.provider_reaction,
                     ProductProvider.management_rule
@@ -84,7 +84,7 @@ class SupplierRepository:
                 ]},
                 ProductProvider.product_provider_type,
                 {ProductProvider.product_provider_details:[{ProviderDetails.naming_contribution:[]}]},
-                {ProductProvider.product_provider_org : [{ProviderOrganisation.naming_contribution:[]}]},
+                {ProductProvider.product_provider_org : [{ProviderOrganisation.naming:[]}]},
                 ProductProvider.provider_image,
                 ProductProvider.provider_reaction,
                 ProductProvider.management_rule
@@ -128,7 +128,7 @@ class SupplierRepository:
         """Get all suppliers with filters"""
         conditions = {}
         if owner_id != 0:
-            conditions[ProductProvider.product_provider_owner] = owner_id
+            conditions[ProductProvider.product_provider_user_id] = owner_id
         if org_id != 0:
             conditions[ProductProvider.product_provider_org_id] = org_id
         
@@ -150,7 +150,7 @@ class SupplierRepository:
                 
                 {ProductProvider.product_provider_details:[{ProviderDetails.naming_contribution:[]}]},
                 ProductProvider.provider_image,
-                {ProductProvider.product_provider_org : [{ProviderOrganisation.naming_contribution:[]}]},
+                {ProductProvider.product_provider_org : [{ProviderOrganisation.naming:[]}]},
             ],
             offset=offset,
             limit=limit,
@@ -254,8 +254,8 @@ class SupplierRepository:
             Location.position_wkt,
             ProductProvider.id_product_provider,
             ProductProvider.product_provider_type_id,
-            ProductProvider.product_provider_owner,
-            ProviderOrganisation.idprovider_organisation,
+            ProductProvider.product_provider_user_id,
+            ProviderOrganisation.id_provider_organisation,
             ProviderOrganisation.provider_organisation_name,
             Address.id_address,
             Address.address_street,
@@ -292,7 +292,7 @@ class SupplierRepository:
         return int(
             storage_broker.count(
                 ProductProvider,
-                conditions={ProductProvider.product_provider_owner: user_id},
+                conditions={ProductProvider.product_provider_user_id: user_id},
             )
             or 0
         )
@@ -337,7 +337,7 @@ class SupplierRepository:
     #         Location.position_wkt,
     #         ProductProvider.id_product_provider,
     #         ProductProvider.product_provider_type_id,
-    #         ProductProvider.product_provider_owner,
+    #         ProductProvider.product_provider_user_id,
     #         Address.id_address,
     #         Address.address_street,
     #         Address.address_city,
@@ -376,19 +376,19 @@ class OrganisationRepository:
         if eager_load:
             records = storage_broker.get(
                 ProviderOrganisation,
-                {ProviderOrganisation.idprovider_organisation: org_id},
+                {ProviderOrganisation.id_provider_organisation: org_id},
                 None,
                 [
                     ProviderOrganisation.organisation_image,
                     ProviderOrganisation.product_provider,
-                    ProviderOrganisation.naming_contribution,
+                    ProviderOrganisation.naming,
                     ProviderOrganisation.management_rule
                 ]
             )
         else:
             records = storage_broker.get(
                 ProviderOrganisation,
-                {ProviderOrganisation.idprovider_organisation: org_id},
+                {ProviderOrganisation.id_provider_organisation: org_id},
                 None,
                 []
             )
@@ -400,7 +400,7 @@ class OrganisationRepository:
             ProviderOrganisation,
             {ProviderOrganisation.provider_organisation_name: org_name},
             None,
-            [ProviderOrganisation.naming_contribution,]
+            [ProviderOrganisation.naming,]
         )
         return records[0] if records else None
     
@@ -410,7 +410,7 @@ class OrganisationRepository:
             ProviderOrganisation,
             {},
             None,
-            eager_load_depth=[ProviderOrganisation.organisation_image,ProviderOrganisation.naming_contribution,],
+            eager_load_depth=[ProviderOrganisation.organisation_image,ProviderOrganisation.naming,],
             offset=offset,
             limit=limit,
             serialize=True
@@ -478,7 +478,7 @@ class OrganisationRepository:
         return int(
             storage_broker.count(
                 ProviderOrganisation,
-                conditions={ProviderOrganisation.app_user_id: user_id},
+                conditions={ProviderOrganisation.user_id: user_id},
             )
             or 0
         )

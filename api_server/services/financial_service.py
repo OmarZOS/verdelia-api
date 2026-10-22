@@ -58,7 +58,7 @@ class FinancialService:
             if self._norm_status(getattr(p, "payment_status", None)) in SETTLED_PAYMENT_STATUSES:
                 settled_total += float(getattr(p, "payment_amount", 0) or 0)
 
-        total_due = float(invoice.invoice_total_amount or 0)
+        total_due = float(invoice.grand_total or 0)
 
         if settled_total <= 0:
             new_status = InvoiceStatus.UNPAID

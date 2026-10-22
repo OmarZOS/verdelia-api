@@ -211,7 +211,7 @@ class DeliveryService:
             logger.debug(f"Updating existing delivery {delivery.id_delivery}")
         else:
             delivery = Delivery()
-            delivery.delivery_created_at = datetime.now()
+            delivery.created_at = datetime.now()
             logger.debug("Creating new delivery")
 
         if delivery_data.delivery_package_count is not None:
@@ -230,14 +230,14 @@ class DeliveryService:
         if delivery_data.hs_code is not None:
             delivery.hs_code = delivery_data.hs_code
 
-        if delivery_data.delivery_merchant_name is not None:
-            delivery.delivery_merchant_name = delivery_data.delivery_merchant_name
+        # if delivery_data.delivery_merchant_name is not None:
+        #     delivery.delivery_broker = delivery_data.delivery_merchant_name
 
         if delivery_data.delivery_shipping_method is not None:
             delivery.delivery_shipping_method = delivery_data.delivery_shipping_method.value
 
         if delivery_data.delivery_special_instructions is not None:
-            delivery.delivery_special_instructions = delivery_data.delivery_special_instructions
+            delivery.special_instructions = delivery_data.delivery_special_instructions
 
         # Status is set verbatim here. Policy validation belongs to the
         # workflow. This keeps the service usable by code paths that
@@ -250,11 +250,11 @@ class DeliveryService:
         if delivery_data.delivery_fee is not None:
             delivery.delivery_fee = delivery_data.delivery_fee
 
-        if delivery_data.recipient_person is not None:
-            delivery.recipient_person = delivery_data.recipient_person
+        # if delivery_data.recipient_person is not None:
+        #     delivery.recipient_person = delivery_data.recipient_person
 
         if delivery_data.recipient_provider is not None:
-            delivery.recipient_provider = delivery_data.recipient_provider
+            delivery.delivery_provider_id = delivery_data.recipient_provider
 
         if delivery_data.delivery_broker_id is not None:
             delivery.delivery_broker_id = delivery_data.delivery_broker_id
@@ -282,7 +282,7 @@ class DeliveryService:
                 raise AddressNotFoundException(
                     address_id=delivery_data.delivery_address_id
                 )
-            delivery.delivery_address_id = delivery_data.delivery_address_id
+            delivery.address_id = delivery_data.delivery_address_id
 
         if (
             delivery_data.delivery_current_address_id is not None
@@ -295,11 +295,11 @@ class DeliveryService:
                 raise AddressNotFoundException(
                     address_id=delivery_data.delivery_current_address_id
                 )
-            delivery.delivery_current_address_id = (
+            delivery.current_address_id = (
                 delivery_data.delivery_current_address_id
             )
 
-        delivery.delivery_updated_at = datetime.now()
+        delivery.updated_at = datetime.now()
         return delivery
 
     # ==================== CRUD (local only) ====================
@@ -486,7 +486,6 @@ class DeliveryService:
         """
         delivery = self.get_delivery_by_id(delivery_id)
         delivery.delivery_status = new_status.lower()
-        delivery.delivery_updated_at = datetime.now()
         return self.delivery_repo.update(delivery)
 
     def bulk_update_status_local(

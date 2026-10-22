@@ -302,7 +302,7 @@ class SubscriptionService:
         """Delete a subscription row.
 
         Does not unlink the user — that's the workflow's job. The FK
-        on `AppUser.app_user_subscription_ref` will block the delete
+        on `AppUser.app_user_subscription_id` will block the delete
         if a user still points at this subscription.
         """
         subscription = self.subscription_repo.get_by_id(subscription_id)

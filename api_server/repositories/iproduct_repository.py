@@ -12,7 +12,7 @@ class IProductRepository:
     
     def get_by_barcode(self, barcode: str) -> Optional[List[Iproduct]]:
         """Get IProduct by barcode"""
-        records = storage_broker.get(Iproduct, {Iproduct.iproduct_barcode: barcode},None,[Iproduct.naming_contribution])
+        records = storage_broker.get(Iproduct, {Iproduct.barcode: barcode},None,[Iproduct.naming_contribution])
         return records if records else None
     
     def create(self, iproduct: Iproduct) -> Iproduct:

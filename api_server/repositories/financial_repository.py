@@ -1,7 +1,11 @@
 # repositories/financial_repository.py
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from core.models.models import Invoice, Payment
 import storage.storage_broker as storage_broker
+from sqlalchemy import exists, select, delete, func, desc, and_, or_
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 class FinancialRepository:
     """Repository for financial document operations"""
@@ -54,3 +58,43 @@ class FinancialRepository:
         """Update a payment"""
         from features.insertion import update_record_in_api
         return update_record_in_api(payment)
+
+    def get_by_invoice_id_and_status(
+        self,
+        invoice_id: int,
+        statuses: Tuple[str, ...] = ("completed", "confirmed", "paid"),
+    ) -> Optional[Payment]:
+        """
+        Return the most recent payment for an invoice whose status is in
+        `statuses`, or None.
+
+        Used as an idempotency guard by the order/cart payment workflows:
+        if a completed payment already exists for this invoice, a retry
+        must not create a second one — even if the invoice row itself was
+        never flipped to `paid` (e.g. a crash between finance confirm and
+        local persist).
+
+        Returns the newest match (ordered by payment_created_at DESC) so
+        that, in the unlikely case of multiple completed payments, the
+        caller sees the one most recently attached to the invoice.
+        """
+        if not statuses:
+            return None
+
+        try:
+            with storage_broker.session_scope() as session:
+                return (
+                    session.query(Payment)
+                    .filter(
+                        Payment.payment_invoice_id == invoice_id,
+                        Payment.payment_status.in_(list(statuses)),
+                    )
+                    .order_by(desc(Payment.payment_created_at))
+                    .first()
+                )
+        except Exception as e:
+            logger.error(
+                "Failed to get payment for invoice %s with statuses %s: %s",
+                invoice_id, statuses, e,
+            )
+            return None

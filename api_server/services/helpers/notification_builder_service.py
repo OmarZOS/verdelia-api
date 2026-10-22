@@ -19,8 +19,6 @@ class NotificationBuilderService:
     def __init__(self):
         self.notification_service = NotificationService()
     
-
-
     def dump_notification(self, notification: Notification) -> Dict[str, Any]:
         """
         Convert a Notification model instance to a dictionary.
@@ -66,7 +64,6 @@ class NotificationBuilderService:
         
         return result
 
-
     def dump_notification_list(self, notifications: List[Notification]) -> List[Dict[str, Any]]:
         """
         Convert a list of Notification model instances to a list of dictionaries.
@@ -79,7 +76,6 @@ class NotificationBuilderService:
         """
         return [self.dump_notification(notification) for notification in notifications]
 
-
     def build_invitation_notification(
         self,
         rule_id: int = 0,
@@ -90,6 +86,8 @@ class NotificationBuilderService:
         invited_by: int = 0
     ) -> Notification_API:
         """Build an invitation notification"""
+        
+        
         return Notification_API(
             notification_code="role_invitation",
             notification_params=json.dumps({

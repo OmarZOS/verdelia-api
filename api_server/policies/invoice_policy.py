@@ -25,7 +25,7 @@ Predicates take an `Invoice` instance directly. External signals (amount
 received, refund completed, write-off authorised) come in as keyword
 arguments on `decide(...)`.
 
-The invoice carries `invoice_total_amount`, `invoice_due_date`, and
+The invoice carries `grand_total`, `invoice_due_date`, and
 `invoice_status`. Predicates that reason about partial vs. full payment
 receive the captured amount as a keyword argument — the invoice itself
 has no "paid so far" column, so the caller (usually after summing its
@@ -51,7 +51,7 @@ from policies.transitions import (
 
 def has_amount(invoice: Invoice) -> bool:
     """Any invoice that can transition must have a positive total."""
-    return float(invoice.invoice_total_amount or 0) > 0
+    return float(invoice.grand_total or 0) > 0
 
 
 def partial_payment_received(
@@ -60,7 +60,7 @@ def partial_payment_received(
     """
     unpaid → partially_paid: some money came in, less than the total.
     """
-    total = float(invoice.invoice_total_amount or 0)
+    total = float(invoice.grand_total or 0)
     captured = float(captured_amount or 0)
     return 0 < captured < total
 
@@ -76,7 +76,7 @@ def full_payment_received(
     That's the common case from `process_payment`, which confirms the
     payment and knows the invoice settled.
     """
-    total = float(invoice.invoice_total_amount or 0)
+    total = float(invoice.grand_total or 0)
     if total <= 0:
         return False
 

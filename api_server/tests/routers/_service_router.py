@@ -47,30 +47,30 @@
 #         "api_ordered_items": [
 #             {
 #                 "id_ordered_item": 0,
-#                 "ordered_product_id": 1,  # Grano'Sac Raisin Cacahuetes
+#                 "product_id": 1,  # Grano'Sac Raisin Cacahuetes
 #                 "order_ref": order_ref,
 #                 "product_discount": 10.0,
 #                 "ordered_quantity": 2,
 #                 "unit_price": 5.99,
-#                 "applied_vat": 18.0
+#                 "vat_rate": 18.0
 #             },
 #             {
 #                 "id_ordered_item": 0,
-#                 "ordered_product_id": 2,  # Butter Biscuits LEGER
+#                 "product_id": 2,  # Butter Biscuits LEGER
 #                 "order_ref": order_ref,
 #                 "product_discount": 5.0,
 #                 "ordered_quantity": 3,
 #                 "unit_price": 4.49,
-#                 "applied_vat": 18.0
+#                 "vat_rate": 18.0
 #             },
 #             {
 #                 "id_ordered_item": 0,
-#                 "ordered_product_id": 3,  # Cookies from Home Bakery
+#                 "product_id": 3,  # Cookies from Home Bakery
 #                 "order_ref": order_ref,
 #                 "product_discount": 15.0,
 #                 "ordered_quantity": 1,
 #                 "unit_price": 3.99,
-#                 "applied_vat": 18.0
+#                 "vat_rate": 18.0
 #             }
 #         ],
 #         "api_provided_services": [
@@ -337,7 +337,7 @@
 #     })
     
 #     # Modify invalid product ID test
-#     test_cases[3]["data"]["api_ordered_items"][0]["ordered_product_id"] = 9999
+#     test_cases[3]["data"]["api_ordered_items"][0]["product_id"] = 9999
 #     test_cases[3]["expected_status"] = [400, 422, 404]
     
 #     test_cases.append({
@@ -391,12 +391,12 @@
 #                 cart_data["api_ordered_items"] = [
 #                     {
 #                         "id_ordered_item": 0,
-#                         "ordered_product_id": 7,  # JUMPY Peanut Butter (from provider 6 - bakery)
+#                         "product_id": 7,  # JUMPY Peanut Butter (from provider 6 - bakery)
 #                         "order_ref": f"BAKERY-{datetime.now().strftime('%H%M%S')}",
 #                         "product_discount": 5.0,
 #                         "ordered_quantity": 1,
 #                         "unit_price": 5.79,
-#                         "applied_vat": 18.0
+#                         "vat_rate": 18.0
 #                     }
 #                 ]
 #                 cart_data["api_provided_services"] = []  # Bakeries might not have services
@@ -481,21 +481,21 @@
 #     cart_data["api_ordered_items"].extend([
 #         {
 #             "id_ordered_item": 0,
-#             "ordered_product_id": 4,  # Gullon Cookies
+#             "product_id": 4,  # Gullon Cookies
 #             "order_ref": 0,
 #             "product_discount": 12.0,
 #             "ordered_quantity": 2,
 #             "unit_price": 6.29,
-#             "applied_vat": 18.0
+#             "vat_rate": 18.0
 #         },
 #         {
 #             "id_ordered_item": 0,
-#             "ordered_product_id": 5,  # Date Butter
+#             "product_id": 5,  # Date Butter
 #             "order_ref": 0,
 #             "product_discount": 8.0,
 #             "ordered_quantity": 1,
 #             "unit_price": 7.99,
-#             "applied_vat": 18.0
+#             "vat_rate": 18.0
 #         }
 #     ])
     

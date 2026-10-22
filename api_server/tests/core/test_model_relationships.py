@@ -177,7 +177,7 @@ from core.models.models import *
 #         # Join Product with ProductProvider and AppUser
 #         query = db_session.query(
 #             Product.product_name,
-#             Product.product_price,
+#             Product.unit_price,
 #             ProductProvider.product_provider_details.has_property('provider_name'),
 #             AppUser.app_user_name
 #         ).join(

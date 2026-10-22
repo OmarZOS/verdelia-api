@@ -369,9 +369,9 @@ class CompactInvoiceRenderer:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         
         # Clean filename
-        safe_invoice_number = invoice.invoice_number.replace('/', '-').replace('\\', '-')
-        html_path = Path(output_dir) / f"invoice-{safe_invoice_number}.html"
-        pdf_path = Path(output_dir) / f"invoice-{safe_invoice_number}.pdf"
+        safe_invoice_reference = invoice.invoice_reference.replace('/', '-').replace('\\', '-')
+        html_path = Path(output_dir) / f"invoice-{safe_invoice_reference}.html"
+        pdf_path = Path(output_dir) / f"invoice-{safe_invoice_reference}.pdf"
         
         print(f"Generating compact invoice HTML: {html_path}")
         html_content = self.generate_compact_invoice_html(invoice, str(html_path))

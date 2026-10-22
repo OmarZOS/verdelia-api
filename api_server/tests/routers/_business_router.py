@@ -60,21 +60,21 @@ def create_sample_order_data(user_id: int = 1) -> tuple:
     ordered_items = [
         {
             "id_ordered_item": 0,  # Will be auto-generated
-            "ordered_product_id": 1,  # Assuming product ID 1 exists
+            "product_id": 1,  # Assuming product ID 1 exists
             "order_ref": 0,  # Will be set to actual order ID
             "product_discount": 5.0,
             "ordered_quantity": 2.0,
             "unit_price": 25.99,
-            "applied_vat": 0.21
+            "vat_rate": 0.21
         },
         {
             "id_ordered_item": 0,
-            "ordered_product_id": 2,  # Assuming product ID 2 exists
+            "product_id": 2,  # Assuming product ID 2 exists
             "order_ref": 0,
             "product_discount": 0.0,
             "ordered_quantity": 1.0,
             "unit_price": 15.50,
-            "applied_vat": 0.21
+            "vat_rate": 0.21
         }
     ]
     

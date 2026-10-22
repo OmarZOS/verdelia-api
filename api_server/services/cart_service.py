@@ -32,7 +32,6 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 
-from core.models.finance_models import PaymentCreate
 from repositories.service_repository import ServiceRepository
 from repositories.order_repository import OrderRepository
 from repositories.financial_repository import FinancialRepository
@@ -74,12 +73,13 @@ from core.exceptions.handler import (
     InsufficientStockException,
     ServiceNotFoundException,
 )
-from core.exceptions.specific.product_exceptions import ProductQuantityNotEnoughException
+from core.exceptions.specific.product_exceptions import (
+    ProductQuantityNotEnoughException,
+)
 
 from core.logging_config import get_logger
 
 logger = get_logger(__name__)
-
 
 
 # ==================== Payment intent enum ====================
@@ -250,17 +250,23 @@ class CartService:
         invoice: Invoice,
         payment_method: str,
         captured_amount: float,
-    ) -> PaymentCreate:
-        """Local: shape the payload the workflow hands to the finance client."""
+    ) -> "PaymentCreate":
+        """
+        Local: shape the payload the workflow hands to the finance client.
+
+        `PaymentCreate` lives in `core.models.finance_models`. It expects
+        `invoice_id`, `amount`, `payment_method`, `user_id`, optional
+        `notes`, optional `payment_type`.
+        """
         from core.models.finance_models import PaymentCreate
 
         return PaymentCreate(
             invoice_id=invoice.invoice_id,
             amount=captured_amount,
             payment_method=payment_method,
-            user_id=cart.cart_selling_user,
+            user_id=cart.selling_user_id,
             notes=f"Cart #{cart.cart_id} payment",
-            payment_type='payment',
+            payment_type="payment",
         )
 
     def build_payment_transaction_details(
@@ -271,14 +277,14 @@ class CartService:
     ) -> Dict[str, Any]:
         """Local: default transaction details for the finance confirm call."""
         return {
-            'reference': (
-                f'CART-{cart.cart_id}-'
-                f'{datetime.now().strftime("%Y%m%d%H%M%S")}'
+            "reference": (
+                f"CART-{cart.cart_id}-"
+                f"{datetime.now().strftime('%Y%m%d%H%M%S')}"
             ),
-            'cart_id': cart.cart_id,
-            'invoice_id': invoice.invoice_id,
-            'payment_method': payment_method,
-            'notes': f'Payment for cart #{cart.cart_id}',
+            "cart_id": cart.cart_id,
+            "invoice_id": invoice.invoice_id,
+            "payment_method": payment_method,
+            "notes": f"Payment for cart #{cart.cart_id}",
         }
 
     def build_ordered_reserve_payload(
@@ -286,9 +292,9 @@ class CartService:
     ) -> List[Dict[str, Any]]:
         return [
             {
-                'id': item.id_ordered_item,
-                'quantity': item.ordered_quantity,
-                'product_id': item.ordered_product_id,
+                "id": item.id_ordered_item,
+                "quantity": item.ordered_quantity,
+                "product_id": item.product_id,
             }
             for item in items
         ]
@@ -298,19 +304,20 @@ class CartService:
     def get_cart_by_id(self, cart_id: int, eager_load: bool = True) -> Cart:
         cart = self.cart_repo.get_cart_by_id(cart_id, eager_load=eager_load)
         if not cart:
-            logger.warning(f"Cart with ID {cart_id} not found")
+            logger.warning("Cart with ID %s not found", cart_id)
             raise CartNotFoundException(cart_id=cart_id)
 
         try:
             if hasattr(cart, "ordered_item") and cart.ordered_item:
                 for item in cart.ordered_item:
                     _ = item.id_ordered_item
-                    _ = item.ordered_product_id
+                    _ = item.product_id
             if hasattr(cart, "ordered_service") and cart.ordered_service:
                 for service in cart.ordered_service:
                     _ = service.ordered_service_id
+                    _ = service.service_id
         except Exception as e:
-            logger.warning(f"Error loading cart relationships: {e}")
+            logger.warning("Error loading cart relationships: %s", e)
             cart = self.cart_repo.get_cart_by_id(cart_id, eager_load=True)
             if not cart:
                 raise CartNotFoundException(cart_id=cart_id)
@@ -359,21 +366,17 @@ class CartService:
 
         if cart.ordered_service:
             for service in cart.ordered_service:
-                subtotal += self.safe_float(
-                    service.ordered_service_total_price
-                )
+                subtotal += self.safe_float(service.subtotal)
                 service_count += 1
 
         return {
             "cart_id": cart_id,
             "subtotal": round(subtotal, 2),
-            "total": round(
-                self.safe_float(cart.cart_total_amount or subtotal), 2
-            ),
+            "total": round(self.safe_float(cart.subtotal or subtotal), 2),
             "item_count": item_count,
             "service_count": service_count,
             "status": cart.cart_status,
-            "created_at": cart.cart_created_at,
+            "updated_at": cart.updated_at,
         }
 
     def get_cart_items(self, cart_id: int) -> List[Dict[str, Any]]:
@@ -381,20 +384,22 @@ class CartService:
         items = []
         if cart.ordered_item:
             for item in cart.ordered_item:
-                product = self.product_repo.get_product_by_id(
-                    item.ordered_product_id
-                )
+                product = self.product_repo.get_product_by_id(item.product_id)
                 items.append({
                     "id": item.id_ordered_item,
-                    "product_id": item.ordered_product_id,
-                    "product_name": product.product_name if product else "Unknown",
+                    "product_id": item.product_id,
+                    "product_name": (
+                        product.generic_name if product else "Unknown"
+                    ),
                     "quantity": self.safe_float(item.ordered_quantity),
                     "unit_price": self.safe_float(item.unit_price),
-                    "total_price": self.safe_float(item.ordered_quantity) * \
-                        self.safe_float(item.unit_price),
-                    "applied_vat": self.safe_float(item.applied_vat),
-                    "product_discount": self.safe_float(
-                        item.product_discount or 0
+                    "total_price": (
+                        self.safe_float(item.ordered_quantity) *
+                        self.safe_float(item.unit_price)
+                    ),
+                    "vat_rate": self.safe_float(item.vat_rate),
+                    "discount_amount": self.safe_float(
+                        item.discount_amount or 0
                     ),
                 })
         return items
@@ -405,24 +410,19 @@ class CartService:
         if cart.ordered_service:
             for service in cart.ordered_service:
                 service_obj = self.service_repo.get_service_by_id(
-                    service.ordered_service_service_id
+                    service.service_id
                 )
                 services.append({
                     "id": service.ordered_service_id,
-                    "service_id": service.ordered_service_service_id,
+                    "service_id": service.service_id,
                     "service_name": (
                         service_obj.provided_service_name
                         if service_obj else "Unknown"
                     ),
                     "quantity": self.safe_float(service.ordered_service_quantity),
-                    "unit_price": self.safe_float(
-                        service.ordered_service_unit_price
-                    ),
-                    "total_price": self.safe_float(
-                        service.ordered_service_total_price
-                    ),
-                    "scheduled_at": service.ordered_service_scheduled_at,
-                    "notes": service.ordered_service_notes,
+                    "unit_price": self.safe_float(service.unit_price),
+                    "total_price": self.safe_float(service.subtotal),
+                    "scheduled_at": service.scheduled_at,
                 })
         return services
 
@@ -432,13 +432,16 @@ class CartService:
         """
         Local: fetch the Invoice attached to a Cart.
 
-        `persist_cart` sets `cart.cart_invoice = created_invoice.invoice_id`,
+        `persist_cart` sets `cart.invoice_id = created_invoice.invoice_id`,
         so this reads that id back through the financial repository.
         """
-        invoice_id = getattr(cart, "cart_invoice", None)
+        invoice_id = getattr(cart, "invoice_id", None)
         if not invoice_id:
             raise CartInvoiceCreationException(
-                error=f"Cart {getattr(cart, 'cart_id', '?')} has no linked invoice"
+                error=(
+                    f"Cart {getattr(cart, 'cart_id', '?')} has no "
+                    f"linked invoice"
+                )
             )
 
         invoice = self.invoice_repo.get_invoice_by_id(invoice_id)
@@ -474,10 +477,9 @@ class CartService:
         ordered_items: List[OrderedItem_API],
         ordered_services: List[OrderedService_API],
     ) -> Tuple[Dict[int, Any], Dict[int, Any]]:
-        product_ids = [item.ordered_product_id for item in ordered_items]
+        product_ids = [item.product_id for item in ordered_items]
         service_ids = [
-            service.ordered_service_service_id
-            for service in ordered_services
+            service.ordered_service_service_id for service in ordered_services
         ]
 
         products: Dict[int, Any] = {}
@@ -486,12 +488,14 @@ class CartService:
             products = {p.id_product: p for p in product_list}
             if len(products) != len(set(product_ids)):
                 missing = set(product_ids) - set(products.keys())
-                raise CartProductNotFoundException(product_id=next(iter(missing)))
+                raise CartProductNotFoundException(
+                    product_id=next(iter(missing))
+                )
 
         services: Dict[int, Any] = {}
         if service_ids:
             service_list = self.service_repo.get_services_by_ids(service_ids)
-            services = {s.provided_service_id: s for s in service_list}
+            services = {s.idprovided_service: s for s in service_list}
             if len(services) != len(set(service_ids)):
                 missing = set(service_ids) - set(services.keys())
                 raise ServiceNotFoundException(service_id=next(iter(missing)))
@@ -509,13 +513,15 @@ class CartService:
         item_details: Dict[int, Dict] = {}
 
         for item in ordered_items:
-            product_id = item.ordered_product_id
+            product_id = item.product_id
             product = products.get(product_id)
             if not product:
                 continue
 
             quantity = item.ordered_quantity
-            reservation_plan.setdefault(product_id, {"quantity": 0, "sources": []})
+            reservation_plan.setdefault(
+                product_id, {"quantity": 0, "sources": []}
+            )
             reservation_plan[product_id]["quantity"] += quantity
             reservation_plan[product_id]["sources"].append({
                 "type": "ordered_item",
@@ -524,7 +530,7 @@ class CartService:
             })
 
             item_details.setdefault(product_id, {
-                "unit_price": self.safe_float(product.product_price),
+                "unit_price": self.safe_float(product.unit_price),
                 "product": product,
             })
 
@@ -534,24 +540,33 @@ class CartService:
                 continue
 
             resource_requirements = (
-                self.service_repo.get_service_resource_requirements(service_id)
+                self.service_repo.get_service_resource_requirements(
+                    service_id
+                )
             )
             for requirement in resource_requirements or []:
                 if not requirement.service_resource_requirement_is_consumable:
                     continue
 
-                product_id = requirement.service_resource_requirement_product_ref
+                product_id = requirement.product_id
+                if product_id is None:
+                    continue
+
                 quantity_needed = (
-                    self.safe_float(requirement.service_resource_requirement_quantity)
+                    self.safe_float(
+                        requirement.service_resource_requirement_quantity
+                    )
                     * service_api.ordered_service_quantity
                 )
 
-                reservation_plan.setdefault(product_id, {"quantity": 0, "sources": []})
+                reservation_plan.setdefault(
+                    product_id, {"quantity": 0, "sources": []}
+                )
                 reservation_plan[product_id]["quantity"] += quantity_needed
                 reservation_plan[product_id]["sources"].append({
                     "type": "consumption",
                     "service_id": service_id,
-                    "id": requirement.service_resource_requirement_id,
+                    "id": requirement.id_service_resource_requirement,
                     "quantity": quantity_needed,
                 })
 
@@ -559,7 +574,7 @@ class CartService:
                     product = self.product_repo.get_product_by_id(product_id)
                     if product:
                         item_details[product_id] = {
-                            "unit_price": self.safe_float(product.product_price),
+                            "unit_price": self.safe_float(product.unit_price),
                             "product": product,
                         }
 
@@ -581,32 +596,38 @@ class CartService:
         client: Optional[Person_API],
     ) -> Tuple[Cart, float, Optional[Any]]:
         total_price = 0.0
-        ordered_item_models = []
+        ordered_item_models: List[OrderedItem] = []
 
         for item in ordered_items:
-            product_id = item.ordered_product_id
+            product_id = item.product_id
             product = products.get(product_id)
             if not product:
                 continue
 
-            unit_price = self.safe_float(product.product_price)
+            unit_price = self.safe_float(product.unit_price)
             item_total = item.ordered_quantity * unit_price
-            if item.applied_vat:
-                item_total *= 1 + self.safe_float(item.applied_vat)
+            if item.vat_rate:
+                item_total *= 1 + self.safe_float(item.vat_rate)
+            if getattr(item, "product_discount", None):
+                item_total -= self.safe_float(item.product_discount)
             total_price += item_total
 
             ordered_item = OrderedItem(
-                ordered_product_id=product_id,
+                product_id=product_id,
                 ordered_quantity=item.ordered_quantity,
-                applied_vat=self.safe_float(item.applied_vat),
+                vat_rate=self.safe_float(item.vat_rate),
+                discount_amount=self.safe_float(
+                    getattr(item, "product_discount", None)
+                ),
                 unit_price=unit_price,
-                reserved_quantity=item.ordered_quantity,
+                reserved_quantity=0,
             )
-            if item.order_ref and item.order_ref > 0:
-                ordered_item.order_ref = item.order_ref
+            order_ref = getattr(item, "order_ref", None)
+            if order_ref and order_ref > 0:
+                ordered_item.order_id = order_ref
             ordered_item_models.append(ordered_item)
 
-        ordered_service_models = []
+        ordered_service_models: List[OrderedService] = []
         for service_api in ordered_services:
             service_id = service_api.ordered_service_service_id
             service = services.get(service_id)
@@ -614,18 +635,18 @@ class CartService:
                 continue
 
             unit_price = (
-                self.safe_float(service.provided_service_final_price)
-                or self.safe_float(service.provided_service_base_price)
+                self.safe_float(service.unit_price)
+                or self.safe_float(service.base_price)
                 or 0.0
             )
             service_total = service_api.ordered_service_quantity * unit_price
             total_price += service_total
 
             ordered_service = OrderedService(
-                ordered_service_service_id=service_id,
+                service_id=service_id,
                 ordered_service_quantity=service_api.ordered_service_quantity,
-                ordered_service_unit_price=unit_price,
-                ordered_service_total_price=service_total,
+                unit_price=unit_price,
+                subtotal=service_total,
                 ordered_service_notes=service_api.ordered_service_notes,
                 ordered_service_delivery_status="pending",
             )
@@ -635,18 +656,20 @@ class CartService:
             )
             ordered_service.product_consumption = [
                 ProductConsumption(
-                    consumed_product_id=req.service_resource_requirement_product_ref,
-                    resource_req_ref=req.service_resource_requirement_id,
+                    consumed_product_id=req.product_id,
+                    requirement_id=req.id_service_resource_requirement,
                     product_reserved_quantity=0,
                 )
-                for req in reqs
+                for req in reqs or []
                 if req.service_resource_requirement_is_consumable
+                and req.product_id is not None
             ]
 
-            if service_api.ordered_service_scheduled_at:
-                ordered_service.ordered_service_scheduled_at = (
-                    service_api.ordered_service_scheduled_at
-                )
+            scheduled_at = getattr(
+                service_api, "ordered_service_scheduled_at", None
+            )
+            if scheduled_at:
+                ordered_service.scheduled_at = scheduled_at
 
             ordered_service_models.append(ordered_service)
 
@@ -659,24 +682,21 @@ class CartService:
                     client.id_person
                 )
 
-        now = datetime.now()
         final_total = round(
             self.safe_float(cart_data.cart_total_amount or total_price), 2
         )
 
         cart = Cart(
-            cart_product_provider_id=provider_id,
-            cart_selling_user=seller_user_id,
-            cart_person_ref=person_obj.id_person if person_obj else None,
-            cart_status=cart_data.cart_status or "open",
-            cart_total_amount=final_total,
-            cart_notes=cart_data.cart_notes or "",
-            cart_created_at=now,
-            cart_updated_at=now,
+            provider_id=provider_id,
+            selling_user_id=seller_user_id,
+            client_person_id=person_obj.id_person if person_obj else None,
+            cart_status="open",
+            subtotal=final_total,
+            notes=cart_data.cart_notes or "",
         )
 
         if buyer_user_id:
-            cart.cart_client_user = buyer_user_id
+            cart.client_user_id = buyer_user_id
         if cart_data.cart_due_date:
             cart.cart_due_date = cart_data.cart_due_date
 
@@ -694,38 +714,40 @@ class CartService:
         person_obj: Optional[Any],
     ) -> Tuple[Cart, List[OrderedItem], List[OrderedService], Invoice]:
         invoice = Invoice(
-            invoice_total_amount=total_price,
+            grand_total=total_price,
             invoice_status="unpaid",
             invoice_issue_date=datetime.now().date(),
             invoice_due_date=datetime.now().date() + timedelta(days=30),
             invoice_type="invoice",
-            invoice_tax_applied=19,
+            tax_amount=0.0,
         )
         created_invoice = self.invoice_repo.create_invoice(invoice)
-        logger.info(f"✅ Created invoice: {created_invoice.invoice_id}")
+        logger.info("Created invoice: %s", created_invoice.invoice_id)
 
-        cart.cart_invoice = created_invoice.invoice_id
+        cart.invoice_id = created_invoice.invoice_id
         cart = self.cart_repo.create_cart(cart)
-        logger.info(f"Cart created with ID: {cart.cart_id}")
+        logger.info("Cart created with ID: %s", cart.cart_id)
 
-        created_items = []
+        created_items: List[OrderedItem] = []
         for ordered_item in cart.ordered_item:
-            ordered_item.ordered_item_cart_ref = cart.cart_id
+            ordered_item.cart_id = cart.cart_id
             created_item = self.order_repo.create_order_item(ordered_item)
+            created_item.reserved_quantity = 0
             created_items.append(created_item)
             logger.info(
-                f"Created ordered item ID: {created_item.id_ordered_item}"
+                "Created ordered item ID: %s", created_item.id_ordered_item
             )
 
-        created_services = []
+        created_services: List[OrderedService] = []
         for ordered_service in cart.ordered_service:
-            ordered_service.ordered_service_cart_id = cart.cart_id
+            ordered_service.cart_id = cart.cart_id
             created_service = self.cart_repo.create_ordered_service(
                 ordered_service
             )
             created_services.append(created_service)
             logger.info(
-                f"Created ordered service ID: {created_service.ordered_service_id}"
+                "Created ordered service ID: %s",
+                created_service.ordered_service_id,
             )
 
         cart.ordered_item = created_items
@@ -745,11 +767,6 @@ class CartService:
     ) -> Payment:
         """
         Local: build and persist a Payment row directly via the repo.
-
-        Previously this delegated to FinancialService. It now writes to
-        the repository itself — the service owns no remote collaborators.
-        If FinancialService does local-only work you need (e.g. fee
-        calculation), call it from the workflow, not from here.
         """
         payment = Payment(
             payment_invoice_id=invoice_id,
@@ -771,12 +788,13 @@ class CartService:
     def apply_invoice_status(self, invoice: Invoice, new_status: str) -> None:
         """Local: write the invoice's new status via the repo."""
         invoice.invoice_status = new_status
-        invoice.invoice_updated_at = datetime.now()
+        invoice.updated_at = datetime.now()
         try:
             self.invoice_repo.update_invoice(invoice)
         except Exception as e:
             logger.error(
-                f"Failed to update invoice {invoice.invoice_id} status: {e}"
+                "Failed to update invoice %s status: %s",
+                invoice.invoice_id, e,
             )
             raise CartInvoiceCreationException(
                 error=f"Invoice status update failed: {e}"
@@ -794,17 +812,17 @@ class CartService:
         Does NOT validate the transition. Callers that need policy
         gating go through CartWorkflow.mark_cart_*.
         """
-        logger.info(f"Updating cart {cart_id} status to '{new_status}'")
+        logger.info("Updating cart %s status to %r", cart_id, new_status)
         cart = self.get_cart_by_id(cart_id)
         cart.cart_status = new_status
-        cart.cart_updated_at = datetime.now()
+        cart.updated_at = datetime.now()
 
         try:
             result = self.cart_repo.update_cart(cart)
-            logger.info(f"Cart {cart_id} status updated successfully")
+            logger.info("Cart %s status updated successfully", cart_id)
             return result
         except Exception as e:
-            logger.error(f"Failed to update cart {cart_id} status: {e}")
+            logger.error("Failed to update cart %s status: %s", cart_id, e)
             raise CartUpdateFailedException(
                 cart_id=cart_id,
                 error=str(e),
@@ -822,7 +840,7 @@ class CartService:
 
     def persist_ordered_item(self, item: OrderedItem) -> OrderedItem:
         """Local: persist an OrderedItem's changes."""
-        item.ordered_item_last_mod = datetime.now()
+        item.updated_at = datetime.now()
         return self.order_repo.update_order_item(item)
 
     def get_ordered_service(self, service_id: int) -> OrderedService:
@@ -834,7 +852,7 @@ class CartService:
 
     def persist_ordered_service(self, svc: OrderedService) -> OrderedService:
         """Local: persist an OrderedService's changes."""
-        svc.ordered_service_updated_at = datetime.now()
+        svc.updated_at = datetime.now()
         return self.cart_repo.update_ordered_service(svc)
 
     # ==================== Rollback (local only) ====================
@@ -853,13 +871,13 @@ class CartService:
         if not cart:
             return
 
-        logger.info(f"🔄 Rolling back cart creation for cart {cart.cart_id}")
+        logger.info("Rolling back cart creation for cart %s", cart.cart_id)
 
         try:
             self.cart_repo.delete_cart_sync(cart)
-            logger.info("✅ Cart deleted during rollback")
+            logger.info("Cart deleted during rollback")
         except Exception as e:
-            logger.error(f"Rollback failed: {e}")
+            logger.error("Rollback failed: %s", e)
 
     # Backwards-compat alias
     _rollback_cart_creation = rollback_cart_creation

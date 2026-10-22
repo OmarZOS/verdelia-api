@@ -86,7 +86,7 @@ SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USE_TLS = True
 EMAIL_FROM = "noreply@yourcompany.com"
-EMAIL_SUBJECT_INVOICE = "Invoice {invoice_number} from {company_name}"
+EMAIL_SUBJECT_INVOICE = "Invoice {invoice_reference} from {company_name}"
 EMAIL_SUBJECT_RECEIPT = "Payment Receipt {receipt_number}"
 EMAIL_BODY_TEMPLATE = "email_template.html"
 

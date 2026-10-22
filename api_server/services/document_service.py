@@ -279,11 +279,11 @@ class DocumentService:
         """Generate QR code data for invoice"""
         return {
             "type": "invoice",
-            "invoice_number": cart_data.get("invoice_number", f"INV-{cart_data.get('cart_id', '000')}"),
+            "invoice_reference": cart_data.get("invoice_reference", f"INV-{cart_data.get('cart_id', '000')}"),
             "amount": cart_data.get("total", cart_data.get("cart_total_amount", 0)),
             "currency": cart_data.get("currency", "USD"),
             "due_date": cart_data.get("due_date", ""),
-            "payment_url": f"https://payment.example.com/pay/{cart_data.get('invoice_number', 'unknown')}"
+            "payment_url": f"https://payment.example.com/pay/{cart_data.get('invoice_reference', 'unknown')}"
         }
     
     def _generate_qr_data_for_receipt(self, cart_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -373,7 +373,7 @@ class DocumentService:
     def cart_to_invoice_data(self, cart_data: Dict[str, Any]) -> Dict[str, Any]:
         """Convert cart data to invoice format"""
         return {
-            "invoice_number": f"INV-{cart_data.get('cart_id', '000')}",
+            "invoice_reference": f"INV-{cart_data.get('cart_id', '000')}",
             "invoice_date": cart_data.get("created_at", ""),
             "due_date": cart_data.get("due_date", ""),
             "company": cart_data.get("company", {}),

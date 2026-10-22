@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice {{ invoice_number }}</title>
+    <title>Invoice {{ invoice_reference }}</title>
     <style>
         /* Algerian government document style - ultra compact */
         body { 
@@ -318,7 +318,7 @@
                 <div class="invoice-meta">
                     <div class="invoice-title">FACTURE / INVOICE</div>
                     <div>
-                        <span class="invoice-number">#{{ invoice_number }}</span>
+                        <span class="invoice-number">#{{ invoice_reference }}</span>
                         <span class="status-badge status-{{ status }}">{{ status|upper }}</span>
                     </div>
                     <div>Date: {{ issue_date }}</div>
@@ -351,7 +351,7 @@
                 </div>
                 <div class="info-row">
                     <span class="info-label">Référence:</span>
-                    <span class="info-value">{{ reference or invoice_number }}</span>
+                    <span class="info-value">{{ reference or invoice_reference }}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Date Facture:</span>
@@ -534,7 +534,7 @@
                 <div>{{ company.name }} • {{ company.address }} • {{ company.city_state_zip }}</div>
                 <div>Tél: {{ company.phone }} • Email: {{ company.email }} • Site: {{ company.website }}</div>
                 <div style="margin-top: 2px;">
-                    <strong>Facture #{{ invoice_number }}</strong> • Émise le/Issued: {{ issue_date }} • 
+                    <strong>Facture #{{ invoice_reference }}</strong> • Émise le/Issued: {{ issue_date }} • 
                     Échéance/Due: {{ due_date }} • 
                     Statut/Status: <span class="status-{{ status }}">{{ status|upper }}</span>
                 </div>

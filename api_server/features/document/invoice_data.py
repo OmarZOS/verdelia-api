@@ -72,7 +72,7 @@ class AppUser:
     app_user_last_active: Optional[str] = None
     app_user_last_updated: Optional[str] = None
     app_user_creation: Optional[str] = None
-    app_user_subscription_ref: Optional[int] = None
+    app_user_subscription_id: Optional[int] = None
     app_user_person: Optional[Person] = None
     
     def to_dict(self):
@@ -87,7 +87,7 @@ class AppUser:
             "app_user_last_active": self.app_user_last_active,
             "app_user_last_updated": self.app_user_last_updated,
             "app_user_creation": self.app_user_creation,
-            "app_user_subscription_ref": self.app_user_subscription_ref,
+            "app_user_subscription_id": self.app_user_subscription_id,
             "app_user_person": self.app_user_person.to_dict() if self.app_user_person else None
         }
 
@@ -141,7 +141,7 @@ class OrderedProduct:
         return {
             "id_product": self.id_product,
             "product_name": self.product_name,
-            "product_price": self.product_price,
+            "product_price": self.unit_price,
             "product_description": self.product_description,
             "product_provider_id": self.product_provider_id,
             "product_brand": self.product_brand,
@@ -153,10 +153,10 @@ class OrderedProduct:
 @dataclass
 class OrderedItem:
     id_ordered_item: int
-    ordered_product_id: int
+    product_id: int
     ordered_quantity: int
     unit_price: float
-    applied_vat: float
+    vat_rate: float
     product_discount: float
     order_ref: Optional[int] = None
     ordered_product: Optional[OrderedProduct] = None
@@ -164,16 +164,16 @@ class OrderedItem:
     @property
     def total(self) -> float:
         discount_factor = (100 - self.product_discount) / 100
-        vat_factor = (100 + self.applied_vat) / 100
+        vat_factor = (100 + self.vat_rate) / 100
         return self.ordered_quantity * self.unit_price * discount_factor * vat_factor
     
     def to_dict(self):
         return {
             "id_ordered_item": self.id_ordered_item,
-            "ordered_product_id": self.ordered_product_id,
+            "product_id": self.product_id,
             "ordered_quantity": self.ordered_quantity,
             "unit_price": self.unit_price,
-            "applied_vat": self.applied_vat,
+            "vat_rate": self.vat_rate,
             "product_discount": self.product_discount,
             "order_ref": self.order_ref,
             "ordered_product": self.ordered_product.to_dict() if self.ordered_product else None,
@@ -189,7 +189,7 @@ class ProvidedService:
     provided_service_description: str
     provided_service_base_price: float
     provided_service_product_provider_id: int
-    provided_service_category_id: int
+    category_id: int
     provided_service_actual_duration: int
     provided_service_is_active: int
     provided_service_created_at: str
@@ -205,7 +205,7 @@ class ProvidedService:
             "provided_service_description": self.provided_service_description,
             "provided_service_base_price": self.provided_service_base_price,
             "provided_service_product_provider_id": self.provided_service_product_provider_id,
-            "provided_service_category_id": self.provided_service_category_id,
+            "category_id": self.category_id,
             "provided_service_actual_duration": self.provided_service_actual_duration,
             "provided_service_is_active": self.provided_service_is_active,
             "provided_service_created_at": self.provided_service_created_at,
@@ -251,29 +251,29 @@ class OrderedService:
 @dataclass
 class InvoiceData:
     invoice_id: int
-    invoice_number: str
-    invoice_total_amount: float
+    invoice_reference: str
+    grand_total: float
     invoice_status: str
     invoice_issue_date: str
     invoice_due_date: Optional[str]
     invoice_notes: Optional[str]
     invoice_cart_id: int
-    invoice_created_at: str
-    invoice_updated_at: str
+    created_at: str
+    updated_at: str
     payment: List[Dict] = field(default_factory=list)
     
     def to_dict(self):
         return {
             "invoice_id": self.invoice_id,
-            "invoice_number": self.invoice_number,
-            "invoice_total_amount": self.invoice_total_amount,
+            "invoice_reference": self.invoice_reference,
+            "grand_total": self.grand_total,
             "invoice_status": self.invoice_status,
             "invoice_issue_date": self.invoice_issue_date,
             "invoice_due_date": self.invoice_due_date,
             "invoice_notes": self.invoice_notes,
             "invoice_cart_id": self.invoice_cart_id,
-            "invoice_created_at": self.invoice_created_at,
-            "invoice_updated_at": self.invoice_updated_at,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
             "payment": self.payment
         }
 
@@ -536,7 +536,7 @@ class Invoice:
     company: Company
     client: Client
     items: List[InvoiceItem]
-    invoice_number: str
+    invoice_reference: str
     issue_date: str
     due_date: str
     cart_id: int
@@ -588,14 +588,14 @@ class Invoice:
         # Add ordered items (products)
         for ordered_item in cart.ordered_item:
             product = ordered_item.ordered_product
-            description = product.product_name if product else f"Product #{ordered_item.ordered_product_id}"
+            description = product.product_name if product else f"Product #{ordered_item.product_id}"
             details = product.product_description if product else None
             
             items.append(InvoiceItem(
                 description=description,
                 quantity=ordered_item.ordered_quantity,
                 unit_price=ordered_item.unit_price,
-                tax_rate=ordered_item.applied_vat,
+                tax_rate=ordered_item.vat_rate,
                 unit="unit",
                 details=details,
                 item_type="product"
@@ -625,7 +625,7 @@ class Invoice:
             company=company,
             client=client,
             items=items,
-            invoice_number=invoice_data.invoice_number,
+            invoice_reference=invoice_data.invoice_reference,
             issue_date=invoice_data.invoice_issue_date,
             due_date=invoice_data.invoice_due_date or "Upon receipt",
             cart_id=cart.cart_id,
@@ -671,7 +671,7 @@ class Invoice:
     def get_qr_code_data(self, size: int = 150, style: str = "professional") -> str:
         """Generate QR code for invoice"""
         invoice_data = {
-            "invoice_number": self.invoice_number,
+            "invoice_reference": self.invoice_reference,
             "cart_id": self.cart_id,
             "company_name": self.company.name,
             "company_tax_id": self.company.tax_id,
@@ -687,7 +687,7 @@ class Invoice:
         # Generate QR data structure
         qr_data = self.qr_generator.generate_qr_data(
             document_type="invoice",
-            document_id=self.invoice_number,
+            document_id=self.invoice_reference,
             data=invoice_data
         )
         
@@ -706,7 +706,7 @@ class Invoice:
             "company": self.company.to_dict(),
             "client": self.client.to_dict(),
             "items": [item.to_dict() for item in self.items],
-            "invoice_number": self.invoice_number,
+            "invoice_reference": self.invoice_reference,
             "issue_date": self.issue_date,
             "due_date": self.due_date,
             "cart_id": self.cart_id,
@@ -775,7 +775,7 @@ class Receipt:
         """Generate QR code for receipt"""
         receipt_data = {
             "receipt_number": self.receipt_number,
-            "invoice_number": self.invoice.invoice_number,
+            "invoice_reference": self.invoice.invoice_reference,
             "cart_id": self.invoice.cart_id,
             "company_name": self.invoice.company.name,
             "company_tax_id": self.invoice.company.tax_id,
@@ -813,7 +813,7 @@ class Receipt:
             "client": self.invoice.client.to_dict(),
             "items": [item.to_dict() for item in self.invoice.items],
             "receipt_number": self.receipt_number,
-            "invoice_number": self.invoice.invoice_number,
+            "invoice_reference": self.invoice.invoice_reference,
             "cart_id": self.invoice.cart_id,
             "payment_date": self.payment_date,
             "payment_time": self.payment_time,
@@ -871,7 +871,7 @@ class InvoiceGenerator:
                 "app_user_name": cart.app_user.app_user_name,
                 "app_user_last_updated": cart.app_user.app_user_last_updated.isoformat() if cart.app_user.app_user_last_updated else None,
                 "app_user_creation": cart.app_user.app_user_creation.isoformat() if cart.app_user.app_user_creation else None,
-                "app_user_subscription_ref": cart.app_user.app_user_subscription_ref,
+                "app_user_subscription_id": cart.app_user.app_user_subscription_id,
                 "app_user_person": None
             }
             
@@ -925,7 +925,7 @@ class InvoiceGenerator:
                 "app_user_name": cart.app_user_.app_user_name,
                 "app_user_last_updated": cart.app_user_.app_user_last_updated.isoformat() if cart.app_user_.app_user_last_updated else None,
                 "app_user_creation": cart.app_user_.app_user_creation.isoformat() if cart.app_user_.app_user_creation else None,
-                "app_user_subscription_ref": cart.app_user_.app_user_subscription_ref,
+                "app_user_subscription_id": cart.app_user_.app_user_subscription_id,
                 "app_user_person": None
             }
         
@@ -987,13 +987,13 @@ class InvoiceGenerator:
                 item_dict = {
                     "id_ordered_item": item.id_ordered_item,
                     "ordered_quantity": item.ordered_quantity,
-                    "applied_vat": float(item.applied_vat) if item.applied_vat else 0.0,
-                    "ordered_product_id": item.ordered_product_id,
+                    "vat_rate": float(item.vat_rate) if item.vat_rate else 0.0,
+                    "product_id": item.product_id,
                     "order_ref": item.order_ref,
                     "unit_price": float(item.unit_price) if item.unit_price else 0.0,
                     "product_discount": float(item.product_discount) if item.product_discount else None,
                     "ordered_product": {
-                        "product_provider_id": item.ordered_product.product_provider_id if item.ordered_product else None,
+                        "product_provider_id": item.ordered_product.provider_id if item.ordered_product else None,
                         "product_quantifier": item.ordered_product.product_quantifier if item.ordered_product else None,
                         "product_owner": item.ordered_product.product_owner if item.ordered_product else None,
                         "product_brand": item.ordered_product.product_brand if item.ordered_product else "",
@@ -1005,7 +1005,7 @@ class InvoiceGenerator:
                         "product_description": item.ordered_product.product_description if item.ordered_product else "",
                         "product_origin_id": item.ordered_product.product_origin_id if item.ordered_product else None,
                         "product_name": item.ordered_product.product_name if item.ordered_product else "",
-                        "product_price": float(item.ordered_product.product_price) if item.ordered_product and item.ordered_product.product_price else 0.0,
+                        "product_price": float(item.ordered_product.unit_price) if item.ordered_product and item.ordered_product.unit_price else 0.0,
                         "product_quantity": item.ordered_product.product_quantity if item.ordered_product else 0
                     } if item.ordered_product else None
                 }
@@ -1014,7 +1014,7 @@ class InvoiceGenerator:
         return cart_dict
     
     @staticmethod
-    def generate_invoice_number(prefix="INV", year=None, sequence=1):
+    def generate_invoice_reference(prefix="INV", year=None, sequence=1):
         if year is None:
             year = datetime.now().year
         return f"{prefix}-{year}-{sequence:04d}"
@@ -1087,7 +1087,7 @@ class InvoiceGenerator:
                 app_user_last_active=au_data.get('app_user_last_active'),
                 app_user_last_updated=au_data.get('app_user_last_updated'),
                 app_user_creation=au_data.get('app_user_creation'),
-                app_user_subscription_ref=au_data.get('app_user_subscription_ref'),
+                app_user_subscription_id=au_data.get('app_user_subscription_id'),
                 app_user_person=app_user_person
             )
         
@@ -1137,10 +1137,10 @@ class InvoiceGenerator:
             
             ordered_item = OrderedItem(
                 id_ordered_item=item_data.get('id_ordered_item', 0),
-                ordered_product_id=item_data.get('ordered_product_id', 0),
+                product_id=item_data.get('product_id', 0),
                 ordered_quantity=item_data.get('ordered_quantity', 0),
                 unit_price=item_data.get('unit_price', 0.0),
-                applied_vat=item_data.get('applied_vat', 0.0),
+                vat_rate=item_data.get('vat_rate', 0.0),
                 product_discount=item_data.get('product_discount', 0.0),
                 order_ref=item_data.get('order_ref'),
                 ordered_product=ordered_product
@@ -1160,7 +1160,7 @@ class InvoiceGenerator:
                     provided_service_description=ps_data.get('provided_service_description', ''),
                     provided_service_base_price=ps_data.get('provided_service_base_price', 0.0),
                     provided_service_product_provider_id=ps_data.get('provided_service_product_provider_id', 0),
-                    provided_service_category_id=ps_data.get('provided_service_category_id', 0),
+                    category_id=ps_data.get('category_id', 0),
                     provided_service_actual_duration=ps_data.get('provided_service_actual_duration', 0),
                     provided_service_is_active=ps_data.get('provided_service_is_active', 0),
                     provided_service_created_at=ps_data.get('provided_service_created_at', ''),
@@ -1190,30 +1190,30 @@ class InvoiceGenerator:
             inv_data = cart_data['invoice'][0]
             invoice_data = InvoiceData(
                 invoice_id=inv_data.get('invoice_id', 0),
-                invoice_number=inv_data.get('invoice_number', f"INV-{cart_data.get('cart_id', 0)}"),
-                invoice_total_amount=inv_data.get('invoice_total_amount', 0.0),
+                invoice_reference=inv_data.get('invoice_reference', f"INV-{cart_data.get('cart_id', 0)}"),
+                grand_total=inv_data.get('grand_total', 0.0),
                 invoice_status=inv_data.get('invoice_status', 'pending'),
                 invoice_issue_date=inv_data.get('invoice_issue_date', cart_data.get('cart_created_at', '')[:10]),
                 invoice_due_date=inv_data.get('invoice_due_date'),
                 invoice_notes=inv_data.get('invoice_notes'),
                 invoice_cart_id=inv_data.get('invoice_cart_id', cart_data.get('cart_id', 0)),
-                invoice_created_at=inv_data.get('invoice_created_at', cart_data.get('cart_created_at', '')),
-                invoice_updated_at=inv_data.get('invoice_updated_at', cart_data.get('cart_updated_at', '')),
+                created_at=inv_data.get('created_at', cart_data.get('cart_created_at', '')),
+                updated_at=inv_data.get('updated_at', cart_data.get('cart_updated_at', '')),
                 payment=inv_data.get('payment', [])
             )
         else:
             # Create default invoice data if none exists
             invoice_data = InvoiceData(
                 invoice_id=cart_data.get('cart_id', 0),
-                invoice_number=f"INV-{cart_data.get('cart_id', 0)}",
-                invoice_total_amount=cart_data.get('cart_total_amount', 0.0),
+                invoice_reference=f"INV-{cart_data.get('cart_id', 0)}",
+                grand_total=cart_data.get('cart_total_amount', 0.0),
                 invoice_status='pending',
                 invoice_issue_date=cart_data.get('cart_created_at', '')[:10],
                 invoice_due_date=None,
                 invoice_notes=cart_data.get('cart_notes', ''),
                 invoice_cart_id=cart_data.get('cart_id', 0),
-                invoice_created_at=cart_data.get('cart_created_at', ''),
-                invoice_updated_at=cart_data.get('cart_updated_at', ''),
+                created_at=cart_data.get('cart_created_at', ''),
+                updated_at=cart_data.get('cart_updated_at', ''),
                 payment=[]
             )
         
@@ -1264,12 +1264,12 @@ class InvoiceGenerator:
             items = []
             for ordered_item in ordered_items:
                 product = ordered_item.ordered_product
-                description = product.product_name if product else f"Product #{ordered_item.ordered_product_id}"
+                description = product.product_name if product else f"Product #{ordered_item.product_id}"
                 items.append(InvoiceItem(
                     description=description,
                     quantity=ordered_item.ordered_quantity,
                     unit_price=ordered_item.unit_price,
-                    tax_rate=ordered_item.applied_vat,
+                    tax_rate=ordered_item.vat_rate,
                     unit="unit",
                     details=product.product_description if product else None,
                     item_type="product"
@@ -1298,7 +1298,7 @@ class InvoiceGenerator:
                 company=company,
                 client=client,
                 items=items,
-                invoice_number=f"INV-{cart.cart_id}",
+                invoice_reference=f"INV-{cart.cart_id}",
                 issue_date=cart.cart_created_at[:10] if cart.cart_created_at else datetime.now().strftime('%Y-%m-%d'),
                 due_date="Upon receipt",
                 cart_id=cart.cart_id,

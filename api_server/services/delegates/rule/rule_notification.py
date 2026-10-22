@@ -27,46 +27,56 @@ class RuleNotification:
         self.notification_builder = NotificationBuilderService()
         self.supplier_repo = SupplierRepository()
     
-    def create_invitation_notification(self, rule,destinations) -> None:
+    def create_invitation_notification(self, rule, destinations):
         """
-        Create invitation notification for a rule.
-        
-        Args:
-            rule: Created rule
+        Create invitation notifications for a rule.
+
+        Filters out None/invalid destinations up front. Raises if no valid
+        destination remains — an invitation with no recipient is a bug, not
+        a no-op.
         """
+        valid = [d for d in destinations if isinstance(d, int) and d > 0]
+        if not valid:
+            raise ValueError(
+                f"No valid destination users for rule {rule.id_management_rule}; "
+                f"provider={rule.rule_provider_id} org={rule.rule_org_id}"
+            )
+
+        result: Optional[Notification_API] = None
         try:
-            
-            for id in destinations:
+            for user_id in valid:
                 notification = self.notification_builder.create_invitation_notification(
                     rule_id=rule.id_management_rule,
                     role=rule.management_rule_code,
-                    provider_id=rule.rule_ref_provider,
-                    organization_id=rule.rule_ref_org,
-                    destination_user=rule.rule_ref_user,
-                    invited_by=rule.rule_ref_provider,
-                    notify_user= id
+                    provider_id=rule.rule_provider_id,
+                    organization_id=rule.rule_org_id,
+                    destination_user=rule.rule_user_id,
+                    invited_by=rule.rule_provider_id,  # still wrong; see earlier note
+                    notify_user=user_id,
                 )
-                if rule.rule_ref_user == id:
+                if rule.rule_user_id == user_id:
                     result = notification
-                
-                logger.info(f"Created invitation notification to user: {id} for rule {rule.id_management_rule}")
-            
-            # Try to send real-time notification via publisher
+                logger.info(
+                    "Created invitation notification to user %s for rule %s",
+                    user_id, rule.id_management_rule,
+                )
+
             try:
                 notify_invitation_to_role_received({
                     "rule_id": rule.id_management_rule,
                     "role": rule.management_rule_code,
-                    "provider_id": rule.rule_ref_provider,
-                    "organization_id": rule.rule_ref_org,
-                    "destination_user": rule.rule_ref_user,
-                    "invited_by": rule.rule_ref_provider
-                }, rule.rule_ref_user)
+                    "provider_id": rule.rule_provider_id,
+                    "organization_id": rule.rule_org_id,
+                    "destination_user": rule.rule_user_id,
+                    "invited_by": rule.rule_provider_id,
+                }, rule.rule_user_id)
             except Exception as e:
-                logger.error(f"Failed to send real-time notification: {e}")
+                logger.warning("Failed to send real-time notification: %s", e)
+
             return result
-                
         except Exception as e:
-            logger.error(f"Failed to create invitation notification: {e}")
+            logger.exception("Failed to create invitation notification")
+            raise
     
     def create_rule_update_notification(self, rule,destinations) -> None:
         """
@@ -80,10 +90,10 @@ class RuleNotification:
                 "rule_id": rule.id_management_rule,
                 "role": rule.management_rule_code,
                 "rule_type": rule.management_rule_status,
-                "user_id": rule.rule_ref_user,
-                "provider_id": rule.rule_ref_provider,
-                "organization_id": rule.rule_ref_org,
-                "invited_by": rule.rule_ref_user,
+                "user_id": rule.rule_user_id,
+                "provider_id": rule.rule_provider_id,
+                "organization_id": rule.rule_org_id,
+                "invited_by": rule.rule_user_id,
                 "notification_date": str(datetime.now())
             }
             for id in destinations:
@@ -114,9 +124,9 @@ class RuleNotification:
             
             notification_data = {
                 "rule_id": rule.id_management_rule,
-                "user_id": rule.rule_ref_user,
-                "organization_id": rule.rule_ref_org,
-                "provider_id": rule.rule_ref_provider,
+                "user_id": rule.rule_user_id,
+                "organization_id": rule.rule_org_id,
+                "provider_id": rule.rule_provider_id,
                 "role": rule.management_rule_code,
                 "status": rule.management_rule_status,
                 "response_date": str(datetime.now())

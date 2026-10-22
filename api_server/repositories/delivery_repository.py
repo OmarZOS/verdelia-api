@@ -16,9 +16,9 @@ class DeliveryRepository:
                 [
 
                 {
-                    Delivery.invoice:[{Invoice.placed_order:[{PlacedOrder.ordering_user:[{AppUser.app_user_person:[]}]},{PlacedOrder.ordered_item:[{OrderedItem.ordered_product:[Product.product_provider_id]}]}]}]},
-                    Delivery.delivery_address,
-                    Delivery.recipient_person,
+                    Delivery.invoice:[{Invoice.placed_order:[{PlacedOrder.ordering_user:[{AppUser.app_user_person:[]}]},{PlacedOrder.ordered_item:[{OrderedItem.product:[Product.provider_id]}]}]}]},
+                    Delivery.address,
+                    # Delivery.person,
                     Delivery.delivery_provider,
                     Delivery.delivery_broker
                     # Delivery.cart,
@@ -66,7 +66,7 @@ class DeliveryRepository:
                 # Delivery.placed_order,
                 Delivery.delivery_provider,
                 Delivery.delivery_broker,
-                Delivery.delivery_address
+                Delivery.address
             ]
         else:
             eager_load_depth = []
@@ -100,14 +100,14 @@ class DeliveryRepository:
             Delivery,
             conditions,
             [],
-            [Delivery.placed_order, Delivery.delivery_broker]
+            [ Delivery.delivery_broker]
         )
     
     def get_by_recipient_person(self, person_id: int) -> List[Delivery]:
         """Get deliveries by recipient person"""
         return storage_broker.get(
             Delivery,
-            {Delivery.recipient_person: person_id},
+            {Delivery.recipient_person_id: person_id},
             [],
             [Delivery.delivery_provider, Delivery.delivery_broker]
         )
@@ -142,8 +142,6 @@ class DeliveryRepository:
             
             if provider_id > 0:
                 query = query.filter(Delivery.delivery_provider_id == provider_id)
-            if order_id > 0:
-                query = query.filter(Delivery.delivery_placed_order == order_id)
             if status:
                 query = query.filter(Delivery.delivery_status == status)
             else:

@@ -246,7 +246,7 @@ INSERT INTO `verdelia`.`provided_service_category` (
 INSERT INTO `verdelia`.`provided_service` (
   `provided_service_name`,
   `provided_service_description`,
-  `provided_service_category_id`,
+  `category_id`,
   `provided_service_product_provider_id`,
   `provided_service_base_price`,
   `provided_service_final_price`,
@@ -630,9 +630,9 @@ INSERT INTO `verdelia`.`service_resource_requirement` (
 
 -- -- Insert ordered_items with valid product_id (1-7) and cart_ref (1-42)
 -- INSERT INTO `verdelia`.`ordered_item` (
---   `ordered_product_id`,
+--   `product_id`,
 --   `ordered_quantity`,
---   `applied_vat`,
+--   `vat_rate`,
 --   `unit_price`,
 --   `product_discount`,
 --   `ordered_item_cart_ref`
@@ -746,9 +746,9 @@ INSERT INTO `verdelia`.`service_resource_requirement` (
 
 -- -- Insert more varied orders
 -- INSERT INTO `verdelia`.`ordered_item` (
---   `ordered_product_id`,
+--   `product_id`,
 --   `ordered_quantity`,
---   `applied_vat`,
+--   `vat_rate`,
 --   `unit_price`,
 --   `product_discount`,
 --   `ordered_item_cart_ref`
@@ -783,8 +783,8 @@ INSERT INTO `verdelia`.`service_resource_requirement` (
 -- -- Insert invoices with valid cart_id (1-42)
 -- -- INSERT INTO `verdelia`.`invoice` (
 -- --   `invoice_cart_id`,
--- --   `invoice_number`,
--- --   `invoice_total_amount`,
+-- --   `invoice_reference`,
+-- --   `grand_total`,
 -- --   `invoice_status`,
 -- --   `invoice_issue_date`,
 -- --   `invoice_due_date`,
@@ -843,8 +843,8 @@ INSERT INTO `verdelia`.`service_resource_requirement` (
 -- -- -- Insert more invoices
 -- -- INSERT INTO `verdelia`.`invoice` (
 -- --   `invoice_cart_id`,
--- --   `invoice_number`,
--- --   `invoice_total_amount`,
+-- --   `invoice_reference`,
+-- --   `grand_total`,
 -- --   `invoice_status`,
 -- --   `invoice_issue_date`,
 -- --   `invoice_due_date`,
@@ -1094,9 +1094,9 @@ INSERT INTO `verdelia`.`service_resource_requirement` (
 
 -- Insert dummy data for ordered_item table
 -- INSERT INTO `verdelia`.`ordered_item` (
---   `ordered_product_id`,
+--   `product_id`,
 --   `ordered_quantity`,
---   `applied_vat`,
+--   `vat_rate`,
 --   `unit_price`,
 --   `product_discount`,
 --   `ordered_item_cart_ref`
@@ -1223,9 +1223,9 @@ INSERT INTO `verdelia`.`service_resource_requirement` (
 
 -- More varied orders with different scenarios
 -- INSERT INTO `verdelia`.`ordered_item` (
---   `ordered_product_id`,
+--   `product_id`,
 --   `ordered_quantity`,
---   `applied_vat`,
+--   `vat_rate`,
 --   `unit_price`,
 --   `product_discount`,
 --   `ordered_item_cart_ref`
@@ -1264,9 +1264,9 @@ INSERT INTO `verdelia`.`service_resource_requirement` (
 
 -- -- Insert dummy data for ordered_item table referencing placed_order (IDs 38-74)
 -- INSERT INTO `verdelia`.`ordered_item` (
---   `ordered_product_id`,
+--   `product_id`,
 --   `ordered_quantity`,
---   `applied_vat`,
+--   `vat_rate`,
 --   `order_ref`,
 --   `unit_price`,
 --   `product_discount`,
@@ -1422,8 +1422,8 @@ INSERT INTO `verdelia`.`service_resource_requirement` (
 -- Insert dummy data for invoice table
 -- INSERT INTO `verdelia`.`invoice` (
 --   `invoice_cart_id`,
---   `invoice_number`,
---   `invoice_total_amount`,
+--   `invoice_reference`,
+--   `grand_total`,
 --   `invoice_status`,
 --   `invoice_issue_date`,
 --   `invoice_due_date`,
@@ -1559,8 +1559,8 @@ INSERT INTO `verdelia`.`service_resource_requirement` (
 -- More invoices for comprehensive coverage
 -- INSERT INTO `verdelia`.`invoice` (
 --   `invoice_cart_id`,
---   `invoice_number`,
---   `invoice_total_amount`,
+--   `invoice_reference`,
+--   `grand_total`,
 --   `invoice_status`,
 --   `invoice_issue_date`,
 --   `invoice_due_date`,
@@ -2203,7 +2203,7 @@ INSERT INTO `provided_service_category` (
 INSERT INTO `provided_service` (
     `provided_service_name`,
     `provided_service_description`,
-    `provided_service_category_id`,
+    `category_id`,
     `provided_service_product_provider_id`,
     `provided_service_base_price`,
     `provided_service_final_price`,

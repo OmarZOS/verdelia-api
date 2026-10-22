@@ -608,7 +608,7 @@ class BusinessOperationService:
     def _load_product_provider_map(self, items: Iterable[OrderedItem]) -> Dict[int, int]:
         product_ids: Set[int] = set()
         for item in items:
-            pid = getattr(item, "ordered_product_id", None)
+            pid = getattr(item, "product_id", None)
             if pid is not None:
                 product_ids.add(pid)
 
@@ -669,6 +669,8 @@ class BusinessOperationService:
     # Financial rollup
     # ------------------------------------------------------------------
 
+
+
     def _financials(
         self,
         items: List[OrderedItem],
@@ -679,59 +681,83 @@ class BusinessOperationService:
         """
         Commercial model
         ----------------
-        - `unit_price` on items is VAT-INCLUSIVE. `applied_vat` is the rate
-          that produced it (price_with_vat = base * (1 + vat/100)).
-        - `applied_vat` may be 0 when the item was priced without tax.
-        - Discounts live at the ORDER level (`_order_discount`, sourced from
-          PlacedOrder.order_discount or Cart.cart_discount), not on items.
+        - `unit_price` on items is VAT-INCLUSIVE. `vat_rate` is the
+          rate that was baked into it (price_with_vat = base × (1 + vat/100)).
+        - `vat_rate` may be 0 when the line was priced without tax.
+        - Discounts live at the ORDER level (`_order_discount`, sourced
+          from PlacedOrder.order_discount or Cart.cart_discount). The
+          per-item `product_discount` slot exists in the payload but is
+          always null today; we still read it so a future backend that
+          populates it doesn't silently drop money.
 
-        So:
-            line_total_inclusive   = qty * unit_price
-            tax_portion            = line * (vat / (100 + vat))   when vat > 0
-            line_total_ex_tax      = line - tax_portion
+        Therefore:
 
-            product_subtotal       = Σ line_total_ex_tax
-            service_subtotal       = Σ service_total_ex_tax
-            gross_subtotal         = product_subtotal + service_subtotal
-            taxable_amount         = gross_subtotal                 (already pre-tax)
-            tax_amount             = Σ tax_portion (items) + Σ (services)
-            discount_amount        = _order_discount
-            delivery_revenue       = _delivery_fee
-            grand_total            = taxable_amount
-                                   + tax_amount
-                                   + delivery_revenue
+            line_total       = qty × unit_price                    (VAT-incl.)
+            item_discount    = product_discount (per line, default 0)
+            line_net         = line_total − item_discount
+            product_subtotal = Σ line_net
+            service_subtotal = Σ ordered_service_total_price
+            gross_subtotal   = product_subtotal + service_subtotal
+            order_discount   = _order_discount
+            discount_amount  = Σ item_discount + order_discount
+            delivery_revenue = _delivery_fee
+
+            grand_total      = max(gross_subtotal − order_discount, 0)
+                             + delivery_revenue
+
+        `tax_amount` is *extracted from* the line totals for reporting —
+        it is already contained in `grand_total` and must NOT be added
+        to it:
+
+            tax_portion      = line_total × vat / (100 + vat)
+            tax_amount       = Σ tax_portion (items) + Σ tax_portion (services)
+
+        `due_amount` is always computed against `grand_total`, never
+        against `invoice_total`. The invoice's own total is carried
+        verbatim on `invoice_total` for reconciliation.
         """
         # ---------- COMMERCIAL ----------
-        product_subtotal = 0.0          # pre-tax
-        tax_from_items = 0.0
+        product_subtotal = 0.0          # VAT-inclusive, after item discounts
+        item_discount_total = 0.0       # Σ per-item product_discount
+        tax_from_items = 0.0            # informational only
         product_cost = 0.0
 
         for item in items:
             try:
                 qty = float(getattr(item, "ordered_quantity", 0) or 0)
                 price = float(getattr(item, "unit_price", 0) or 0)
-                vat = float(getattr(item, "applied_vat", 0) or 0)
-
-                line_inclusive = qty * price
-                if vat > 0:
-                    tax_portion = line_inclusive * (vat / (100.0 + vat))
-                else:
-                    tax_portion = 0.0
-                line_ex_tax = line_inclusive - tax_portion
-
-                product_subtotal += line_ex_tax
-                tax_from_items += tax_portion
-
-                product = self._safe_loaded(item, "ordered_product")
-                if product is not None:
-                    base = float(getattr(product, "product_base_price", 0) or 0)
-                    if base > 0:
-                        product_cost += base * qty
+                vat = float(getattr(item, "vat_rate", 0) or 0)
             except (TypeError, ValueError):
                 continue
 
-        service_subtotal = 0.0          # pre-tax
-        tax_from_services = 0.0
+            line_total = qty * price
+
+            # Per-item discount. Payload sends null today; treat null
+            # and missing as zero. Guard against a string being passed.
+            try:
+                item_discount = float(
+                    getattr(item, "product_discount", 0) or 0
+                )
+            except (TypeError, ValueError):
+                item_discount = 0.0
+
+            line_net = line_total - item_discount
+
+            product_subtotal += line_net
+            item_discount_total += item_discount
+
+            if vat > 0:
+                # Tax is already inside line_net; just report the split.
+                tax_from_items += line_total * (vat / (100.0 + vat))
+
+            product = self._safe_loaded(item, "ordered_product")
+            if product is not None:
+                base = float(getattr(product, "product_base_price", 0) or 0)
+                if base > 0:
+                    product_cost += base * qty
+
+        service_subtotal = 0.0          # VAT-inclusive
+        tax_from_services = 0.0         # informational only
         consumable_service_cost = 0.0
         non_consumable_service_cost = 0.0
         labor_cost = 0.0
@@ -741,16 +767,13 @@ class BusinessOperationService:
                 svc_total = float(
                     getattr(svc, "ordered_service_total_price", 0) or 0
                 )
-                svc_vat = float(getattr(svc, "applied_vat", 0) or 0)
+                svc_vat = float(getattr(svc, "vat_rate", 0) or 0)
             except (TypeError, ValueError):
                 continue
 
+            service_subtotal += svc_total
             if svc_vat > 0:
-                svc_tax_portion = svc_total * (svc_vat / (100.0 + svc_vat))
-            else:
-                svc_tax_portion = 0.0
-            service_subtotal += svc_total - svc_tax_portion
-            tax_from_services += svc_tax_portion
+                tax_from_services += svc_total * (svc_vat / (100.0 + svc_vat))
 
             provided = self._safe_loaded(svc, "ordered_service_service")
             if provided is None:
@@ -794,22 +817,21 @@ class BusinessOperationService:
                     per_use = (qty * unit_cost) / self.NON_CONSUMABLE_AMORTIZATION_DAYS
                     non_consumable_service_cost += per_use
 
-        # ---------- DISCOUNT (order-level only) ----------
-        discount_total = float(op.get("_order_discount", 0) or 0)
+        # ---------- DISCOUNT ----------
+        order_discount = float(op.get("_order_discount", 0) or 0)
+        discount_total = item_discount_total + order_discount
 
         gross_subtotal = product_subtotal + service_subtotal
-        taxable_amount = max(gross_subtotal - discount_total, 0.0)
+        taxable_amount = max(gross_subtotal - order_discount, 0.0)
 
-        # ---------- TAX ----------
-        tax_total = tax_from_items + tax_from_services
-
+        # ---------- DELIVERY ----------
         delivery_revenue = float(op.get("_delivery_fee", 0) or 0)
 
-        grand_total = round(
-            taxable_amount + tax_total + delivery_revenue, 2
-        )
+        # ---------- GRAND TOTAL ----------
+        # Tax is contained in the line totals already; it is NOT added.
+        grand_total = round(taxable_amount + delivery_revenue, 2)
 
-        # Invoice's own total, kept for reference only.
+        # Invoice's own total, carried verbatim for reconciliation.
         invoice_total = self._invoice_total(invoice)
 
         # ---------- SETTLEMENT ----------
@@ -839,14 +861,17 @@ class BusinessOperationService:
         margin_amount = round(grand_total - total_cost, 2)
         roi = round(margin_amount / total_cost, 4) if total_cost > 0 else None
 
+        # ---------- TAX (reporting only) ----------
+        tax_total = tax_from_items + tax_from_services
+
         return {
             # Commercial
             "product_subtotal": round(product_subtotal, 2),
             "service_subtotal": round(service_subtotal, 2),
             "gross_subtotal": round(gross_subtotal, 2),
             "discount_amount": round(discount_total, 2),
-            "item_discount_amount": 0.0,
-            "order_discount_amount": round(discount_total, 2),
+            "item_discount_amount": round(item_discount_total, 2),
+            "order_discount_amount": round(order_discount, 2),
             "tax_amount": round(tax_total, 2),
             "delivery_revenue": round(delivery_revenue, 2),
             "grand_total": grand_total,
@@ -879,7 +904,7 @@ class BusinessOperationService:
         if invoice is None:
             return 0.0
         return BusinessOperationService._safe_float(
-            getattr(invoice, "invoice_total_amount", 0)
+            getattr(invoice, "grand_total", 0)
         )
 
     def _sum_completed_payments(self, invoice: Optional[Invoice]) -> float:
@@ -932,7 +957,7 @@ class BusinessOperationService:
 
     @staticmethod
     def _item_provider_id(item, product_provider_map):
-        pid = getattr(item, "ordered_product_id", None)
+        pid = getattr(item, "product_id", None)
         if pid is None:
             return None
         return product_provider_map.get(pid)

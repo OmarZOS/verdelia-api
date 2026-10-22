@@ -2,7 +2,7 @@
 """
 PlacedOrderPolicy — PlacedOrder status rules, built on TransitionEngine.
 
-States (from `placed_order_state` enum, stored UPPERCASE):
+States (from `order_state` enum, stored UPPERCASE):
     PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED
 
 Transitions (from the state diagram):
@@ -74,7 +74,7 @@ def cancellable(order: PlacedOrder) -> bool:
     * → CANCELLED: cancellable while the order hasn't been fully
     delivered. Once DELIVERED, the path is REFUNDED, not CANCELLED.
     """
-    status = (order.placed_order_state or '').upper()
+    status = (order.order_state or '').upper()
     return status in {'PENDING', 'PROCESSING', 'SHIPPED'}
 
 
@@ -199,7 +199,7 @@ class PlacedOrderPolicy(PolicyBase):
         **extras: Any,
     ) -> Decision:
         """Decide using the order's own state as the current state."""
-        current = order.placed_order_state or self.initial_state
+        current = order.order_state or self.initial_state
         return self.decide(current, target, order, **extras)
 
     def is_final(self, state: str) -> bool:
@@ -211,12 +211,12 @@ class PlacedOrderPolicy(PolicyBase):
 
     def is_settled(self, order: PlacedOrder) -> bool:
         """Delivered, cancelled, or refunded — no further action needed."""
-        return self.is_final(order.placed_order_state or '')
+        return self.is_final(order.order_state or '')
 
     def is_active(self, order: PlacedOrder) -> bool:
         """Anything before SHIPPED is actively being worked on."""
         return self.normalize(
-            order.placed_order_state or ''
+            order.order_state or ''
         ) in {'PENDING', 'PROCESSING'}
 
     # ── Error mapping ────────────────────────────────────────────────

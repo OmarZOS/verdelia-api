@@ -114,7 +114,7 @@ class PricingService:
     ) -> float:
         """Calculate total price for an order"""
         subtotal = sum(
-            item.ordered_quantity * item.unit_price * (1 + item.applied_vat)
+            item.ordered_quantity * item.unit_price * (1 + item.vat_rate)
             for item in items
         )
         

@@ -37,7 +37,7 @@ from core.exceptions.specific.order_exceptions import (
 from core.exceptions.specific.product_exceptions import (
     ProductNotFoundException,
 )
-from core.models.models import PlacedOrder, OrderedItem, Product, Invoice, Delivery
+from core.models.models import Payment, PlacedOrder, OrderedItem, Product, Invoice, Delivery
 from repositories.order_repository import OrderRepository, OrderItemRepository
 from repositories.product_repository import ProductRepository
 from repositories.user_repository import UserRepository
@@ -107,23 +107,23 @@ class OrderService:
 
         for api_item in items:
             product = self.product_repo.get_product_by_id(
-                api_item.ordered_product_id
+                api_item.product_id
             )
             if not product:
                 raise ProductNotFoundException(
-                    product_id=api_item.ordered_product_id
+                    product_id=api_item.product_id
                 )
 
-            delivery_provider_ids.add(product.product_provider_id)
+            delivery_provider_ids.add(product.provider_id)
 
             item = self.build_ordered_item_model(api_item)
-            item.unit_price = float(product.product_price)
+            item.unit_price = float(product.unit_price)
             ordered_items.append(item)
 
             order_total_price += (
                 item.ordered_quantity
-                * float(product.product_price)
-                * (1 + item.applied_vat)
+                * float(product.unit_price)
+                * (1 + item.vat_rate)
             )
 
         if order_data.order_discount:
@@ -132,10 +132,10 @@ class OrderService:
 
         placed_order = PlacedOrder(
             ordering_user_id=ordering_user.id_app_user,
-            order_discount=order_data.order_discount or 0,
-            placed_order_last_mod=datetime.now(),
-            total_price=max(0, order_total_price),
-            placed_order_state=self.validate_order_status(
+            discount_amount=order_data.order_discount or 0,
+            updated_at=datetime.now(),
+            subtotal=max(0, order_total_price),
+            order_state=self.validate_order_status(
                 order_data.placed_order_state or 'PENDING'
             ),
         )
@@ -146,12 +146,12 @@ class OrderService:
 
         created_items: List[OrderedItem] = []
         for item in ordered_items:
-            item.order_ref = created_order.id_placed_order
+            item.order_id = created_order.id_placed_order
             saved = self.order_repo.create_order_item(item)
             created_items.append(saved)
             logger.info(
-                f"✅ Created order item: {saved.id_ordered_item} "
-                f"for product {saved.ordered_product_id}"
+                f"✅ Created order item: {saved.id_ordered_item}, quantity: {saved.ordered_quantity}, price: {saved.unit_price}"
+                f"for product {saved.product_id}"
             )
 
         deliveries: List[Delivery] = []
@@ -171,8 +171,8 @@ class OrderService:
 
             delivery = Delivery(
                 delivery_source_type='placed_order',
-                delivery_address_id=delivery_address_id,
-                recipient_person=user_id,
+                address_id=delivery_address_id,
+                recipient_person_id=user_id,
                 delivery_source_id=created_order.id_placed_order,
                 delivery_provider_id=provider_id,
                 delivery_fee=(
@@ -185,23 +185,23 @@ class OrderService:
             )
 
         invoice = Invoice(
-            invoice_number=(
+            invoice_reference=(
                 f"INV-{created_order.id_placed_order}-"
                 f"{datetime.now().strftime('%Y%m%d')}"
             ),
-            invoice_total_amount=order_total_price,
+            grand_total=order_total_price,
             invoice_status='unpaid',
             invoice_issue_date=datetime.now().date(),
             invoice_due_date=datetime.now().date() + timedelta(days=30),
             invoice_notes=f"Order #{created_order.id_placed_order}",
             invoice_type='invoice',
-            invoice_tax_applied=19,
+            tax_amount=0.0,
             delivery=deliveries,
         )
         created_invoice = self.invoice_repo.create_invoice(invoice)
         logger.info(f"✅ Created invoice: {created_invoice.invoice_id}")
 
-        created_order.placed_order_invoice = created_invoice.invoice_id
+        created_order.invoice_id = created_invoice.invoice_id
         created_order = self.order_repo.update_order(created_order)
 
         return created_order, created_items, created_invoice, deliveries
@@ -217,9 +217,9 @@ class OrderService:
 
     def advance_order_after_payment(self, order: PlacedOrder) -> PlacedOrder:
         """Local: PENDING → PROCESSING after payment succeeds."""
-        if order.placed_order_state == 'PENDING':
-            order.placed_order_state = 'PROCESSING'
-            order.placed_order_last_mod = datetime.now()
+        if order.order_state == 'PENDING':
+            order.order_state = 'PROCESSING'
+            order.updated_at = datetime.now()
             return self.order_repo.update_order(order)
         return order
 
@@ -228,7 +228,7 @@ class OrderService:
     # ================================================================
 
     def build_payment_create_payload(self, order, invoice, payment_method):
-        amount = invoice.invoice_total_amount
+        amount = invoice.grand_total
         if amount is None:
             raise OrderUpdateFailedException(
                 order_id=order.id_placed_order,
@@ -277,7 +277,7 @@ class OrderService:
             {
                 'id': item.id_ordered_item,
                 'quantity': item.ordered_quantity,
-                'product_id': item.ordered_product_id,
+                'product_id': item.product_id,
             }
             for item in items
         ]
@@ -301,11 +301,11 @@ class OrderService:
         if isinstance(item, dict):
             ordered_item_id = item.get('id_ordered_item')
             quantity = item.get('ordered_quantity')
-            product_id = item.get('ordered_product_id')
+            product_id = item.get('product_id')
         else:
             ordered_item_id = getattr(item, 'id_ordered_item', None)
             quantity = getattr(item, 'ordered_quantity', None)
-            product_id = getattr(item, 'ordered_product_id', None)
+            product_id = getattr(item, 'product_id', None)
 
         if ordered_item_id is None or product_id is None:
             logger.warning(f"Skipping malformed confirm item: {item!r}")
@@ -398,10 +398,10 @@ class OrderService:
     def update_order_status(self, order_id: int, new_status: str) -> PlacedOrder:
         validated = self.validate_order_status(new_status)
         order = self.get_order_by_id(order_id, with_items=False)
-        self.validate_status_transition(order.placed_order_state, validated)
+        self.validate_status_transition(order.order_state, validated)
 
-        order.placed_order_state = validated
-        order.placed_order_last_mod = datetime.now()
+        order.order_state = validated
+        order.updated_at = datetime.now()
         return self.order_repo.update_order(order)
 
     def delete_order(self, order_id: int) -> bool:
@@ -425,13 +425,13 @@ class OrderService:
         self, api_item: OrderedItem_API
     ) -> OrderedItem:
         item = OrderedItem(
-            ordered_product_id=api_item.ordered_product_id,
+            product_id=api_item.product_id,
             ordered_quantity=api_item.ordered_quantity,
-            applied_vat=api_item.applied_vat,
+            vat_rate=api_item.vat_rate,
             unit_price=api_item.unit_price,
         )
         if api_item.order_ref and api_item.order_ref > 0:
-            item.order_ref = api_item.order_ref
+            item.order_id = api_item.order_ref
         return item
 
     def validate_order_status(self, status: str) -> str:
@@ -496,14 +496,14 @@ class OrderService:
                 order_data.placed_order_state
             )
             self.validate_status_transition(
-                existing_order.placed_order_state, validated
+                existing_order.order_state, validated
             )
-            existing_order.placed_order_state = validated
+            existing_order.order_state = validated
 
         if order_data.order_discount is not None:
-            existing_order.order_discount = order_data.order_discount
+            existing_order.discount = order_data.order_discount
 
-        existing_order.placed_order_last_mod = datetime.now()
+        existing_order.updated_at = datetime.now()
         updated_order = self.order_repo.update_order(existing_order)
 
         if items:
@@ -511,7 +511,7 @@ class OrderService:
             new_items = []
             for api_item in items:
                 item = self.build_ordered_item_model(api_item)
-                item.order_ref = order_id
+                item.order_id = order_id
                 new_items.append(item)
             self.order_item_repo.bulk_create(new_items)
 
@@ -525,19 +525,33 @@ class OrderService:
     # ================================================================
 
     def get_invoice_for_order(self, order: PlacedOrder) -> Invoice:
-        if not order.placed_order_invoice:
+        if not order.invoice_id:
             raise OrderUpdateFailedException(
                 order_id=order.id_placed_order,
                 error="Order has no linked invoice",
                 fields_attempted=["payment"],
             )
         invoice = self.invoice_repo.get_invoice_by_id(
-            order.placed_order_invoice
+            order.invoice_id
         )
         if not invoice:
             raise OrderUpdateFailedException(
                 order_id=order.id_placed_order,
-                error=f"Invoice {order.placed_order_invoice} not found",
+                error=f"Invoice {order.invoice_id} not found",
                 fields_attempted=["payment"],
             )
         return invoice
+
+    def get_completed_payment_for_invoice(
+        self, invoice_id: int
+    ) -> Optional[Payment]:
+        """Return a completed payment for this invoice, if one exists.
+
+        Used to make process_payment idempotent on retry.
+        """
+        return (
+            self.invoice_repo.get_by_invoice_id_and_status(
+                invoice_id=invoice_id,
+                statuses=("completed", "confirmed", "paid"),
+            )
+        )

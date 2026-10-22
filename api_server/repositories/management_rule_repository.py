@@ -18,9 +18,9 @@ class ManagementRuleRepository:
             None,
             [
                 ManagementRule.id_management_rule,
-                ManagementRule.rule_ref_org,
-                ManagementRule.rule_ref_provider,
-                ManagementRule.rule_ref_user,
+                ManagementRule.rule_org_id,
+                ManagementRule.rule_provider_id,
+                ManagementRule.rule_user_id,
                 ManagementRule.management_rule_code,
                 ManagementRule.management_rule_status,
                 ManagementRule.management_rule_expiry,
@@ -45,11 +45,11 @@ class ManagementRuleRepository:
             conditions[ManagementRule.id_management_rule] = rule_id
         else:
             if user_id and user_id != 0:
-                conditions[ManagementRule.rule_ref_user] = user_id
+                conditions[ManagementRule.rule_user_id] = user_id
             if supplier_id and supplier_id != 0:
-                conditions[ManagementRule.rule_ref_provider] = supplier_id
+                conditions[ManagementRule.rule_provider_id] = supplier_id
             if org_id and org_id != 0:
-                conditions[ManagementRule.rule_ref_org] = org_id
+                conditions[ManagementRule.rule_org_id] = org_id
         
         # Log the conditions for debugging
         # logger.debug(f"Fetching rules with conditions: {conditions}")
@@ -59,12 +59,12 @@ class ManagementRuleRepository:
             ManagementRule.management_rule_code,
             ManagementRule.management_rule_status,
             ManagementRule.management_rule_expiry,
-            ManagementRule.provider_organisation,
+            ManagementRule.rule_org,
             {
-                ManagementRule.product_provider: [{ProductProvider.product_provider_details:[]}]
+                ManagementRule.rule_provider: [{ProductProvider.product_provider_details:[]}]
             },
             {
-                ManagementRule.app_user: [{
+                ManagementRule.rule_user: [{
                     AppUser.app_user_person: [{Person.person_details:[]}]
                 }]
             },
@@ -100,7 +100,7 @@ class ManagementRuleRepository:
     
     def get_by_user(self, user_id: int, status: Optional[str] = None) -> List[ManagementRule]:
         """Get rules by user with optional status filter"""
-        conditions = {ManagementRule.rule_ref_user: user_id}
+        conditions = {ManagementRule.rule_user_id: user_id}
         if status:
             conditions[ManagementRule.management_rule_status] = status
         
@@ -109,18 +109,18 @@ class ManagementRuleRepository:
             conditions,
             None,
             [ManagementRule.role_invitation,
-                      {ManagementRule.product_provider: [{
+                      {ManagementRule.rule_provider: [{
                     ProductProvider.product_provider_details: []
                 }]},
              
              
-            ManagementRule.product_provider,
-            ManagementRule.provider_organisation]
+            ManagementRule.rule_provider,
+            ManagementRule.rule_org]
         )
     
     def get_by_provider(self, provider_id: int, status: Optional[str] = None) -> List[ManagementRule]:
         """Get rules by provider with optional status filter"""
-        conditions = {ManagementRule.rule_ref_provider: provider_id}
+        conditions = {ManagementRule.rule_provider_id: provider_id}
         if status:
             conditions[ManagementRule.management_rule_status] = status
         
@@ -128,14 +128,14 @@ class ManagementRuleRepository:
             ManagementRule,
             conditions,
             None,
-            [ManagementRule.app_user, ManagementRule.provider_organisation,
-             {ManagementRule.product_provider: [ProductProvider.product_provider_details]},
+            [ManagementRule.rule_user, ManagementRule.rule_org,
+             {ManagementRule.rule_provider: [ProductProvider.rule_provider_details]},
              ]
         )
     
     def get_by_organisation(self, org_id: int, status: Optional[str] = None) -> List[ManagementRule]:
         """Get rules by organisation with optional status filter"""
-        conditions = {ManagementRule.rule_ref_org: org_id}
+        conditions = {ManagementRule.rule_org_id: org_id}
         if status:
             conditions[ManagementRule.management_rule_status] = status
         
@@ -143,7 +143,7 @@ class ManagementRuleRepository:
             ManagementRule,
             conditions,
             None,
-            [ManagementRule.app_user, ManagementRule.product_provider]
+            [ManagementRule.rule_user, ManagementRule.rule_provider]
         )
     
     def get_active_rules(self) -> List[ManagementRule]:
@@ -207,7 +207,7 @@ class ManagementRuleRepository:
     
     def get_by_user_and_provider(self, user_id: int,provider_id:int, status: Optional[str] = None) -> List[ManagementRule]:
         """Get rules by user with optional status filter"""
-        conditions = {ManagementRule.rule_ref_user: user_id,ManagementRule.rule_ref_provider: provider_id}
+        conditions = {ManagementRule.rule_user_id: user_id,ManagementRule.rule_provider_id: provider_id}
         if status:
             conditions[ManagementRule.management_rule_status] = status
         
@@ -215,12 +215,12 @@ class ManagementRuleRepository:
             ManagementRule,
             conditions,
             None,
-            [ManagementRule.product_provider, ManagementRule.provider_organisation]
+            [ManagementRule.rule_provider, ManagementRule.rule_org]
         )
     
     def get_by_provider(self, provider_id: int, status: Optional[str] = None) -> List[ManagementRule]:
         """Get rules by provider with optional status filter"""
-        conditions = {ManagementRule.rule_ref_provider: provider_id}
+        conditions = {ManagementRule.rule_provider_id: provider_id}
         if status:
             conditions[ManagementRule.management_rule_status] = status
         
@@ -228,7 +228,7 @@ class ManagementRuleRepository:
             ManagementRule,
             conditions,
             None,
-            [ManagementRule.app_user, ManagementRule.provider_organisation]
+            [ManagementRule.rule_user, ManagementRule.rule_org]
         )
     
     def get_expiring_rules(self, days_threshold: int = 7) -> List[ManagementRule]:
@@ -252,18 +252,18 @@ class StaffRepository:
         """Get all staff assignments for a user"""
         return storage_broker.get(
             ManagementRule,
-            {ManagementRule.rule_ref_user: user_id},
+            {ManagementRule.rule_user_id: user_id},
             None,
-            [ManagementRule.product_provider, ManagementRule.provider_organisation]
+            [ManagementRule.rule_provider, ManagementRule.rule_org]
         )
     
     def get_staff_by_provider(self, provider_id: int) -> List[ManagementRule]:
         """Get all staff members for a provider"""
         return storage_broker.get(
             ManagementRule,
-            {ManagementRule.rule_ref_provider: provider_id},
+            {ManagementRule.rule_provider_id: provider_id},
             None,
-            [ManagementRule.app_user]
+            [ManagementRule.rule_user]
         )
     
     def get_active_staff(self, provider_id: int) -> List[ManagementRule]:
@@ -271,11 +271,11 @@ class StaffRepository:
         return storage_broker.get(
             ManagementRule,
             {
-                ManagementRule.rule_ref_provider: provider_id,
+                ManagementRule.rule_provider_id: provider_id,
                 ManagementRule.management_rule_status: 'ACTIVE'
             },
             None,
-            [ManagementRule.app_user]
+            [ManagementRule.rule_user]
         )
     
     def get_pending_invitations(self, user_id: int) -> List[ManagementRule]:
@@ -283,9 +283,9 @@ class StaffRepository:
         return storage_broker.get(
             ManagementRule,
             {
-                ManagementRule.rule_ref_user: user_id,
+                ManagementRule.rule_user_id: user_id,
                 ManagementRule.management_rule_status: 'PENDING'
             },
             None,
-            [ManagementRule.product_provider, ManagementRule.provider_organisation,ManagementRule.role_invitation]
+            [ManagementRule.rule_provider, ManagementRule.rule_org,ManagementRule.role_invitation]
         )

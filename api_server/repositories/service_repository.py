@@ -24,7 +24,7 @@ class ServiceRepository:
         
         records = storage_broker.get(
             ProvidedService,
-            {ProvidedService.provided_service_id: service_id},
+            {ProvidedService.idprovided_service: service_id},
             [],
             eager_fields
         )
@@ -49,15 +49,15 @@ class ServiceRepository:
         if eager_load:
             eager_fields = [
                 {ProvidedService.service_staff_requirement: [StaffRole.naming_contribution]},
-                ProvidedService.provided_service_category,
-                ProvidedService.provided_service_product_provider,
+                ProvidedService.category,
+                ProvidedService.provider,
                 ProvidedService.ordered_service,
                 ProvidedService.service_package_item,
                 ProvidedService.service_contribution
             ]
         
         # Build condition for IN clause
-        condition = {ProvidedService.provided_service_id: service_ids}
+        condition = {ProvidedService.idprovided_service: service_ids}
         
         # Execute query
         records = storage_broker.get(
@@ -73,7 +73,7 @@ class ServiceRepository:
         """Get services by category"""
         return storage_broker.get(
             ProvidedService,
-            {ProvidedService.provided_service_category_id: category_id},
+            {ProvidedService.category_id: category_id},
             [],
             [],
             offset=offset,
@@ -84,7 +84,7 @@ class ServiceRepository:
         """Get services by category"""
         return storage_broker.get(
             ProvidedService,
-            {ProvidedService.provided_service_category_id: category_id},
+            {ProvidedService.category_id: category_id},
             [],
             None,
             offset,
@@ -97,7 +97,7 @@ class ServiceRepository:
                 ProvidedServiceCategory,
                 {},
                 [],
-                [ProvidedServiceCategory.naming_contribution],
+                [ProvidedServiceCategory.naming],
                 offset,
                 limit
             )
@@ -107,7 +107,7 @@ class ServiceRepository:
         """Get service category by ID"""
         data = storage_broker.get(
             ProvidedServiceCategory,
-            {ProvidedServiceCategory.provided_service_category_id: category_id},
+            {ProvidedServiceCategory.id_provided_service_category: category_id},
             [],
             None,
             0,
@@ -130,7 +130,7 @@ class ServiceRepository:
         """Get services by provider"""
         return storage_broker.get(
             ProvidedService,
-            {ProvidedService.provided_service_product_provider_id: provider_id},
+            {ProvidedService.provider_id: provider_id},
             [],
             None,
             offset,
@@ -152,7 +152,7 @@ class ServiceRepository:
         """Get package items by service ID"""
         return storage_broker.get(
             ServicePackageItem,
-            {ServicePackageItem.service_package_item_service_id: service_id},
+            {ServicePackageItem.id_service_package_item: service_id},
             [],
             None,
             0,
@@ -163,7 +163,7 @@ class ServiceRepository:
         """Get ordered services by service ID"""
         return storage_broker.get(
             OrderedService,
-            {OrderedService.ordered_service_service_id: service_id},
+            {OrderedService.service_id: service_id},
             [],
             None,
             0,
@@ -174,7 +174,7 @@ class ServiceRepository:
         """Get active services"""
         conditions = {ProvidedService.provided_service_is_active: True}
         if provider_id:
-            conditions[ProvidedService.provided_service_product_provider_id] = provider_id
+            conditions[ProvidedService.provider_id] = provider_id
         
         return storage_broker.get(ProvidedService, conditions, [], None)
     
@@ -207,7 +207,7 @@ class ServiceRepository:
         """Get resource requirements for a service"""
         return storage_broker.get(
             ServiceResourceRequirement,
-            {ServiceResourceRequirement.service_resource_requirement_service_id: service_id},
+            {ServiceResourceRequirement.service_id: service_id},
             [],
             None
         )
@@ -235,7 +235,7 @@ class ServiceRepository:
         """Get a resource requirement by ID."""
         records = storage_broker.get(
             ServiceResourceRequirement,
-            {ServiceResourceRequirement.service_resource_requirement_id: requirement_id},
+            {ServiceResourceRequirement.id_service_resource_requirement: requirement_id},
             [],
             None
         )
@@ -245,7 +245,7 @@ class ServiceRepository:
         """Get a staff requirement by ID."""
         records = storage_broker.get(
             ServiceStaffRequirement,
-            {ServiceStaffRequirement.service_staff_requirement_id: requirement_id},
+            {ServiceStaffRequirement.id_service_staff_requirement: requirement_id},
             [],
             None
         )
@@ -278,7 +278,7 @@ class ServiceRepository:
         return int(
             storage_broker.count(
                 ProvidedService,
-                conditions={ProvidedService.provided_service_product_provider_id: provider_id},
+                conditions={ProvidedService.provider_id: provider_id},
             )
             or 0
         )

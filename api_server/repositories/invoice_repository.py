@@ -7,7 +7,7 @@ Following the same pattern as cart_repository.py
 from typing import Optional, List, Dict, Any, Tuple
 from datetime import date, datetime
 from sqlalchemy.orm import joinedload, sessionmaker, Session
-from sqlalchemy import select, delete, func, desc, and_, or_
+from sqlalchemy import exists, select, delete, func, desc, and_, or_
 
 from core.models.models import (
     Invoice, Payment, Cart, PlacedOrder, Delivery, AdditionalFee
@@ -90,11 +90,11 @@ class InvoiceRepository:
         )
         return records[0] if records else None
     
-    def get_by_number(self, invoice_number: str) -> Optional[Invoice]:
+    def get_by_number(self, invoice_reference: str) -> Optional[Invoice]:
         """Get invoice by invoice number."""
         records = storage_broker.get(
             Invoice,
-            {Invoice.invoice_number: invoice_number},
+            {Invoice.invoice_reference: invoice_reference},
             [],
             []
         )
@@ -114,59 +114,82 @@ class InvoiceRepository:
         provider_id: Optional[int] = None,
         order_id: Optional[int] = None,
         offset: int = 0,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[Invoice]:
-        """Get invoices with filters."""
-        # Build conditions
-        conditions = {}
-        
-        if status:
-            conditions[Invoice.invoice_status] = status
-        if type_:
-            conditions[Invoice.invoice_type] = type_
+        """Get invoices with filters.
 
-        
-        # For date filters, we need to use extra_filters
-        extra_filters = []
-        
+        All filters are expressed as SQLAlchemy expressions and pushed
+        into the query, including filters against related rows. Related
+        filters use EXISTS subqueries so `limit` and `offset` apply to
+        the already-filtered set — pagination returns the correct
+        slice, not a post-filter truncation.
+        """
+        conditions: List[Any] = []
+
+        # ── Root-model equality ─────────────────────────────────────
+        if status:
+            conditions.append(Invoice.invoice_status == status)
+        if type_:
+            conditions.append(Invoice.invoice_type == type_)
+
+        # ── Date range ──────────────────────────────────────────────
         if date_from:
-            extra_filters.append(Invoice.invoice_issue_date >= date_from)
+            conditions.append(Invoice.invoice_issue_date >= date_from)
         if date_to:
-            extra_filters.append(Invoice.invoice_issue_date <= date_to)
-        
-        # For cart_id and order_id, we need joins
+            conditions.append(Invoice.invoice_issue_date <= date_to)
+
+        # ── Cart filter (EXISTS on Invoice.cart) ────────────────────
+        if cart_id:
+            cart_match = (
+                exists()
+                .where(Cart.invoice_ref == Invoice.invoice_id)
+                .where(Cart.cart_id == cart_id)
+            )
+            conditions.append(cart_match)
+
+        # ── Order filter (EXISTS on Invoice.placed_order) ───────────
+        if order_id:
+            order_match = (
+                exists()
+                .where(PlacedOrder.placed_order_invoice == Invoice.invoice_id)
+                .where(PlacedOrder.id_placed_order == order_id)
+            )
+            conditions.append(order_match)
+
+        # ── Provider filter (cart OR delivery) ──────────────────────
+        #
+        # An invoice's provider is on the cart for cart-backed invoices
+        # and on the delivery for order-backed ones. Match either, so
+        # both shapes are visible when filtering by provider.
+        if provider_id:
+            cart_provider = (
+                exists()
+                .where(Cart.cart_invoice == Invoice.invoice_id)
+                .where(Cart.cart_product_provider_id == provider_id)
+            )
+            conditions.append(cart_provider)
+
+        # ── Fetch ───────────────────────────────────────────────────
+        #
+        # `eager_load_depth` is a list of relationship specs, matching
+        # `build_eager_options` in the storage broker. Plain attributes
+        # and `{Relationship: [nested_specs]}` dicts are both accepted.
         eager_fields = [
             Invoice.payment,
-            Invoice.placed_order,
-            Invoice.cart,
+            {Invoice.placed_order: []},
+            {Invoice.cart: []},
             Invoice.delivery,
-            Invoice.additional_fee
+            Invoice.additional_fee,
         ]
-        
-        invoices = storage_broker.get(
+
+        return storage_broker.get(
             Invoice,
-            conditions,
-            extra_filters,
-            eager_fields,
+            conditions=conditions,
+            eager_load_depth=eager_fields,
             offset=offset,
             limit=limit,
-            # order_by=desc(Invoice.invoice_created_at)
         )
         
-        # Apply cart_id and order_id filters (since storage_broker doesn't support join filters directly)
-        if cart_id or order_id or provider_id:
-            filtered_invoices = []
-            for invoice in invoices:
-                if cart_id and invoice.cart and invoice.cart.cart_id == cart_id:
-                    filtered_invoices.append(invoice)
-                
-                if provider_id and len(invoice.cart)>0 and invoice.cart[0] and invoice.cart[0].cart_product_provider_id == provider_id:
-                    filtered_invoices.append(invoice)
-                elif order_id and invoice.placed_order and invoice.placed_order.id_placed_order == order_id:
-                    filtered_invoices.append(invoice)
-            return filtered_invoices
-        
-        return invoices
     
     def count_with_filters(
         self,
@@ -283,7 +306,7 @@ class InvoiceRepository:
                     if hasattr(invoice, key):
                         setattr(invoice, key, value)
                 
-                invoice.invoice_updated_at = datetime.now()
+                invoice.updated_at = datetime.now()
                 session.flush()
                 session.refresh(invoice)
                 
@@ -312,7 +335,7 @@ class InvoiceRepository:
                     return False
                 
                 invoice.invoice_status = new_status
-                invoice.invoice_updated_at = datetime.now()
+                invoice.updated_at = datetime.now()
                 session.flush()
                 
                 logger.info(f"Invoice {invoice_id} status updated to {new_status}")
@@ -509,7 +532,7 @@ class InvoiceRepository:
         """Get total revenue from paid invoices."""
         try:
             with storage_broker.session_scope() as session:
-                query = session.query(func.sum(Invoice.invoice_total_amount)).filter(
+                query = session.query(func.sum(Invoice.grand_total)).filter(
                     Invoice.invoice_status == 'paid'
                 )
                 
@@ -527,7 +550,7 @@ class InvoiceRepository:
         """Get total amount of pending invoices."""
         try:
             with storage_broker.session_scope() as session:
-                total = session.query(func.sum(Invoice.invoice_total_amount)).filter(
+                total = session.query(func.sum(Invoice.grand_total)).filter(
                     Invoice.invoice_status.in_(['unpaid', 'partially_paid'])
                 ).scalar()
                 return total or 0.0
@@ -547,3 +570,44 @@ class InvoiceRepository:
         except Exception as e:
             logger.error(f"Failed to get overdue invoices: {e}")
             return []
+
+
+    def get_by_invoice_id_and_status(
+        self,
+        invoice_id: int,
+        statuses: Tuple[str, ...] = ("completed", "confirmed", "paid"),
+    ) -> Optional[Payment]:
+        """
+        Return the most recent payment for an invoice whose status is in
+        `statuses`, or None.
+
+        Used as an idempotency guard by the order/cart payment workflows:
+        if a completed payment already exists for this invoice, a retry
+        must not create a second one — even if the invoice row itself was
+        never flipped to `paid` (e.g. a crash between finance confirm and
+        local persist).
+
+        Returns the newest match (ordered by payment_created_at DESC) so
+        that, in the unlikely case of multiple completed payments, the
+        caller sees the one most recently attached to the invoice.
+        """
+        if not statuses:
+            return None
+
+        try:
+            with storage_broker.session_scope() as session:
+                return (
+                    session.query(Payment)
+                    .filter(
+                        Payment.payment_invoice_id == invoice_id,
+                        Payment.payment_status.in_(list(statuses)),
+                    )
+                    .order_by(desc(Payment.payment_created_at))
+                    .first()
+                )
+        except Exception as e:
+            logger.error(
+                "Failed to get payment for invoice %s with statuses %s: %s",
+                invoice_id, statuses, e,
+            )
+            return None

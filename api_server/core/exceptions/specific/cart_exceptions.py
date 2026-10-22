@@ -567,3 +567,36 @@ class CartDepositCreationException(CartServiceException):
             status_code=HTTP_417_EXPECTATION_FAILED,
             details=error_details
         )
+
+
+
+class CartInsufficientStockException(CartServiceException):
+    """Stock is not available to confirm/reserve for a cart."""
+    def __init__(
+        self,
+        cart_id: int = None,
+        product_id: int = None,
+        requested: int = None,
+        available: int = None,
+        detail: str = None,
+        details: dict = None,
+    ):
+        error_details = details or {}
+        if cart_id: error_details["cart_id"] = cart_id
+        if product_id: error_details["product_id"] = product_id
+        if requested is not None: error_details["requested"] = requested
+        if available is not None: error_details["available"] = available
+        if detail: error_details["inventory_detail"] = detail
+
+        message = "Insufficient stock to confirm cart"
+        if product_id is not None:
+            message = f"Insufficient stock for product {product_id}"
+        if requested is not None and available is not None:
+            message += f" (requested {requested}, available {available})"
+
+        super().__init__(
+            message=message,
+            error_code=ErrorCode.PRODUCT_QUANTITY_INSUFFICIENT,  # add this code
+            status_code=HTTP_409_CONFLICT,
+            details=error_details,
+        )

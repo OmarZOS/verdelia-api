@@ -53,16 +53,16 @@
 #         },
 #         "iproduct": {
 #             "id_iproduct": 0,
-#             "iproduct_name": "Test IProduct",
-#             "iproduct_barcode": "1234567890123",
-#             "iproduct_brand": "Test Brand",
-#             "iproduct_estimated_price": 99.99,
-#             "iproduct_price_currency": "USD",
+#             "generic_name": "Test IProduct",
+#             "barcode": "1234567890123",
+#             "brand": "Test Brand",
+#             "estimated_price": 99.99,
+#             "price_currency": "USD",
 #             "iproduct_gluten_status": "unknown",
-#             "iproduct_info_source": "openai",
-#             "iproduct_info_confidence": 0.95,
-#             "iproduct_model_name": "gpt-4",
-#             "iproduct_image_url": ""
+#             "info_source": "openai",
+#             "info_confidence": 0.95,
+#             "model_name": "gpt-4",
+#             "image_url": ""
 #         }
 #     }
 
@@ -285,7 +285,7 @@
 #         """Test successful image search"""
 #         # Mock the recognition result
 #         mock_iproduct = Mock()
-#         mock_iproduct.iproduct_name = "Recognized Product"
+#         mock_iproduct.generic_name = "Recognized Product"
 #         mock_recognize.return_value = mock_iproduct
         
 #         # Create a dummy image file

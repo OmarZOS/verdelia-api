@@ -46,7 +46,7 @@ class SubscriptionRepository:
     def get_by_user_id(self, user_id: int) -> Optional[Subscription]:
         """Get the subscription a user currently points at, or None.
 
-        The link is via `AppUser.app_user_subscription_ref`, which is
+        The link is via `AppUser.app_user_subscription_id`, which is
         a single FK — not a history table. So this returns at most
         one row, and only when the user has an active pointer.
         """
@@ -54,11 +54,11 @@ class SubscriptionRepository:
             AppUser,
             {AppUser.id_app_user: user_id},
             [],
-            [AppUser.subscription],
+            [AppUser.app_user_subscription],
         )
         if not users:
             return None
-        return users[0].subscription
+        return users[0].app_user_subscription
 
     def get_by_payment_id(
         self, payment_id: int,

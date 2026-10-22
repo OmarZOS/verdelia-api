@@ -347,12 +347,12 @@ from core.exceptions.handler import APIException
         
 #         # Update the product
 #         product.product_name = "Updated Product Name"
-#         product.product_price = 9999
+#         product.unit_price = 9999
         
 #         updated = db_module.update_record(db_engine_with_data, product)
         
 #         assert updated.product_name == "Updated Product Name"
-#         assert updated.product_price == 9999
+#         assert updated.unit_price == 9999
 #         assert updated.product_id == product.product_id
         
 #         # Verify the update persisted
@@ -499,7 +499,7 @@ from core.exceptions.handler import APIException
 #         results = db_module.get_records_by_filter(
 #             db_engine_with_data,
 #             Product,
-#             selected_fields=[Product.product_name, Product.product_price],
+#             selected_fields=[Product.product_name, Product.unit_price],
 #             offset=0,
 #             limit=10
 #         )
@@ -536,7 +536,7 @@ from core.exceptions.handler import APIException
         
 #         # Create a condition
 #         from sqlalchemy import and_
-#         condition = Product.product_price > 4000
+#         condition = Product.unit_price > 4000
         
 #         results = db_module.get_records_by_filter(
 #             db_engine_with_data,
@@ -548,7 +548,7 @@ from core.exceptions.handler import APIException
         
 #         # Should find the special product
 #         assert len(results) >= 1
-#         assert any(r.product_price > 4000 for r in results if isinstance(r, Product))
+#         assert any(r.unit_price > 4000 for r in results if isinstance(r, Product))
     
 #     def test_get_records_by_filter_with_ordering(self, db_module, db_engine_with_data):
 #         """Test query with ordering."""

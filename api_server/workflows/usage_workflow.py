@@ -224,23 +224,6 @@ class UsageWorkflow:
 
     # ==================== Quota mirror ====================
 
-    def sync_user_quota(self, user_id: int) -> AppUser:
-        """Refresh the user's quota mirror from their subscription."""
-        sub = self._subscription_for(user_id, required=False)
-        user = self.user_service.get_user_by_id(user_id)
-
-        if sub is None:
-            if user.user_quota != 0:
-                user.user_quota = 0
-                return self.user_service.update_user_record_raw(user)
-            return user
-
-        new_quota = sub.subscription_quota or 0
-        if user.user_quota == new_quota:
-            return user
-
-        user.user_quota = new_quota
-        return self.user_service.update_user_record_raw(user)
 
     # ==================== Bulk reads ====================
 

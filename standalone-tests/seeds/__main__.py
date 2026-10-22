@@ -25,8 +25,8 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="test_runner",
         description=(
             "Verdelia API test runner. Generates users, organisations, "
-            "suppliers, products, services, and staff rules against a "
-            "running backend."
+            "suppliers, products, services, carts, orders, and staff "
+            "rules against a running backend."
         ),
     )
     parser.add_argument(
@@ -37,7 +37,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--profile",
         choices=list(PROFILES.keys()),
-        default="standard",
+        default="smoke",
         help="Volume profile: how much data to generate (default: %(default)s)",
     )
     parser.add_argument(
@@ -59,6 +59,33 @@ def _build_parser() -> argparse.ArgumentParser:
         "--skip-boundary",
         action="store_true",
         help="Skip the metering boundary probes (they are slow on paid tiers)",
+    )
+    parser.add_argument(
+        "--skip-carts",
+        action="store_true",
+        help=(
+            "Skip cart generation. Useful when only orders are being "
+            "exercised, or when a known cart-side failure would "
+            "otherwise dominate the run."
+        ),
+    )
+    parser.add_argument(
+        "--skip-orders",
+        action="store_true",
+        help=(
+            "Skip order generation. Useful when only carts are being "
+            "exercised, or when a known order-side failure would "
+            "otherwise dominate the run."
+        ),
+    )
+    parser.add_argument(
+        "--skip-deliveries",
+        action="store_true",
+        help=(
+            "Skip the delivery state-machine exercises. Deliveries are "
+            "produced by the cart and order flows; this flag suppresses "
+            "the walk through their lifecycle."
+        ),
     )
     parser.add_argument(
         "--context-file",
@@ -92,6 +119,9 @@ async def _run(args: argparse.Namespace) -> int:
             skip_login=args.skip_login,
             skip_subscriptions=args.skip_subscriptions,
             skip_boundary=args.skip_boundary,
+            skip_carts=args.skip_carts,
+            skip_orders=args.skip_orders,
+            skip_deliveries=args.skip_deliveries,
             context_file=args.context_file,
         )
 

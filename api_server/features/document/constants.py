@@ -71,7 +71,7 @@ LATE_FEE_PERCENTAGE = 1.5           # Monthly late fee (industry standard)
 EARLY_PAYMENT_DISCOUNT = 2.0        # Early payment discount percentage
 
 # Document Numbering Patterns
-INVOICE_NUMBER_PATTERN = "INV-{year}{month}{day}-{seq:03d}"
+invoice_reference_PATTERN = "INV-{year}{month}{day}-{seq:03d}"
 RECEIPT_NUMBER_PATTERN = "RCPT-{year}{month}{day}-{seq:03d}"
 QUOTE_NUMBER_PATTERN = "QTE-{year}{month}{day}-{seq:03d}"
 

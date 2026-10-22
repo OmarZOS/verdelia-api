@@ -92,7 +92,7 @@ class ProfessionalQRGenerator:
     
     def _calculate_document_hash(self, data: Dict[str, Any]) -> str:
         """Calculate MINIMAL hash for document verification"""
-        document_id = data.get("invoice_number") or data.get("receipt_number", "")
+        document_id = data.get("invoice_reference") or data.get("receipt_number", "")
         amount = data.get("grand_total", 0)
         date = data.get("issue_date", "")
         
@@ -279,7 +279,7 @@ class BatchQRGenerator:
         results = {}
         
         for doc in documents:
-            doc_id = doc.get("invoice_number") or doc.get("receipt_number") or f"doc_{hash(str(doc))}"
+            doc_id = doc.get("invoice_reference") or doc.get("receipt_number") or f"doc_{hash(str(doc))}"
             qr_data = self.qr_gen.generate_qr_data(
                 document_type=doc.get("type", "invoice"),
                 document_id=doc_id,
@@ -309,7 +309,7 @@ def generate_qr_for_document(document_data: Dict[str, Any],
     generator = ProfessionalQRGenerator()
     
     # Extract minimal data
-    doc_id = document_data.get("invoice_number") or document_data.get("receipt_number", "temp_id")
+    doc_id = document_data.get("invoice_reference") or document_data.get("receipt_number", "temp_id")
     
     qr_data = generator.generate_qr_data(
         document_type, 

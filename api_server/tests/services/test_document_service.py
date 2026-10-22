@@ -67,7 +67,7 @@
 # def sample_invoice_data():
 #     """Sample invoice data for direct document generation"""
 #     return {
-#         "invoice_number": "INV-001",
+#         "invoice_reference": "INV-001",
 #         "invoice_date": "2024-01-15",
 #         "due_date": "2024-02-15",
 #         "company": {
@@ -601,7 +601,7 @@
 #         """Test converting cart data to invoice data"""
 #         result = document_service.cart_to_invoice_data(sample_cart_json)
         
-#         assert "invoice_number" in result
+#         assert "invoice_reference" in result
 #         assert "items" in result
 #         assert "total" in result
     

@@ -23,10 +23,10 @@ class CartRepository:
                 Cart.invoice,
                 Cart.ordered_item,
                 Cart.ordered_service,
-                Cart.app_user_,
-                Cart.app_user,
-                Cart.cart_product_provider,
-                Cart.person
+                Cart.client_user,
+                Cart.selling_user,
+                Cart.provider,
+                Cart.client_person
             ]
         else:
             eager_fields = []
@@ -50,11 +50,11 @@ class CartRepository:
         conditions = {}
         
         if provider_id > 0:
-            conditions[Cart.cart_product_provider_id] = provider_id
+            conditions[Cart.provider_id] = provider_id
         if seller_id > 0:
-            conditions[Cart.cart_selling_user] = seller_id
+            conditions[Cart.selling_user_id] = seller_id
         if buyer_id > 0:
-            conditions[Cart.cart_client_user] = buyer_id
+            conditions[Cart.client_user_id] = buyer_id
         if status:
             conditions[Cart.cart_status] = status
         
@@ -74,7 +74,7 @@ class CartRepository:
         """Get carts by provider ID"""
         return storage_broker.get(
             Cart,
-            {Cart.cart_product_provider_id: provider_id},
+            {Cart.provider_id: provider_id},
             [],
             [Cart.invoice],
             offset=offset,
@@ -85,7 +85,7 @@ class CartRepository:
         """Get carts by seller user ID"""
         return storage_broker.get(
             Cart,
-            {Cart.cart_selling_user: seller_id},
+            {Cart.selling_user_id: seller_id},
             [],
             [Cart.invoice],
             offset=offset,
@@ -96,9 +96,29 @@ class CartRepository:
         """Get carts by buyer/client user ID"""
         return storage_broker.get(
             Cart,
-            {Cart.cart_client_user: buyer_id},
+            {Cart.client_user_id: buyer_id},
             [],
             [Cart.invoice],
+            offset=offset,
+            limit=limit
+        )
+
+    def get_ordered_items_for_cart(self, cart_id: int, offset: int = 0, limit: int = 100) -> List[Cart]:
+        return storage_broker.get(
+            OrderedItem,
+            {OrderedItem.cart_id: cart_id},
+            [],
+            [],
+            offset=offset,
+            limit=limit
+        )
+
+    def get_ordered_services_for_cart(self, cart_id: int, offset: int = 0, limit: int = 100) -> List[Cart]:
+        return storage_broker.get(
+            OrderedService,
+            {OrderedService.cart_id: cart_id},
+            [],
+            [OrderedService.product_consumption],
             offset=offset,
             limit=limit
         )
@@ -123,7 +143,7 @@ class CartRepository:
                 
                 # Get all related ordered items
                 ordered_items = session.query(OrderedItem).filter(
-                    OrderedItem.ordered_item_cart_ref == cart_merged.cart_id
+                    OrderedItem.cart_id == cart_merged.cart_id
                 ).all()
                 
                 # Delete ordered items first
@@ -133,7 +153,7 @@ class CartRepository:
                 
                 # Get all related ordered services
                 ordered_services = session.query(OrderedService).filter(
-                    OrderedService.ordered_service_cart_id == cart_merged.cart_id
+                    OrderedService.cart_id == cart_merged.cart_id
                 ).all()
                 
                 # Delete ordered services
@@ -163,12 +183,12 @@ class CartRepository:
                 
                 # Delete ordered items
                 session.query(OrderedItem).filter(
-                    OrderedItem.ordered_item_cart_ref == cart_id
+                    OrderedItem.cart_id == cart_id
                 ).delete(synchronize_session=False)
                 
                 # Delete ordered services
                 session.query(OrderedService).filter(
-                    OrderedService.ordered_service_cart_id == cart_id
+                    OrderedService.cart_id == cart_id
                 ).delete(synchronize_session=False)
                 
                 # Delete the cart
@@ -198,7 +218,7 @@ class CartRepository:
         try:
             with storage_broker.session_scope() as session:
                 session.query(OrderedItem).filter(
-                    OrderedItem.ordered_item_cart_ref == cart_id
+                    OrderedItem.cart_id == cart_id
                 ).delete(synchronize_session=False)
                 session.flush()
                 return True
@@ -211,7 +231,7 @@ class CartRepository:
         try:
             with storage_broker.session_scope() as session:
                 session.query(OrderedService).filter(
-                    OrderedService.ordered_service_cart_id == cart_id
+                    OrderedService.cart_id == cart_id
                 ).delete(synchronize_session=False)
                 session.flush()
                 return True

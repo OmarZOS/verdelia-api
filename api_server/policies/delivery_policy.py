@@ -73,10 +73,10 @@ def has_recipient(delivery: Delivery) -> bool:
     address, the delivery has no business being processed.
     """
     return bool(
-        # (delivery.recipient_person or 0) > 0
-        (delivery.recipient_provider or 0) > 0
-        or (delivery.delivery_address_id or 0) > 0
-        or (delivery.delivery_current_address_id or 0) > 0
+        (delivery.recipient_person_id or 0) > 0
+        or (delivery.recipient_provider_id or 0) > 0
+        or (delivery.address_id or 0) > 0
+        or (delivery.current_address_id or 0) > 0
     )
 
 
@@ -103,30 +103,6 @@ def has_packages(delivery: Delivery) -> bool:
     """
 
     
-    logger.info(f"Package count: {delivery.delivery_package_count}")
-
-    logger.info(f"id_delivery: {delivery.id_delivery}")
-    logger.info(f"recipient_person: {delivery.recipient_person}")
-    logger.info(f"recipient_provider: {delivery.recipient_provider}")
-    logger.info(f"delivery_package_count: {delivery.delivery_package_count}")
-    logger.info(f"delivery_total_weight: {delivery.delivery_total_weight}")
-    logger.info(f"delivery_cargo_dimensions: {delivery.delivery_cargo_dimensions}")
-    logger.info(f"delivery_goods_description: {delivery.delivery_goods_description}")
-    logger.info(f"hs_code: {delivery.hs_code}")
-    logger.info(f"delivery_merchant_name: {delivery.delivery_merchant_name}")
-    logger.info(f"delivery_shipping_method: {delivery.delivery_shipping_method}")
-    logger.info(f"delivery_special_instructions: {delivery.delivery_special_instructions}")
-    logger.info(f"delivery_created_at: {delivery.delivery_created_at}")
-    logger.info(f"delivery_updated_at: {delivery.delivery_updated_at}")
-    logger.info(f"delivery_status: {delivery.delivery_status}")
-    logger.info(f"delivery_address_id: {delivery.delivery_address_id}")
-    logger.info(f"delivery_current_address_id: {delivery.delivery_current_address_id}")
-    logger.info(f"delivery_fee: {delivery.delivery_fee}")
-    logger.info(f"delivery_provider_id: {delivery.delivery_provider_id}")
-    logger.info(f"delivery_broker_id: {delivery.delivery_broker_id}")
-    logger.info(f"delivery_invoice_ref: {delivery.delivery_invoice_ref}")
-    logger.info(f"delivery_source_type: {delivery.delivery_source_type}")
-    logger.info(f"delivery_source_id: {delivery.delivery_source_id}")
 
 
 
@@ -297,11 +273,22 @@ class DeliveryPolicy(PolicyBase):
                 side_effects=("advance_order_to_shipped",),
                 name="confirmed_to_shipped",
             ),
+            
             Transition(
                 source="confirmed", target="cancelled",
                 predicate=is_cancellable_window,
                 side_effects=("release_inventory",),
                 name="confirmed_to_cancelled",
+            ),
+
+            Transition(
+                source="confirmed", target="out_for_delivery",
+                # Structural: the delivery must still have a
+                # destination. Guards against a reroute that never
+                # completed.
+                predicate=has_recipient,
+                side_effects=("notify_recipient",),
+                name="confirmed_to_out_for_delivery",
             ),
 
             # ── shipped ─────────────────────────────────────────────
