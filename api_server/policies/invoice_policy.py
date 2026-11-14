@@ -250,7 +250,7 @@ class InvoicePolicy(PolicyBase):
                 predicate=refund_completed,
                 side_effects=(
                     'refund_payment',
-                    'order_refund',
+                    'order_idund',
                     'delivery_refund',
                 ),
                 name='paid_to_refunded',

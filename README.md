@@ -93,7 +93,7 @@ For the business logic:
     receipt → payment_id
     receipt → cart_ref
 
-    ordered_item → order_ref (placed_order)  -- Path A
+    ordered_item → order_id (placed_order)  -- Path A
     ordered_item → cart_ref                  -- Path B
     ordered_service → cart_ref               -- Only path
 

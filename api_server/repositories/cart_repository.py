@@ -22,7 +22,7 @@ class CartRepository:
             eager_fields = [
                 Cart.invoice,
                 Cart.ordered_item,
-                Cart.ordered_service,
+                {Cart.ordered_service:[OrderedService.product_consumption]},
                 Cart.client_user,
                 Cart.selling_user,
                 Cart.provider,
@@ -34,6 +34,43 @@ class CartRepository:
         records = storage_broker.get(
             Cart,
             {Cart.cart_id: cart_id},
+            [],
+            eager_fields
+        )
+        return records[0] if records else None
+
+    def get_cart_by_id(self, cart_id: int, eager_load: bool = True) -> Optional[Cart]:
+            """Get cart by ID with optional eager loading"""
+            if eager_load:
+                eager_fields = [
+                    Cart.invoice,
+                    Cart.ordered_item,
+                    {Cart.ordered_service:[OrderedService.product_consumption]},
+                    Cart.client_user,
+                    Cart.selling_user,
+                    Cart.provider,
+                    Cart.client_person
+                ]
+            else:
+                eager_fields = []
+            
+            records = storage_broker.get(
+                Cart,
+                {Cart.cart_id: cart_id},
+                [],
+                eager_fields
+            )
+            return records[0] if records else None
+
+    def get_ordered_service_by_id(self, ordered_service_id: int) -> Optional[Cart]:
+        """Get cart by ID with optional eager loading"""
+        eager_fields = [
+            OrderedService.product_consumption
+        ]
+        
+        records = storage_broker.get(
+            OrderedService,
+            {OrderedService.ordered_service_id: ordered_service_id},
             [],
             eager_fields
         )

@@ -259,7 +259,7 @@ class ProductRepository:
             ProductCategory,
             conditions=None,
             join_tables=None,
-            eager_load_depth=[ProductCategory.naming],
+            eager_load_depth=[ProductCategory.naming_contribution],
             offset=0,
             limit=300,
         )

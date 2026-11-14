@@ -111,7 +111,7 @@
 #         return OrderedItem_API(
 #             id_ordered_item=None,
 #             product_id=1,
-#             order_ref=None,
+#             order_id=None,
 #             product_discount=0.0,
 #             ordered_quantity=2,
 #             unit_price=100.00,

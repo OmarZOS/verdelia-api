@@ -38,7 +38,7 @@
 # def generate_cart_data():
 #     """Generate test cart data based on actual database IDs"""
 #     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-#     order_ref = 0
+#     order_id = 0
     
 #     cart_data = {
 #         "seller_user_id": 2,          # ProviderAdmin user
@@ -48,7 +48,7 @@
 #             {
 #                 "id_ordered_item": 0,
 #                 "product_id": 1,  # Grano'Sac Raisin Cacahuetes
-#                 "order_ref": order_ref,
+#                 "order_id": order_id,
 #                 "product_discount": 10.0,
 #                 "ordered_quantity": 2,
 #                 "unit_price": 5.99,
@@ -57,7 +57,7 @@
 #             {
 #                 "id_ordered_item": 0,
 #                 "product_id": 2,  # Butter Biscuits LEGER
-#                 "order_ref": order_ref,
+#                 "order_id": order_id,
 #                 "product_discount": 5.0,
 #                 "ordered_quantity": 3,
 #                 "unit_price": 4.49,
@@ -66,7 +66,7 @@
 #             {
 #                 "id_ordered_item": 0,
 #                 "product_id": 3,  # Cookies from Home Bakery
-#                 "order_ref": order_ref,
+#                 "order_id": order_id,
 #                 "product_discount": 15.0,
 #                 "ordered_quantity": 1,
 #                 "unit_price": 3.99,
@@ -392,7 +392,7 @@
 #                     {
 #                         "id_ordered_item": 0,
 #                         "product_id": 7,  # JUMPY Peanut Butter (from provider 6 - bakery)
-#                         "order_ref": f"BAKERY-{datetime.now().strftime('%H%M%S')}",
+#                         "order_id": f"BAKERY-{datetime.now().strftime('%H%M%S')}",
 #                         "product_discount": 5.0,
 #                         "ordered_quantity": 1,
 #                         "unit_price": 5.79,
@@ -482,7 +482,7 @@
 #         {
 #             "id_ordered_item": 0,
 #             "product_id": 4,  # Gullon Cookies
-#             "order_ref": 0,
+#             "order_id": 0,
 #             "product_discount": 12.0,
 #             "ordered_quantity": 2,
 #             "unit_price": 6.29,
@@ -491,7 +491,7 @@
 #         {
 #             "id_ordered_item": 0,
 #             "product_id": 5,  # Date Butter
-#             "order_ref": 0,
+#             "order_id": 0,
 #             "product_discount": 8.0,
 #             "ordered_quantity": 1,
 #             "unit_price": 7.99,

@@ -1267,7 +1267,7 @@ INSERT INTO `verdelia`.`service_resource_requirement` (
 --   `product_id`,
 --   `ordered_quantity`,
 --   `vat_rate`,
---   `order_ref`,
+--   `order_id`,
 --   `unit_price`,
 --   `product_discount`,
 --   `ordered_item_cart_ref`

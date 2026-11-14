@@ -22,7 +22,8 @@ Exception boundary:
   anything about the inventory transport layer.
 """
 
-from typing import List, Dict, Any, Optional, Tuple
+from decimal import Decimal
+from typing import List, Dict, Any, Optional, Tuple, Union
 from datetime import datetime
 import logging
 
@@ -202,15 +203,18 @@ class CartWorkflow:
                 logger.info(
                     "Step 8: Processing payment via process_payment..."
                 )
+                captured_raw = getattr(cart_data, "cart_paid_money", 0)
+                captured_dec = self._as_decimal(captured_raw)
+                if captured_dec is not None and captured_dec <= 0:
+                    captured_dec = None
+
                 financial_docs = await self.process_payment(
                     cart_id=created_cart.cart_id,
                     payment_method=(
                         getattr(cart_data, "cart_payment_method", None)
                         or "cash"
                     ),
-                    captured_amount=self.service.safe_float(
-                        getattr(cart_data, "cart_paid_money", 0)
-                    ) or None,
+                    captured_amount=captured_dec,
                 )
 
                 logger.info(
@@ -321,10 +325,33 @@ class CartWorkflow:
         self,
         cart_id: int,
         payment_method: str = "card",
-        captured_amount: Optional[float] = None,
+        captured_amount: Optional[Union[Decimal, float, str]] = None,
         transaction_details: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
+        """
+        Phase 2 — orchestrate payment for a cart's invoice.
+
+        Money rule for this method:
+        * `captured_amount` may arrive as `str` (query param), `float`
+            (legacy caller), or `Decimal` (preferred). It is coerced to
+            `Decimal` **once**, at the top, and never converted back to
+            `float` until the request body is built.
+        * All comparisons (`captured >= total`, the policy decision)
+            run in `Decimal`. Floats are not used for money arithmetic.
+        * The single `Decimal → float` conversion happens inside
+            `build_payment_create_payload` (or immediately before the
+            JSON encoding), never before the policy has decided.
+        """
         logger.info("Processing payment for cart %s...", cart_id)
+
+        # ── Coerce captured_amount to Decimal once ─────────────────────
+        captured_dec: Optional[Decimal] = None
+        if captured_amount is not None:
+            captured_dec = self._as_decimal(captured_amount)
+            if captured_dec is None:
+                raise ValueError(
+                    f"Invalid captured_amount: {captured_amount!r}"
+                )
 
         cart = self.service.get_cart_by_id(cart_id, eager_load=True)
         invoice = self.service.get_invoice_for_cart(cart)
@@ -358,14 +385,16 @@ class CartWorkflow:
                 "payment_status": existing.payment_status,
             }
 
-        # Decide which target the invoice should reach.
-        if captured_amount is None:
+        # ── Decide the target in Decimal ───────────────────────────────
+        total_dec = self._as_decimal(invoice.grand_total) or Decimal("0")
+        
+        logger.info(f"Comparing {total_dec} to {captured_dec} for cart {cart_id} invoice {invoice.invoice_id}")
+        if captured_dec is None:
             target = "paid"
-            captured_for_policy: Optional[float] = None
+            captured_for_policy: Optional[Decimal] = None
         else:
-            total = float(invoice.grand_total or 0)
-            target = "paid" if captured_amount >= total else "partially_paid"
-            captured_for_policy = captured_amount
+            target = "paid" if captured_dec >= total_dec else "partially_paid"
+            captured_for_policy = captured_dec
 
         # Pre-flight: structural check only. `captured_amount=None`
         # is understood by the policy as "don't validate against the
@@ -380,17 +409,16 @@ class CartWorkflow:
                 f"Invoice transition denied: {invoice_pre.reason}"
             )
 
-        # Remote: create payment
-        amount = (
-            captured_amount
-            if captured_amount is not None
-            else float(invoice.grand_total or 0)
-        )
+        # ── Build the remote payload ──────────────────────────────────
+        # `amount` stays Decimal until the last possible moment. The
+        # float conversion, if any, happens inside the payload builder
+        # (see `build_payment_create_payload`).
+        amount_dec = captured_dec if captured_dec is not None else total_dec
         payment_payload = self.service.build_payment_create_payload(
             cart=cart,
             invoice=invoice,
             payment_method=payment_method,
-            captured_amount=amount,
+            captured_amount=amount_dec,
         )
         payment_response = await self.finance_client.create_payment(
             payment_payload
@@ -431,19 +459,23 @@ class CartWorkflow:
                 invoice_id=invoice.invoice_id,
             )
 
-        # Commit: does the captured amount clear the invoice?
+        # ── Commit: does the captured amount clear the invoice? ───────
         captured = self._as_decimal(confirmed.amount)
         if captured is None or captured <= 0:
             raise PaymentNotConfirmedException(
                 payment_id=confirmed.id,
-                status=f"amount={confirmed.amount!r}",
+                # `!s` on a Decimal renders "803.71", not the float noise.
+                status=f"amount={captured!s}",
                 invoice_id=invoice.invoice_id,
             )
 
+        # Pass Decimal to the policy — this is the comparison that
+        # decides whether the invoice can move to `paid`. Do NOT
+        # `float()` it here.
         invoice_commit = self.invoice_policy.decide_for_invoice(
             invoice,
             target=target,
-            captured_amount=float(captured),
+            captured_amount=captured,
         )
         if not invoice_commit.allowed:
             raise ValueError(
@@ -698,9 +730,14 @@ class CartWorkflow:
         self,
         cart_id: int,
         payment_method: str = "card",
-        captured_amount: Optional[float] = None,
+        captured_amount: Optional[Union[Decimal, float, str]] = None,
         transaction_details: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
+        """
+        Convenience: run Phase 2 (payment) and Phase 3 (inventory
+        confirmation) back-to-back. `captured_amount` is forwarded to
+        `process_payment` unchanged; it is coerced to `Decimal` there.
+        """
         payment_result = await self.process_payment(
             cart_id=cart_id,
             payment_method=payment_method,
@@ -900,7 +937,7 @@ class CartWorkflow:
         ordered_reserve_items: List[Dict[str, Any]] = [
             {
                 "id": item.id_ordered_item,
-                "quantity": item.ordered_quantity,
+                "quantity": str(item.ordered_quantity),
                 "item_type": "ordered_item",
             }
             for item in created_items
@@ -934,7 +971,7 @@ class CartWorkflow:
                 if qty and qty > 0:
                     consumption_reserve_items.append({
                         "id": consumption.id_product_consumption,
-                        "quantity": qty,
+                        "quantity": str(qty),
                         "item_type": "consumption",
                     })
 
@@ -1006,7 +1043,7 @@ class CartWorkflow:
             if iid:
                 ordered_release.append({
                     "id": iid,
-                    "quantity": qty,
+                    "quantity": str(qty),
                     "product_id": pid,
                 })
 
@@ -1030,7 +1067,7 @@ class CartWorkflow:
             if cid:
                 consumption_release.append({
                     "id": cid,
-                    "quantity": qty,
+                    "quantity": str(qty),
                 })
 
         if consumption_release:
@@ -1069,13 +1106,14 @@ class CartWorkflow:
     ) -> None:
         """Remote: confirm the reservations that were just created."""
         ordered_payload: List[Dict[str, Any]] = [
-            {"id": item.id_ordered_item, "quantity": item.ordered_quantity}
+            {"id": item.id_ordered_item, "quantity": str(item.ordered_quantity)}
             for item in created_items
             if item.ordered_quantity and item.ordered_quantity > 0
         ]
 
         consumption_payload: List[Dict[str, Any]] = []
         for service in created_services:
+            service = self.service.get_ordered_service(service.ordered_service_id)
             for consumption in service.product_consumption or []:
                 pid = consumption.consumed_product_id
                 plan = reservation_plan.get(pid, {})
@@ -1088,7 +1126,7 @@ class CartWorkflow:
                         if qty and qty > 0:
                             consumption_payload.append({
                                 "id": consumption.id_product_consumption,
-                                "quantity": qty,
+                                "quantity": str(qty),
                             })
                         break
 
@@ -1169,7 +1207,7 @@ class CartWorkflow:
                 iid = getattr(item, "id_ordered_item", None)
                 qty = getattr(item, "ordered_quantity", None)
             if iid and qty and qty > 0:
-                payload.append({"id": iid, "quantity": qty})
+                payload.append({"id": iid, "quantity": str(qty)})
         return payload
 
     @staticmethod
@@ -1193,7 +1231,7 @@ class CartWorkflow:
                     cid = getattr(c, "id_product_consumption", None)
                     qty = getattr(c, "product_reserved_quantity", 0)
                 if cid and qty and qty > 0:
-                    payload.append({"id": cid, "quantity": qty})
+                    payload.append({"id": cid, "quantity": str(qty)})
         return payload
 
     # ================================================================
@@ -1201,16 +1239,54 @@ class CartWorkflow:
     # ================================================================
 
     @staticmethod
-    def _as_decimal(value: Any):
-        from decimal import Decimal, InvalidOperation
+    def _as_decimal(value: Any) -> Optional[Decimal]:
+        """
+        Coerce to Decimal for money arithmetic.
+
+        Accepted inputs:
+        * Decimal        — passthrough
+        * int            — Decimal(int) (exact)
+        * float          — Decimal(str(f)) so we get the shortest
+                            round-trip representation the wire intended,
+                            NOT the binary expansion
+        * str            — parsed, must be a valid finite Decimal
+
+        Rejects non-finite values (NaN, Infinity). A malformed finance
+        response with `"amount": "Infinity"` would otherwise poison every
+        downstream comparison.
+
+        Returns None when the value cannot be interpreted as money, so
+        callers can branch on "unusable" vs "zero".
+        """
         if value is None:
             return None
+
         if isinstance(value, Decimal):
-            return value
-        try:
-            return Decimal(str(value))
-        except (InvalidOperation, ValueError, TypeError):
+            d = value
+        elif isinstance(value, bool):
+            # bool is an int subclass; a payment amount of True/False is
+            # a bug, not a quantity.
             return None
+        elif isinstance(value, int):
+            d = Decimal(value)
+        elif isinstance(value, float):
+            # Reject non-finite floats before they reach Decimal.
+            if value != value or value in (float("inf"), float("-inf")):
+                return None
+            # `str(float)` gives the shortest round-trip ("803.71"),
+            # `Decimal(float)` would give the full binary expansion.
+            d = Decimal(str(value))
+        elif isinstance(value, str):
+            try:
+                d = Decimal(value)
+            except (InvalidOperation, ValueError, TypeError):
+                return None
+        else:
+            return None
+
+        if not d.is_finite():
+            return None
+        return d
 
     @staticmethod
     def _normalize_payment_status(value: Any) -> str:

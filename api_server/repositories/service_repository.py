@@ -18,7 +18,7 @@ class ServiceRepository:
         eager_fields = []
         if eager_load:
             eager_fields =[
-                {ProvidedService.service_staff_requirement: [{ServiceStaffRequirement.staff_role : [{StaffRole.naming_contribution:[]}]}]},
+                {ProvidedService.service_staff_requirement: [{ServiceStaffRequirement.service_staff_requirement_role : [{StaffRole.naming_contribution:[]}]}]},
                 ProvidedService.service_resource_requirement,
             ]
         

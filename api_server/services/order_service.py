@@ -18,6 +18,7 @@ No `inventory_client`, no `finance_client`, no `asyncio.create_task`
 inside this module.
 """
 
+import decimal
 from typing import List, Tuple, Dict, Any, Optional
 from datetime import datetime, timedelta
 import logging
@@ -102,7 +103,7 @@ class OrderService:
             raise UserNotFoundException(user_id=order_data.ordering_user_id)
 
         ordered_items: List[OrderedItem] = []
-        order_total_price: float = 0.0
+        order_total_price: decimal.Decimal = decimal.Decimal("0")
         delivery_provider_ids: set = set()
 
         for api_item in items:
@@ -117,12 +118,12 @@ class OrderService:
             delivery_provider_ids.add(product.provider_id)
 
             item = self.build_ordered_item_model(api_item)
-            item.unit_price = float(product.unit_price)
+            item.unit_price = product.unit_price
             ordered_items.append(item)
 
             order_total_price += (
-                item.ordered_quantity
-                * float(product.unit_price)
+                decimal.Decimal(str(item.ordered_quantity))
+                * product.unit_price
                 * (1 + item.vat_rate)
             )
 
@@ -181,7 +182,9 @@ class OrderService:
             )
             deliveries.append(delivery)
             order_total_price += (
-                delivery_data.delivery_fee if delivery_data else 0.0
+                decimal.Decimal(str(delivery_data.delivery_fee))
+                if delivery_data and delivery_data.delivery_fee is not None
+                else decimal.Decimal("0")
             )
 
         invoice = Invoice(
@@ -246,7 +249,7 @@ class OrderService:
 
         return PaymentCreate(
             invoice_id= invoice.invoice_id,
-            amount= float(amount),
+            amount= amount,
             payment_method= payment_method,
             user_id= int(user_id),
             notes= f"Order #{order.id_placed_order} payment",
@@ -430,8 +433,8 @@ class OrderService:
             vat_rate=api_item.vat_rate,
             unit_price=api_item.unit_price,
         )
-        if api_item.order_ref and api_item.order_ref > 0:
-            item.order_id = api_item.order_ref
+        if api_item.order_id and api_item.order_id > 0:
+            item.order_id = api_item.order_id
         return item
 
     def validate_order_status(self, status: str) -> str:

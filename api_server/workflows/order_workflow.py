@@ -613,7 +613,7 @@ class OrderWorkflow:
         }
 
 
-    async def mark_order_refunded(
+    async def mark_order_idunded(
         self,
         order_id: int,
         *,

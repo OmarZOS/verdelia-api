@@ -32,6 +32,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 
+from core.models.finance_models import PaymentCreate
 from repositories.service_repository import ServiceRepository
 from repositories.order_repository import OrderRepository
 from repositories.financial_repository import FinancialRepository
@@ -132,28 +133,7 @@ class CartService:
 
     # ==================== Helpers ====================
 
-    def safe_float(self, value: Any) -> float:
-        """Safely convert any value to float, handling Decimal and other types."""
-        if value is None:
-            return 0.0
-        if isinstance(value, Decimal):
-            return float(value)
-        if isinstance(value, (int, float)):
-            return float(value)
-        if isinstance(value, str):
-            try:
-                return float(value)
-            except ValueError:
-                return 0.0
-        if hasattr(value, "__float__"):
-            try:
-                return float(value)
-            except (TypeError, ValueError):
-                return 0.0
-        return 0.0
 
-    # Backwards-compat alias for callers that used the underscore name.
-    _safe_float = safe_float
 
     def parse_inventory_response(self, response: Dict) -> Dict:
         """Parse inventory response to extract stock status by product ID."""
@@ -250,7 +230,7 @@ class CartService:
         invoice: Invoice,
         payment_method: str,
         captured_amount: float,
-    ) -> "PaymentCreate":
+    ) -> PaymentCreate:
         """
         Local: shape the payload the workflow hands to the finance client.
 
@@ -293,7 +273,7 @@ class CartService:
         return [
             {
                 "id": item.id_ordered_item,
-                "quantity": item.ordered_quantity,
+                "quantity": Decimal(item.ordered_quantity),
                 "product_id": item.product_id,
             }
             for item in items
@@ -360,19 +340,19 @@ class CartService:
 
         if cart.ordered_item:
             for item in cart.ordered_item:
-                subtotal += self.safe_float(item.ordered_quantity) * \
-                    self.safe_float(item.unit_price)
+                subtotal += item.ordered_quantity * \
+                    item.unit_price
                 item_count += 1
 
         if cart.ordered_service:
             for service in cart.ordered_service:
-                subtotal += self.safe_float(service.subtotal)
+                subtotal += service.subtotal
                 service_count += 1
 
         return {
             "cart_id": cart_id,
             "subtotal": round(subtotal, 2),
-            "total": round(self.safe_float(cart.subtotal or subtotal), 2),
+            "total": round(cart.subtotal or subtotal, 2),
             "item_count": item_count,
             "service_count": service_count,
             "status": cart.cart_status,
@@ -391,16 +371,14 @@ class CartService:
                     "product_name": (
                         product.generic_name if product else "Unknown"
                     ),
-                    "quantity": self.safe_float(item.ordered_quantity),
-                    "unit_price": self.safe_float(item.unit_price),
+                    "quantity": item.ordered_quantity,
+                    "unit_price": item.unit_price,
                     "total_price": (
-                        self.safe_float(item.ordered_quantity) *
-                        self.safe_float(item.unit_price)
+                        item.ordered_quantity *
+                        item.unit_price
                     ),
-                    "vat_rate": self.safe_float(item.vat_rate),
-                    "discount_amount": self.safe_float(
-                        item.discount_amount or 0
-                    ),
+                    "vat_rate": item.vat_rate,
+                    "discount_amount": item.discount_amount or 0,
                 })
         return items
 
@@ -419,9 +397,9 @@ class CartService:
                         service_obj.provided_service_name
                         if service_obj else "Unknown"
                     ),
-                    "quantity": self.safe_float(service.ordered_service_quantity),
-                    "unit_price": self.safe_float(service.unit_price),
-                    "total_price": self.safe_float(service.subtotal),
+                    "quantity": service.ordered_service_quantity,
+                    "unit_price": service.unit_price,
+                    "total_price": service.subtotal,
                     "scheduled_at": service.scheduled_at,
                 })
         return services
@@ -530,7 +508,7 @@ class CartService:
             })
 
             item_details.setdefault(product_id, {
-                "unit_price": self.safe_float(product.unit_price),
+                "unit_price": product.unit_price,
                 "product": product,
             })
 
@@ -553,9 +531,7 @@ class CartService:
                     continue
 
                 quantity_needed = (
-                    self.safe_float(
-                        requirement.service_resource_requirement_quantity
-                    )
+                    requirement.service_resource_requirement_quantity
                     * service_api.ordered_service_quantity
                 )
 
@@ -574,7 +550,7 @@ class CartService:
                     product = self.product_repo.get_product_by_id(product_id)
                     if product:
                         item_details[product_id] = {
-                            "unit_price": self.safe_float(product.unit_price),
+                            "unit_price": product.unit_price,
                             "product": product,
                         }
 
@@ -595,7 +571,7 @@ class CartService:
         buyer_user_id: int,
         client: Optional[Person_API],
     ) -> Tuple[Cart, float, Optional[Any]]:
-        total_price = 0.0
+        total_price = Decimal("0.0")
         ordered_item_models: List[OrderedItem] = []
 
         for item in ordered_items:
@@ -604,27 +580,25 @@ class CartService:
             if not product:
                 continue
 
-            unit_price = self.safe_float(product.unit_price)
+            unit_price = product.unit_price
             item_total = item.ordered_quantity * unit_price
             if item.vat_rate:
-                item_total *= 1 + self.safe_float(item.vat_rate)
+                item_total *= 1 + item.vat_rate
             if getattr(item, "product_discount", None):
-                item_total -= self.safe_float(item.product_discount)
+                item_total -= item.product_discount
             total_price += item_total
 
             ordered_item = OrderedItem(
                 product_id=product_id,
                 ordered_quantity=item.ordered_quantity,
-                vat_rate=self.safe_float(item.vat_rate),
-                discount_amount=self.safe_float(
-                    getattr(item, "product_discount", None)
-                ),
+                vat_rate=item.vat_rate,
+                discount_amount=getattr(item, "product_discount", None),
                 unit_price=unit_price,
                 reserved_quantity=0,
             )
-            order_ref = getattr(item, "order_ref", None)
-            if order_ref and order_ref > 0:
-                ordered_item.order_id = order_ref
+            order_id = getattr(item, "order_id", None)
+            if order_id and order_id > 0:
+                ordered_item.order_id = order_id
             ordered_item_models.append(ordered_item)
 
         ordered_service_models: List[OrderedService] = []
@@ -634,11 +608,7 @@ class CartService:
             if not service:
                 continue
 
-            unit_price = (
-                self.safe_float(service.unit_price)
-                or self.safe_float(service.base_price)
-                or 0.0
-            )
+            unit_price = service.unit_price
             service_total = service_api.ordered_service_quantity * unit_price
             total_price += service_total
 
@@ -683,7 +653,7 @@ class CartService:
                 )
 
         final_total = round(
-            self.safe_float(cart_data.cart_total_amount or total_price), 2
+            cart_data.cart_total_amount or total_price, 2
         )
 
         cart = Cart(

@@ -158,7 +158,7 @@ class OrderedItem:
     unit_price: float
     vat_rate: float
     product_discount: float
-    order_ref: Optional[int] = None
+    order_id: Optional[int] = None
     ordered_product: Optional[OrderedProduct] = None
     
     @property
@@ -175,7 +175,7 @@ class OrderedItem:
             "unit_price": self.unit_price,
             "vat_rate": self.vat_rate,
             "product_discount": self.product_discount,
-            "order_ref": self.order_ref,
+            "order_id": self.order_id,
             "ordered_product": self.ordered_product.to_dict() if self.ordered_product else None,
             "total": round(self.total, 2)
         }
@@ -989,7 +989,7 @@ class InvoiceGenerator:
                     "ordered_quantity": item.ordered_quantity,
                     "vat_rate": float(item.vat_rate) if item.vat_rate else 0.0,
                     "product_id": item.product_id,
-                    "order_ref": item.order_ref,
+                    "order_id": item.order_id,
                     "unit_price": float(item.unit_price) if item.unit_price else 0.0,
                     "product_discount": float(item.product_discount) if item.product_discount else None,
                     "ordered_product": {
@@ -1142,7 +1142,7 @@ class InvoiceGenerator:
                 unit_price=item_data.get('unit_price', 0.0),
                 vat_rate=item_data.get('vat_rate', 0.0),
                 product_discount=item_data.get('product_discount', 0.0),
-                order_ref=item_data.get('order_ref'),
+                order_id=item_data.get('order_id'),
                 ordered_product=ordered_product
             )
             ordered_items.append(ordered_item)

@@ -5,6 +5,7 @@ All models include proper types, default values, and validation.
 """
 
 from datetime import datetime, date
+from decimal import Decimal
 from typing import Optional, Dict, List, Any
 from pydantic import BaseModel, Field, field_validator, model_validator, validator
 from enum import Enum
@@ -652,7 +653,7 @@ class Iproduct_API(BaseModel):
     )
 
     # ---------- Pricing ----------
-    estimated_price: Optional[float] = Field(
+    estimated_price: Optional[Decimal] = Field(
         default=0.0, ge=0, description="Estimated price",
     )
     price_currency: Optional[str] = Field(
@@ -831,19 +832,19 @@ class Product_API(BaseModel):
 
     # ==================== Pricing & stock ====================
 
-    unit_price: Optional[float] = Field(
+    unit_price: Optional[Decimal] = Field(
         default=0.0, ge=0, description="Customer-facing price (VAT-inclusive)",
     )
-    product_vat_value: Optional[float] = Field(
+    product_vat_value: Optional[Decimal] = Field(
         default=0.0, ge=0, description="Customer-facing price (VAT-inclusive)",
     )
-    product_base_price: Optional[float] = Field(
+    product_base_price: Optional[Decimal] = Field(
         default=0.0, ge=0, description="Supplier-side cost",
     )
-    product_quantity: Optional[float] = Field(
+    product_quantity: Optional[Decimal] = Field(
         default=0.0, ge=0, description="Available quantity",
     )
-    product_reserved_quantity: Optional[float] = Field(
+    product_reserved_quantity: Optional[Decimal] = Field(
         default=0.0, ge=0,
         description="Quantity reserved by carts and pending orders",
     )
@@ -961,10 +962,10 @@ class ProductRead(BaseModel):
     product_description: Optional[str] = None
     product_category_name: Optional[str] = None
 
-    product_price: Optional[float] = 0.0
-    product_base_price: Optional[float] = 0.0
-    product_quantity: Optional[float] = 0.0
-    product_reserved_quantity: Optional[float] = 0.0
+    product_price: Optional[Decimal] = 0.0
+    product_base_price: Optional[Decimal] = 0.0
+    product_quantity: Optional[Decimal] = 0.0
+    product_reserved_quantity: Optional[Decimal] = 0.0
 
     product_visibility: Optional[ProductVisibility] = ProductVisibility.VISIBLE
 
@@ -1000,8 +1001,8 @@ class ProvidedService_API(BaseModel):
     provided_service_name: Optional[str] = Field(default="", max_length=200, description="Service name")
     provided_service_description: Optional[str] = Field(default="", max_length=1000, description="Service description")
     category_id: Optional[int] = Field(default=0, description="Service category ID")
-    provided_service_base_price: Optional[float] = Field(default=0.0, ge=0, description="Base price")
-    provided_service_final_price: Optional[float] = Field(default=0.0, ge=0, description="Final price")
+    provided_service_base_price: Optional[Decimal] = Field(default=0.0, ge=0, description="Base price")
+    provided_service_final_price: Optional[Decimal] = Field(default=0.0, ge=0, description="Final price")
     provided_service_actual_duration: Optional[float] = Field(default=0.0, ge=0, description="Duration in minutes")
     provided_service_is_active: Optional[bool] = Field(default=True, description="Is service active")
     provided_service_pricing_config: Optional[str] = Field(default="", description="Pricing configuration (JSON)")
@@ -1009,9 +1010,9 @@ class ProvidedService_API(BaseModel):
 class OrderedService_API(BaseModel):
     """Service ordered by customer"""
     ordered_service_service_id: Optional[int] = Field(default=0, description="Service ID")
-    ordered_service_quantity: Optional[float] = Field(default=1.0, gt=0, description="Quantity")
-    ordered_service_unit_price: Optional[float] = Field(default=0.0, ge=0, description="Unit price")
-    ordered_service_total_price: Optional[float] = Field(default=0.0, ge=0, description="Total price")
+    ordered_service_quantity: Optional[Decimal] = Field(default=1.0, gt=0, description="Quantity")
+    ordered_service_unit_price: Optional[Decimal] = Field(default=0.0, ge=0, description="Unit price")
+    ordered_service_total_price: Optional[Decimal] = Field(default=0.0, ge=0, description="Total price")
     ordered_service_scheduled_at: Optional[datetime] = Field(default=None, description="Scheduled date/time")
     ordered_service_notes: Optional[str] = Field(default="", max_length=500, description="Order notes")
     resource_requirement_id: Optional[int] = Field(default=0, description="Resource requirement ID")
@@ -1022,8 +1023,8 @@ class ServiceResourceRequirement_API(BaseModel):
     resource_requirement_service_id: Optional[int] = Field(default=0, description="Service ID")
     resource_requirement_name: Optional[str] = Field(default="", max_length=200, description="Resource name")
     resource_requirement_type: Optional[str] = Field(default="", max_length=50, description="Resource type")
-    resource_requirement_quantity: Optional[float] = Field(default=0.0, ge=0, description="Quantity needed")
-    resource_requirement_cost_per_unit: Optional[float] = Field(default=0.0, ge=0, description="Cost per unit")
+    resource_requirement_quantity: Optional[Decimal] = Field(default=0.0, ge=0, description="Quantity needed")
+    resource_requirement_cost_per_unit: Optional[Decimal] = Field(default=0.0, ge=0, description="Cost per unit")
     resource_requirement_is_consumable: Optional[bool] = Field(default=True, description="Is consumable")
     resource_requirement_notes: Optional[str] = Field(default="", max_length=500, description="Notes")
     resource_requirement_product_ref: Optional[int] = Field(default=0, description="Product reference")
@@ -1034,10 +1035,10 @@ class ServiceStaffRequirement_API(BaseModel):
     service_staff_requirement_service_id: Optional[int] = Field(default=0, description="Service ID")
     service_staff_requirement_role: Optional[int] = Field(default=0, description="Staff role ID (foreign key to staff_role)")
     service_staff_requirement_notes: Optional[str] = Field(default="", max_length=500, description="Notes")
-    service_staff_requirement_min_count: Optional[float] = Field(default=0.0, ge=0, description="Minimum staff count")
-    service_staff_requirement_max_count: Optional[float] = Field(default=0.0, ge=0, description="Maximum staff count")
-    service_staff_requirement_hourly_rate: Optional[float] = Field(default=0.0, ge=0, description="Hourly rate")
-    service_staff_requirement_allocated_hours: Optional[float] = Field(default=0.0, ge=0, description="Allocated hours")
+    service_staff_requirement_min_count: Optional[Decimal] = Field(default=0.0, ge=0, description="Minimum staff count")
+    service_staff_requirement_max_count: Optional[Decimal] = Field(default=0.0, ge=0, description="Maximum staff count")
+    service_staff_requirement_hourly_rate: Optional[Decimal] = Field(default=0.0, ge=0, description="Hourly rate")
+    service_staff_requirement_allocated_hours: Optional[Decimal] = Field(default=0.0, ge=0, description="Allocated hours")
     
     @field_validator('service_staff_requirement_role')
     @classmethod
@@ -1092,12 +1093,12 @@ class OrderedItem_API(BaseModel):
     """Ordered item model"""
     id_ordered_item: Optional[int] = Field(default=0, description="Ordered item ID")
     product_id: Optional[int] = Field(default=None, description="Product ID")
-    order_ref: Optional[int] = Field(default=None, description="Order reference")
+    order_id: Optional[int] = Field(default=None, description="Order reference")
     
-    product_discount: Optional[float] = Field(default=0.0, description="Product discount percentage")
+    product_discount: Optional[Decimal] = Field(default=0.0, description="Product discount percentage")
     ordered_quantity: Optional[int] = Field(default=1, gt=0, description="Quantity ordered")
-    unit_price: Optional[float] = Field(default=0.0, ge=0, description="Unit price")
-    vat_rate: Optional[float] = Field(default=0.0, ge=0, le=100, description="VAT percentage")
+    unit_price: Optional[Decimal] = Field(default=0.0, ge=0, description="Unit price")
+    vat_rate: Optional[Decimal] = Field(default=0.0, ge=0, le=100, description="VAT percentage")
     
     @field_validator('ordered_quantity')
     @classmethod
@@ -1155,7 +1156,7 @@ class Delivery_API(BaseModel):
         default=DeliveryStatus.PENDING,
         description="Current delivery status"
     )
-    delivery_fee: Optional[float] = Field(default=0.0, ge=0, description="Delivery fee")
+    delivery_fee: Optional[Decimal] = Field(default=0.0, ge=0, description="Delivery fee")
     
     # Address references
     delivery_address_id: Optional[int] = Field(default=None, description="Delivery address ID")
@@ -1190,7 +1191,7 @@ class Delivery_API(BaseModel):
     
     @field_validator('delivery_total_weight')
     @classmethod
-    def validate_weight(cls, v: Optional[float]) -> Optional[float]:
+    def validate_weight(cls, v: Optional[Decimal]) -> Optional[Decimal]:
         """Validate total weight is positive"""
         if v is not None and v < 0:
             raise ValueError('Total weight must be greater than or equal to 0')
@@ -1198,7 +1199,7 @@ class Delivery_API(BaseModel):
     
     @field_validator('delivery_fee')
     @classmethod
-    def validate_fee(cls, v: Optional[float]) -> Optional[float]:
+    def validate_fee(cls, v: Optional[Decimal]) -> Optional[Decimal]:
         """Validate delivery fee is positive"""
         if v is not None and v < 0:
             raise ValueError('Delivery fee must be greater than or equal to 0')
@@ -1264,7 +1265,7 @@ class Delivery_API(BaseModel):
             recipient_person=db_delivery.recipient_person,
             recipient_provider=db_delivery.recipient_provider,
             delivery_package_count=db_delivery.delivery_package_count,
-            delivery_total_weight=float(db_delivery.delivery_total_weight) if db_delivery.delivery_total_weight else None,
+            delivery_total_weight=Decimal(db_delivery.delivery_total_weight) if db_delivery.delivery_total_weight else None,
             delivery_cargo_dimensions=db_delivery.delivery_cargo_dimensions,
             delivery_goods_description=db_delivery.delivery_goods_description,
             hs_code=db_delivery.hs_code,
@@ -1272,7 +1273,7 @@ class Delivery_API(BaseModel):
             delivery_shipping_method=db_delivery.delivery_shipping_method,
             delivery_special_instructions=db_delivery.delivery_special_instructions,
             delivery_status=db_delivery.delivery_status,
-            delivery_fee=float(db_delivery.delivery_fee) if db_delivery.delivery_fee else 0.0,
+            delivery_fee=Decimal(db_delivery.delivery_fee) if db_delivery.delivery_fee else 0.0,
             delivery_address_id=db_delivery.delivery_address_id,
             delivery_current_address_id=db_delivery.delivery_current_address_id,
             delivery_provider_id=db_delivery.delivery_provider_id,
@@ -1296,7 +1297,7 @@ class DeliveryUpdate_API(BaseModel):
     recipient_person: Optional[int] = Field(default=None, description="Recipient person ID")
     recipient_provider: Optional[int] = Field(default=None, description="Recipient provider ID")
     delivery_package_count: Optional[int] = Field(default=1, ge=0)
-    delivery_total_weight: Optional[float] = Field(default=None, ge=0)
+    delivery_total_weight: Optional[Decimal] = Field(default=None, ge=0)
     delivery_cargo_dimensions: Optional[str] = Field(default=None, max_length=255)
     delivery_goods_description: Optional[str] = Field(default=None)
     hs_code: Optional[str] = Field(default=None, max_length=255)
@@ -1304,7 +1305,7 @@ class DeliveryUpdate_API(BaseModel):
     delivery_shipping_method: Optional[DeliveryShippingMethod] = Field(default=None)
     delivery_special_instructions: Optional[str] = Field(default=None, max_length=45)
     delivery_status: Optional[DeliveryStatus] = Field(default=None)
-    delivery_fee: Optional[float] = Field(default=None, ge=0)
+    delivery_fee: Optional[Decimal] = Field(default=None, ge=0)
     delivery_address_id: Optional[int] = Field(default=None)
     delivery_current_address_id: Optional[int] = Field(default=None)
     delivery_provider_id: Optional[int] = Field(default=None)
@@ -1325,7 +1326,7 @@ class DeliveryUpdate_API(BaseModel):
 class Delivery_Info_API(BaseModel):
     """Location and address model"""
     destination_address : Location_API = Field(..., description="Destination address")
-    delivery_fee: Optional[float] = Field(default=0.0, description="Delivery fee")
+    delivery_fee: Optional[Decimal] = Field(default=0.0, description="Delivery fee")
     
 
 
@@ -1367,7 +1368,7 @@ class CartStatus(str, Enum):
 class Cart_API(BaseModel):
     """Cart API model matching database structure"""
     cart_status: Optional[CartStatus] = Field(default=CartStatus.OPEN)
-    cart_total_amount: Optional[float] = Field(None, ge=0)
+    cart_total_amount: Optional[Decimal] = Field(None, ge=0)
     cart_notes: Optional[str] = Field(None, max_length=65535)  # TEXT field
     cart_due_date: Optional[date] = None
     cart_invoice: Optional[int] = Field(None, ge=1)
@@ -1392,7 +1393,7 @@ class Cart_API(BaseModel):
         default=False,
         description="Client intent: charge a deposit now",
     )
-    cart_paid_money: Optional[float] = Field(
+    cart_paid_money: Optional[Decimal] = Field(
         default=0.0,
         ge=0,
         description="Amount being charged right now (0 if nothing is paid now)",
@@ -1470,7 +1471,7 @@ class Payment_API(BaseModel):
     """Payment information"""
     payment_id: Optional[int] = Field(default=0, ge=0, description="Payment ID")
     payment_invoice_id: Optional[int] = Field(default=None, description="Invoice ID")
-    payment_amount: Optional[float] = Field(default=0.0, ge=0, description="Payment amount")
+    payment_amount: Optional[Decimal] = Field(default=0.0, ge=0, description="Payment amount")
     payment_method: Optional[str] = Field(default="cash", max_length=50, description="Payment method")
     payment_status: Optional[PaymentStatus] = Field(default=PaymentStatus.PENDING, description="Payment status")
     payment_reference: Optional[str] = Field(default="", max_length=100, description="Payment reference")
@@ -1479,7 +1480,7 @@ class Payment_API(BaseModel):
 class Deposit_API(BaseModel):
     """Deposit information"""
     deposit_id: Optional[int] = Field(default=0, ge=0, description="Deposit ID")
-    deposit_amount: Optional[float] = Field(default=0.0, ge=0, description="Deposit amount")
+    deposit_amount: Optional[Decimal] = Field(default=0.0, ge=0, description="Deposit amount")
     deposit_method: Optional[str] = Field(default="cash", max_length=50, description="Deposit method")
     deposit_cart_id: Optional[int] = Field(default=None, description="Cart ID")
     deposit_invoice_id: Optional[int] = Field(default=None, description="Invoice ID")
@@ -1492,7 +1493,7 @@ class AdditionalFee_API(BaseModel):
     additional_fee_id: Optional[int] = Field(default=0, description="Fee ID")
     additional_fee_payment_id: Optional[int] = Field(default=None, description="Payment ID")
     additional_fee_name: Optional[str] = Field(default="", max_length=200, description="Fee name")
-    additional_fee_amount: Optional[float] = Field(default=0.0, ge=0, description="Fee amount")
+    additional_fee_amount: Optional[Decimal] = Field(default=0.0, ge=0, description="Fee amount")
     additional_fee_description: Optional[str] = Field(default="", max_length=500, description="Fee description")
     additional_fee_document_url: Optional[str] = Field(default=None, max_length=500, description="Document URL")
     additional_fee_user_id: int = Field(..., gt=0, description="User ID")
@@ -1722,7 +1723,7 @@ class ReactionBase(BaseModel):
     
     @field_validator('rating_value')
     @classmethod
-    def validate_rating(cls, v: Optional[float]) -> Optional[float]:
+    def validate_rating(cls, v: Optional[Decimal]) -> Optional[Decimal]:
         """Validate rating is between 1 and 5"""
         if v is not None and (v < 1 or v > 5):
             raise ValueError('Rating must be between 1 and 5')
@@ -1759,7 +1760,7 @@ class ReactionStatistics(BaseModel):
     dislike_count: int = Field(default=0, description="Number of dislikes")
     love_count: int = Field(default=0, description="Number of loves")
     helpful_count: int = Field(default=0, description="Number of helpful ratings")
-    average_rating: Optional[float] = Field(default=None, description="Average rating (for providers)")
+    average_rating: Optional[Decimal] = Field(default=None, description="Average rating (for providers)")
     total_ratings: int = Field(default=0, description="Total number of ratings (for providers)")
     
     class Config:
@@ -1839,8 +1840,8 @@ class Reaction_API(BaseModel):
     product_reacting_user: Optional[int] = Field(default=0, description="Product reacting user ID")
     comment_reacting_user: Optional[int] = Field(default=0, description="Comment reacting user ID")
     
-    provider_reaction_value: Optional[float] = Field(default=0.0, description="Provider rating value")
-    product_reaction_value: Optional[float] = Field(default=0.0, description="Product rating value")
+    provider_reaction_value: Optional[Decimal] = Field(default=0.0, description="Provider rating value")
+    product_reaction_value: Optional[Decimal] = Field(default=0.0, description="Product rating value")
 
 # ============================================================================
 # RECIPE MODELS
@@ -1885,7 +1886,7 @@ class PlacedOrder_API(BaseModel):
     """Placed order model"""
     id_placed_order: Optional[int] = Field(default=0, description="Order ID")
     ordered_timestamp: Optional[datetime] = Field(default_factory=datetime.now, description="Order timestamp")
-    order_discount: Optional[float] = Field(default=0.0, ge=0, description="Order discount")
+    order_discount: Optional[Decimal] = Field(default=0.0, ge=0, description="Order discount")
     placed_order_last_mod: Optional[datetime] = Field(default_factory=datetime.now, description="Last modification")
     payment_status: Optional[PaymentStatus] = Field(default=PaymentStatus.PENDING, description="Payment status")
     payment_ref: Optional[str] = Field(default="", max_length=100, description="Payment reference")
@@ -1925,7 +1926,7 @@ class Invoice_API(BaseModel):
     """Invoice API model"""
     invoice_id: Optional[int] = Field(default=0, ge=0, description="Invoice ID")
     invoice_reference: Optional[str] = Field(default="", max_length=100, description="Invoice number")
-    grand_total: Optional[float] = Field(default=0.0, ge=0, description="Total amount")
+    grand_total: Optional[Decimal] = Field(default=0.0, ge=0, description="Total amount")
     invoice_status: InvoiceStatus = Field(default=InvoiceStatus.UNPAID, description="Invoice status")
     invoice_type: InvoiceType = Field(default=InvoiceType.INVOICE, description="Invoice type")
     invoice_issue_date: Optional[date] = Field(default_factory=date.today, description="Issue date")
@@ -1939,7 +1940,7 @@ class Invoice_API(BaseModel):
     
     @field_validator('grand_total')
     @classmethod
-    def validate_amount(cls, v: float) -> float:
+    def validate_amount(cls, v: Decimal) -> Decimal:
         """Validate total amount is not negative"""
         if v < 0:
             raise ValueError('Invoice total amount cannot be negative')
@@ -1956,7 +1957,7 @@ class Invoice_API(BaseModel):
 class InvoiceUpdate_API(BaseModel):
     """Invoice update model - all fields optional"""
     invoice_reference: Optional[str] = Field(default=None, max_length=100, description="Invoice number")
-    grand_total: Optional[float] = Field(default=None, ge=0, description="Total amount")
+    grand_total: Optional[Decimal] = Field(default=None, ge=0, description="Total amount")
     invoice_status: Optional[InvoiceStatus] = Field(default=None, description="Invoice status")
     invoice_type: Optional[InvoiceType] = Field(default=None, description="Invoice type")
     invoice_issue_date: Optional[date] = Field(default=None, description="Issue date")
@@ -1976,8 +1977,8 @@ class InvoiceResponse_API(Invoice_API):
     additional_fees: Optional[List[AdditionalFee_API]] = Field(default=None, description="Additional fees")
     
     # Computed fields
-    total_paid: Optional[float] = Field(default=0.0, description="Total amount paid")
-    remaining_balance: Optional[float] = Field(default=0.0, description="Remaining balance")
+    total_paid: Optional[Decimal] = Field(default=0.0, description="Total amount paid")
+    remaining_balance: Optional[Decimal] = Field(default=0.0, description="Remaining balance")
     is_overdue: Optional[bool] = Field(default=False, description="Is invoice overdue")
     
     class Config:

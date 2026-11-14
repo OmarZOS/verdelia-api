@@ -405,7 +405,7 @@ class CartProductNotFoundException(CartServiceException):
         if product_name:
             error_details["product_name"] = product_name
         
-        message = "Product not found in cart"
+        message = f"Product {product_id} not found in cart"
         if product_id:
             message = f"Product with ID '{product_id}' not found"
         

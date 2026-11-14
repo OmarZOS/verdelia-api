@@ -329,20 +329,20 @@ class BusinessOperationService:
         conditions: List[Any] = []
 
         if supplier_id:
-            conditions.append(Cart.cart_product_provider_id == supplier_id)
+            conditions.append(Cart.provider_id == supplier_id)
         if client_id:
-            conditions.append(Cart.cart_client_user == client_id)
+            conditions.append(Cart.client_user_id == client_id)
 
         start, end = window
         start_db = self._naive_utc(start)
         end_db = self._naive_utc(end)
 
         if start_db is not None and end_db is not None:
-            conditions.append(Cart.cart_created_at.between(start_db, end_db))
+            conditions.append(Cart.created_at.between(start_db, end_db))
         elif start_db is not None:
-            conditions.append(Cart.cart_created_at >= start_db)
+            conditions.append(Cart.created_at >= start_db)
         elif end_db is not None:
-            conditions.append(Cart.cart_created_at <= end_db)
+            conditions.append(Cart.created_at <= end_db)
 
         logger.info(
             f"Cart fetch: {len(conditions)} condition(s), "
@@ -358,14 +358,14 @@ class BusinessOperationService:
                 {
                     Cart.ordered_service: [
                         {
-                            OrderedService.ordered_service_service: [
+                            OrderedService.service: [
                                 {ProvidedService.service_resource_requirement: []},
                                 ProvidedService.service_staff_requirement,
                             ]
                         }
                     ]
                 },
-                {Cart.ordered_item: [{OrderedItem.ordered_product: []}]},
+                {Cart.ordered_item: [{OrderedItem.product: []}]},
             ],
             offset=offset,
             limit=limit,
@@ -388,12 +388,12 @@ class BusinessOperationService:
 
         if start_db is not None and end_db is not None:
             conditions.append(
-                Delivery.delivery_created_at.between(start_db, end_db)
+                Delivery.created_at.between(start_db, end_db)
             )
         elif start_db is not None:
-            conditions.append(Delivery.delivery_created_at >= start_db)
+            conditions.append(Delivery.created_at >= start_db)
         elif end_db is not None:
-            conditions.append(Delivery.delivery_created_at <= end_db)
+            conditions.append(Delivery.created_at <= end_db)
 
         logger.info(
             f"Delivery fetch: {len(conditions)} condition(s), "
@@ -412,7 +412,7 @@ class BusinessOperationService:
                             Invoice.placed_order: [
                                 {
                                     PlacedOrder.ordered_item: [
-                                        OrderedItem.ordered_product
+                                        OrderedItem.product
                                     ]
                                 }
                             ]
@@ -446,15 +446,15 @@ class BusinessOperationService:
         op = {
             "source_type": "cart",
             "source_id": cart.cart_id,
-            "supplier_id": cart.cart_product_provider_id,
-            "client_id": cart.cart_client_user,
+            "supplier_id": cart.provider_id,
+            "client_id": cart.client_user_id,
             "invoice": invoice,
             "items": items,
             "services": services,
             "cart": cart,
             "delivery": None,
             "status": cart.cart_status,
-            "created_at": cart.cart_created_at,
+            "created_at": cart.created_at,
             "_order_discount": self._safe_float(getattr(cart, "cart_discount", 0)),
             "_delivery_fee": delivery_fee,
         }
@@ -486,12 +486,12 @@ class BusinessOperationService:
 
         if start_db is not None and end_db is not None:
             conditions.append(
-                Delivery.delivery_created_at.between(start_db, end_db)
+                Delivery.created_at.between(start_db, end_db)
             )
         elif start_db is not None:
-            conditions.append(Delivery.delivery_created_at >= start_db)
+            conditions.append(Delivery.created_at >= start_db)
         elif end_db is not None:
-            conditions.append(Delivery.delivery_created_at <= end_db)
+            conditions.append(Delivery.created_at <= end_db)
 
         logger.info(
             f"Delivery fetch: {len(conditions)} condition(s), "
@@ -510,7 +510,7 @@ class BusinessOperationService:
                             Invoice.placed_order: [
                                 {
                                     PlacedOrder.ordered_item: [
-                                        OrderedItem.ordered_product
+                                        OrderedItem.product
                                     ]
                                 }
                             ]
@@ -549,7 +549,7 @@ class BusinessOperationService:
             except (TypeError, ValueError):
                 pass
 
-        client = delivery.recipient_person
+        client = delivery.recipient_person_id
         if client is None and placed_orders:
             client = placed_orders[0].ordering_user_id
 
@@ -569,7 +569,7 @@ class BusinessOperationService:
             "cart": None,
             "delivery": delivery,
             "status": delivery.delivery_status,
-            "created_at": delivery.delivery_created_at,
+            "created_at": delivery.created_at,
             "_order_discount": order_discount,
             "_delivery_fee": delivery_fee,
         }
@@ -750,7 +750,7 @@ class BusinessOperationService:
                 # Tax is already inside line_net; just report the split.
                 tax_from_items += line_total * (vat / (100.0 + vat))
 
-            product = self._safe_loaded(item, "ordered_product")
+            product = self._safe_loaded(item, "product")
             if product is not None:
                 base = float(getattr(product, "product_base_price", 0) or 0)
                 if base > 0:

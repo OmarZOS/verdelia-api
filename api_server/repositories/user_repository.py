@@ -18,7 +18,7 @@ class UserRepository:
         
         if eager_load:
             eager_load_depth = [
-                {AppUser.subscription:[Subscription.subscription_usage]},
+                {AppUser.app_user_subscription:[Subscription.subscription_usage]},
                 {AppUser.app_user_wallet:[]},
                 {AppUser.management_rule:[]},
                 {
@@ -32,8 +32,8 @@ class UserRepository:
                             Location.position_wkt,
                             {Location.location_address:[Address.address_city,Address.address_country,Address.address_postal_code,Address.address_street,Address.address_street]},
                         ]},
-                                            {
-                        Person.person_details: [
+                        {
+                           Person.person_details: [
                         ]
                     },
                     ]

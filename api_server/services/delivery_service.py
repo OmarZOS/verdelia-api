@@ -227,6 +227,9 @@ class DeliveryService:
         if delivery_data.delivery_goods_description is not None:
             delivery.delivery_goods_description = delivery_data.delivery_goods_description
 
+        if delivery_data.delivery_broker_id is not None:
+            delivery.delivery_broker_id = delivery_data.delivery_broker_id
+
         if delivery_data.hs_code is not None:
             delivery.hs_code = delivery_data.hs_code
 

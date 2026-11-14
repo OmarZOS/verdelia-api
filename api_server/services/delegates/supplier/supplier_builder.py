@@ -63,7 +63,7 @@ class SupplierBuilder:
         
         new_supplier = ProductProvider()
         new_supplier.product_provider_type_id = provider.id_product_provider_type
-        new_supplier.product_provider_owner = provider.id_provider_owner
+        new_supplier.product_provider_user_id = provider.id_provider_owner
         new_supplier.product_provider_details = self.build_supplier_details(provider)
 
 

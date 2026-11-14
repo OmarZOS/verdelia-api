@@ -39,7 +39,7 @@ class InvoiceRepository:
             with storage_broker.session_scope() as session:
                 cart = session.query(Cart).filter(Cart.cart_id == cart_id).first()
                 if cart:
-                    cart.cart_invoice = invoice_id
+                    cart.invoice_id = invoice_id
                     session.flush()
                     logger.info(f"Invoice {invoice_id} linked to cart {cart_id}")
                     return True
@@ -164,8 +164,8 @@ class InvoiceRepository:
         if provider_id:
             cart_provider = (
                 exists()
-                .where(Cart.cart_invoice == Invoice.invoice_id)
-                .where(Cart.cart_product_provider_id == provider_id)
+                .where(Cart.invoice_id == Invoice.invoice_id)
+                .where(Cart.provider_id == provider_id)
             )
             conditions.append(cart_provider)
 
@@ -227,7 +227,7 @@ class InvoiceRepository:
                     filtered_count += 1
                 elif order_id and invoice.placed_order and invoice.placed_order.id_placed_order == order_id:
                     filtered_count += 1
-                elif provider_id and invoice.cart and invoice.cart.cart_product_provider_id == provider_id:
+                elif provider_id and invoice.cart and invoice.cart.provider_id == provider_id:
                     filtered_count += 1
             return filtered_count
         
@@ -263,7 +263,7 @@ class InvoiceRepository:
                 cart = None
                 if invoice.cart:
                     cart = session.query(Cart).filter(
-                        Cart.cart_invoice == invoice_id
+                        Cart.invoice_id == invoice_id
                     ).first()
                 
                 # Get order if exists
@@ -572,42 +572,3 @@ class InvoiceRepository:
             return []
 
 
-    def get_by_invoice_id_and_status(
-        self,
-        invoice_id: int,
-        statuses: Tuple[str, ...] = ("completed", "confirmed", "paid"),
-    ) -> Optional[Payment]:
-        """
-        Return the most recent payment for an invoice whose status is in
-        `statuses`, or None.
-
-        Used as an idempotency guard by the order/cart payment workflows:
-        if a completed payment already exists for this invoice, a retry
-        must not create a second one — even if the invoice row itself was
-        never flipped to `paid` (e.g. a crash between finance confirm and
-        local persist).
-
-        Returns the newest match (ordered by payment_created_at DESC) so
-        that, in the unlikely case of multiple completed payments, the
-        caller sees the one most recently attached to the invoice.
-        """
-        if not statuses:
-            return None
-
-        try:
-            with storage_broker.session_scope() as session:
-                return (
-                    session.query(Payment)
-                    .filter(
-                        Payment.payment_invoice_id == invoice_id,
-                        Payment.payment_status.in_(list(statuses)),
-                    )
-                    .order_by(desc(Payment.payment_created_at))
-                    .first()
-                )
-        except Exception as e:
-            logger.error(
-                "Failed to get payment for invoice %s with statuses %s: %s",
-                invoice_id, statuses, e,
-            )
-            return None
