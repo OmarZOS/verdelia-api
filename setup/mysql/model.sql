@@ -3322,7 +3322,7 @@ BEGIN
         unit_price,
         product_discount,
         ordered_item_cart_ref,
-        ordered_item_delivery_status,
+        delivery_status,
         ordered_item_delivery_fee
     )
     VALUES (
@@ -3405,7 +3405,7 @@ BEGIN
         product_discount,
         vat_rate,
         ordered_item_cart_ref,
-        ordered_item_delivery_status
+        delivery_status
     INTO
         v_product_id,
         v_quantity,
@@ -3439,7 +3439,7 @@ BEGIN
         - (v_product_discount * v_quantity);
 
     UPDATE ordered_item
-    SET ordered_item_delivery_status = 'cancelled'
+    SET delivery_status = 'cancelled'
     WHERE id_ordered_item = p_ordered_item_id;
 
     UPDATE product

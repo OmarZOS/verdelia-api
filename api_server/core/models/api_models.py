@@ -1156,7 +1156,7 @@ class Delivery_API(BaseModel):
         default=DeliveryStatus.PENDING,
         description="Current delivery status"
     )
-    delivery_fee: Optional[Decimal] = Field(default=0.0, ge=0, description="Delivery fee")
+    delivery_fee: Optional[Decimal] = Field(default=Decimal("0.0"), ge=Decimal("0.0"), description="Delivery fee")
     
     # Address references
     delivery_address_id: Optional[int] = Field(default=None, description="Delivery address ID")

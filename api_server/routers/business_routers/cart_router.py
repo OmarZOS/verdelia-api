@@ -181,7 +181,7 @@ def _serialize_ordered_item(item) -> Dict[str, Any]:
         "total_price": float(item.unit_price * item.ordered_quantity) if item.unit_price else 0,
         "vat": float(item.vat_rate) if item.vat_rate else 0,
         "discount": float(item.product_discount) if item.product_discount else 0,
-        "delivery_status": item.ordered_item_delivery_status,
+        "delivery_status": item.delivery_status,
         "delivery_fee": float(item.ordered_item_delivery_fee) if item.ordered_item_delivery_fee else 0,
     }
 

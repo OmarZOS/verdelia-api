@@ -2,7 +2,7 @@
 """
 OrderedItemPolicy — OrderedItem status rules, built on TransitionEngine.
 
-States (from `ordered_item_delivery_status` enum):
+States (from `delivery_status` enum):
     pending, processing, shipped, delivered, cancelled, returned, partial
 
 Transitions (from the state diagram):
@@ -98,7 +98,7 @@ def cancellable(item: OrderedItem) -> bool:
     * → cancelled: only before the item is in physical motion.
     Once `shipped`, cancel via `returned`, not `cancelled`.
     """
-    status = (item.ordered_item_delivery_status or '').lower()
+    status = (item.delivery_status or '').lower()
     return status in {'pending', 'processing'}
 
 
@@ -232,7 +232,7 @@ class OrderedItemPolicy(PolicyBase):
         **extras: Any,
     ) -> Decision:
         """Decide using the item's own status as the current state."""
-        current = item.ordered_item_delivery_status or self.initial_state
+        current = item.delivery_status or self.initial_state
         return self.decide(current, target, item, **extras)
 
     def is_final(self, state: str) -> bool:

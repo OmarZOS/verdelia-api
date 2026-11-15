@@ -416,7 +416,7 @@ class OrderWorkflow:
           2. remote: confirm inventory
         Idempotent — the silo ignores already-confirmed items.
 
-        The items' `ordered_item_delivery_status` is not changed here:
+        The items' `delivery_status` is not changed here:
         confirmation of inventory is an inventory-side fact, not a
         delivery-side state change. The delivery flow drives the item
         state via OrderedItemPolicy when the goods actually move.

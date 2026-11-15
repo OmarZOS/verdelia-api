@@ -37,7 +37,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--profile",
         choices=list(PROFILES.keys()),
-        default="smoke",
+        default="standard",
         help="Volume profile: how much data to generate (default: %(default)s)",
     )
     parser.add_argument(

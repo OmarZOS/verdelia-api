@@ -680,7 +680,7 @@ class CartService:
     async def persist_cart(
         self,
         cart: Cart,
-        total_price: float,
+        total_price: Decimal,
         person_obj: Optional[Any],
     ) -> Tuple[Cart, List[OrderedItem], List[OrderedService], Invoice]:
         invoice = Invoice(
@@ -714,6 +714,8 @@ class CartService:
             created_service = self.cart_repo.create_ordered_service(
                 ordered_service
             )
+            # inserted_service = self.cart_repo.get_ordered_service_by_id(
+            #     created_service.ordered_service_id)
             created_services.append(created_service)
             logger.info(
                 "Created ordered service ID: %s",

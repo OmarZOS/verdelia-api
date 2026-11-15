@@ -322,13 +322,13 @@ class ProductService:
         product.unit_price = product_api.unit_price
         product.vat_rate = product_api.product_vat_value
         product.base_price = getattr(
-            product_api, "product_base_price", product.product_base_price
+            product_api, "product_base_price", product.base_price
         )
         product.available_quantity = product_api.product_quantity
         product.reserved_quantity = getattr(
             product_api,
             "product_reserved_quantity",
-            product.product_reserved_quantity,
+            product.reserved_quantity,
         )
         product.quantifier = product_api.product_quantifier
         product.product_description = product_api.product_description

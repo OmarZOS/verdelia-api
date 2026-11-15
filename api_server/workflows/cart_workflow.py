@@ -12,6 +12,10 @@ Owns the sequencing of the cart lifecycle:
   Phase 3  confirm_inventory_for_cart
   Finalize finalize_cart  → Phase 2 + Phase 3
 
+Delivery is OPTIONAL. A cart with no delivery lines can go
+pending → checkout → completed as soon as its invoice settles and its
+lines are done.
+
 CartService (local) is injected. No remote clients live on the service.
 
 Exception boundary:
@@ -22,7 +26,7 @@ Exception boundary:
   anything about the inventory transport layer.
 """
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import List, Dict, Any, Optional, Tuple, Union
 from datetime import datetime
 import logging
@@ -199,6 +203,7 @@ class CartWorkflow:
 
             # Step 8 — payment if intent declared.
             financial_docs: Dict[str, Any] = {}
+            payment_succeeded = False
             if intent in (PaymentIntent.FULL, PaymentIntent.DEPOSIT):
                 logger.info(
                     "Step 8: Processing payment via process_payment..."
@@ -216,12 +221,7 @@ class CartWorkflow:
                     ),
                     captured_amount=captured_dec,
                 )
-
-                logger.info(
-                    "Cart %s: payment succeeded; awaiting delivery "
-                    "creation before the checkout transition",
-                    created_cart.cart_id,
-                )
+                payment_succeeded = True
             else:
                 logger.info(
                     "Step 8: No payment requested (intent=%s)",
@@ -234,14 +234,31 @@ class CartWorkflow:
                 created_items, created_services, reservation_plan
             )
 
+            # Step 10 — try to advance the cart through its next
+            # natural state now that payment (if any) has settled.
+            # `advance_cart_state` checks both the invoice state and
+            # the cart lines; delivery is optional.
+            if payment_succeeded or created_invoice is not None:
+                advanced = await self.advance_cart_state(
+                    created_cart.cart_id,
+                )
+                if advanced.get("new_status") in ("checkout", "completed"):
+                    created_cart = self.service.get_cart_by_id(
+                        created_cart.cart_id, eager_load=True
+                    )
+                else:
+                    logger.info(
+                        "Cart %s not yet advanced: %s",
+                        created_cart.cart_id,
+                        advanced.get("reason", "no transition"),
+                    )
+
             financial_docs["invoice"] = created_invoice
 
             logger.info("Cart %s creation completed", created_cart.cart_id)
             return financial_docs, created_cart
 
         except CartInsufficientStockException as e:
-            # Availability check failed before anything was persisted
-            # or reserved — nothing to roll back.
             logger.error(
                 "Cart creation failed — insufficient stock during "
                 "availability check: %s", e,
@@ -284,10 +301,6 @@ class CartWorkflow:
         created_services: List[OrderedService],
         inventory_reserved: bool,
     ) -> Optional[Exception]:
-        """
-        Shared rollback for create_cart. Returns the release error (if
-        any) so callers that want to surface it can; never raises.
-        """
         release_error: Optional[Exception] = None
         if inventory_reserved:
             try:
@@ -331,20 +344,18 @@ class CartWorkflow:
         """
         Phase 2 — orchestrate payment for a cart's invoice.
 
-        Money rule for this method:
-        * `captured_amount` may arrive as `str` (query param), `float`
-            (legacy caller), or `Decimal` (preferred). It is coerced to
-            `Decimal` **once**, at the top, and never converted back to
-            `float` until the request body is built.
-        * All comparisons (`captured >= total`, the policy decision)
-            run in `Decimal`. Floats are not used for money arithmetic.
+        Money rule:
+        * `captured_amount` may arrive as `str`, `float`, or `Decimal`.
+          It is coerced to `Decimal` once, at the top.
+        * All comparisons run in `Decimal`.
         * The single `Decimal → float` conversion happens inside
-            `build_payment_create_payload` (or immediately before the
-            JSON encoding), never before the policy has decided.
+          `build_payment_create_payload` (or just before JSON).
+
+        After the invoice settles, this method advances the cart to
+        `checkout` if it's currently `pending` (delivery is optional).
         """
         logger.info("Processing payment for cart %s...", cart_id)
 
-        # ── Coerce captured_amount to Decimal once ─────────────────────
         captured_dec: Optional[Decimal] = None
         if captured_amount is not None:
             captured_dec = self._as_decimal(captured_amount)
@@ -362,6 +373,7 @@ class CartWorkflow:
         )
         if current_status == "paid":
             logger.info("Cart %s invoice already paid — skipping", cart_id)
+            await self.advance_cart_state(cart_id)
             return {
                 "cart_id": cart_id,
                 "invoice_id": invoice.invoice_id,
@@ -378,6 +390,7 @@ class CartWorkflow:
                 "Invoice %s already has completed payment %s — skipping",
                 invoice.invoice_id, existing.payment_id,
             )
+            await self.advance_cart_state(cart_id)
             return {
                 "cart_id": cart_id,
                 "invoice_id": invoice.invoice_id,
@@ -385,10 +398,12 @@ class CartWorkflow:
                 "payment_status": existing.payment_status,
             }
 
-        # ── Decide the target in Decimal ───────────────────────────────
         total_dec = self._as_decimal(invoice.grand_total) or Decimal("0")
-        
-        logger.info(f"Comparing {total_dec} to {captured_dec} for cart {cart_id} invoice {invoice.invoice_id}")
+
+        logger.info(
+            "Comparing %s to %s for cart %s invoice %s",
+            total_dec, captured_dec, cart_id, invoice.invoice_id,
+        )
         if captured_dec is None:
             target = "paid"
             captured_for_policy: Optional[Decimal] = None
@@ -396,9 +411,6 @@ class CartWorkflow:
             target = "paid" if captured_dec >= total_dec else "partially_paid"
             captured_for_policy = captured_dec
 
-        # Pre-flight: structural check only. `captured_amount=None`
-        # is understood by the policy as "don't validate against the
-        # total; this is a structural decision".
         invoice_pre = self.invoice_policy.decide_for_invoice(
             invoice,
             target=target,
@@ -409,10 +421,6 @@ class CartWorkflow:
                 f"Invoice transition denied: {invoice_pre.reason}"
             )
 
-        # ── Build the remote payload ──────────────────────────────────
-        # `amount` stays Decimal until the last possible moment. The
-        # float conversion, if any, happens inside the payload builder
-        # (see `build_payment_create_payload`).
         amount_dec = captured_dec if captured_dec is not None else total_dec
         payment_payload = self.service.build_payment_create_payload(
             cart=cart,
@@ -425,7 +433,6 @@ class CartWorkflow:
         )
         logger.info("Payment %s created", payment_response.id)
 
-        # Remote: confirm payment
         details = (
             transaction_details
             or self.service.build_payment_transaction_details(
@@ -443,14 +450,12 @@ class CartWorkflow:
             confirmed.id, confirmed.status,
         )
 
-        # Sanity: confirm must not return a different payment
         if confirmed.id != payment_response.id:
             raise ValueError(
                 f"create/confirm returned different payment ids: "
                 f"{payment_response.id} vs {confirmed.id}"
             )
 
-        # Sanity: confirm must have actually completed
         confirmed_status = self._normalize_payment_status(confirmed.status)
         if confirmed_status not in ("completed", "confirmed", "paid"):
             raise PaymentNotConfirmedException(
@@ -459,19 +464,14 @@ class CartWorkflow:
                 invoice_id=invoice.invoice_id,
             )
 
-        # ── Commit: does the captured amount clear the invoice? ───────
         captured = self._as_decimal(confirmed.amount)
         if captured is None or captured <= 0:
             raise PaymentNotConfirmedException(
                 payment_id=confirmed.id,
-                # `!s` on a Decimal renders "803.71", not the float noise.
                 status=f"amount={captured!s}",
                 invoice_id=invoice.invoice_id,
             )
 
-        # Pass Decimal to the policy — this is the comparison that
-        # decides whether the invoice can move to `paid`. Do NOT
-        # `float()` it here.
         invoice_commit = self.invoice_policy.decide_for_invoice(
             invoice,
             target=target,
@@ -483,13 +483,16 @@ class CartWorkflow:
                 f"move to {target!r}: {invoice_commit.reason}"
             )
 
-        # Local: apply the invoice decision
         self.service.apply_invoice_status(invoice, invoice_commit.target)
 
         logger.info(
             "Applied transition: invoice %s → %s",
             invoice_commit.current, invoice_commit.target,
         )
+
+        # Advance the cart now that the invoice is settled. Delivery
+        # is optional, so `pending → checkout` will fire.
+        await self.advance_cart_state(cart_id)
 
         return {
             "cart_id": cart.cart_id,
@@ -499,13 +502,95 @@ class CartWorkflow:
         }
 
     # ================================================================
+    # ADVANCE — the "next natural state" helper
+    # ================================================================
+
+    async def advance_cart_state(self, cart_id: int) -> Dict[str, Any]:
+        """
+        Attempt the cart's next natural transition based on its
+        current state, its invoice, and its line-item statuses.
+
+        - pending → checkout: fires as soon as the cart has an
+          invoice (delivery is optional).
+        - checkout → completed: fires when every line is delivered
+          or has no delivery obligation.
+        - checkout → partial: fires when some lines are delivered
+          and others are still outstanding.
+        - pending → partial: same, for carts whose lines started
+          being delivered before checkout.
+
+        Safe to call multiple times; if no transition applies, it
+        returns a no-op result.
+        """
+        cart = self.service.get_cart_by_id(cart_id, eager_load=True)
+        current = self.cart_policy.normalize(cart.cart_status or "open")
+
+        if current == "pending":
+            # Try checkout first. `checkout_ready` only requires an
+            # invoice row on the cart.
+            try:
+                return self._transition_cart(
+                    cart_id=cart_id,
+                    target="checkout",
+                    invoice_issued=True,
+                    delivery_created=False,
+                )
+            except ValueError as e:
+                logger.debug(
+                    "Cart %s cannot advance to checkout yet: %s",
+                    cart_id, e,
+                )
+            # Fall through to partial.
+            try:
+                return self._transition_cart(
+                    cart_id=cart_id,
+                    target="partial",
+                    partially_fulfilled=True,
+                )
+            except ValueError as e:
+                logger.debug(
+                    "Cart %s cannot advance to partial yet: %s",
+                    cart_id, e,
+                )
+
+        if current in ("checkout", "partial"):
+            try:
+                return self._transition_cart(
+                    cart_id=cart_id,
+                    target="completed",
+                    fully_fulfilled=True,
+                )
+            except ValueError as e:
+                logger.debug(
+                    "Cart %s cannot advance to completed yet: %s",
+                    cart_id, e,
+                )
+            if current == "checkout":
+                try:
+                    return self._transition_cart(
+                        cart_id=cart_id,
+                        target="partial",
+                        partially_fulfilled=True,
+                    )
+                except ValueError as e:
+                    logger.debug(
+                        "Cart %s cannot advance to partial yet: %s",
+                        cart_id, e,
+                    )
+
+        return {
+            "cart_id": cart_id,
+            "new_status": None,
+            "reason": f"no transition from {current}",
+        }
+
+    # ================================================================
     # PHASE 3 — CONFIRM INVENTORY
     # ================================================================
 
     async def confirm_inventory_for_cart(
         self, cart_id: int
     ) -> Dict[str, Any]:
-        """Phase 3 orchestration (by cart id)."""
         logger.info("Confirming inventory for cart %s...", cart_id)
 
         cart = self.service.get_cart_by_id(cart_id, eager_load=True)
@@ -531,7 +616,6 @@ class CartWorkflow:
         *,
         cart_id: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """Phase 3 orchestration (by entities)."""
         ordered_payload = self._build_confirm_ordered_payload(items)
         consumption_payload = self._build_confirm_consumption_payload(services)
 
@@ -573,7 +657,6 @@ class CartWorkflow:
     # ================================================================
 
     async def mark_cart_pending(self, cart_id: int) -> Dict[str, Any]:
-        """open → pending, gated by CartPolicy."""
         return self._transition_cart(cart_id, target="pending")
 
     async def mark_cart_checkout(
@@ -581,7 +664,7 @@ class CartWorkflow:
         cart_id: int,
         *,
         invoice_issued: bool = True,
-        delivery_created: bool = True,
+        delivery_created: bool = False,   # optional now
     ) -> Dict[str, Any]:
         """pending → checkout, gated by CartPolicy."""
         return self._transition_cart(
@@ -597,7 +680,6 @@ class CartWorkflow:
         *,
         fully_fulfilled: bool = True,
     ) -> Dict[str, Any]:
-        """checkout/partial → completed, gated by CartPolicy."""
         return self._transition_cart(
             cart_id,
             target="completed",
@@ -610,7 +692,6 @@ class CartWorkflow:
         *,
         partially_fulfilled: bool = True,
     ) -> Dict[str, Any]:
-        """pending/checkout → partial, gated by CartPolicy."""
         return self._transition_cart(
             cart_id,
             target="partial",
@@ -623,7 +704,6 @@ class CartWorkflow:
         *,
         stale: bool = True,
     ) -> Dict[str, Any]:
-        """open/pending → abandoned, gated by CartPolicy."""
         return self._transition_cart(
             cart_id,
             target="abandoned",
@@ -631,7 +711,6 @@ class CartWorkflow:
         )
 
     async def reopen_cart(self, cart_id: int) -> Dict[str, Any]:
-        """abandoned → open, gated by CartPolicy."""
         return self._transition_cart(cart_id, target="open")
 
     async def cancel_cart(
@@ -640,14 +719,6 @@ class CartWorkflow:
         *,
         reason: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """
-        * → canceled, gated by CartPolicy.
-
-        Persist the status change first, then release. If the persist
-        fails, no release happens and the cart stays live. If the
-        release fails, the cancel still stands and we log an explicit
-        reconciliation error.
-        """
         cart = self.service.get_cart_by_id(cart_id, eager_load=True)
 
         decision = self.cart_policy.decide_for_cart(cart, target="canceled")
@@ -660,10 +731,8 @@ class CartWorkflow:
             c for svc in services for c in (svc.product_consumption or [])
         ]
 
-        # Persist first.
         result = self._apply_cart_decision(cart, decision)
 
-        # Then release.
         if items or consumptions:
             try:
                 await self._release_inventory(items, consumptions)
@@ -679,11 +748,10 @@ class CartWorkflow:
         return result
 
     # ================================================================
-    # EXPLICIT ITEM / SERVICE TRANSITIONS (policy-gated)
+    # EXPLICIT ITEM / SERVICE TRANSITIONS
     # ================================================================
 
     async def mark_item_shipped(self, item_id: int) -> Dict[str, Any]:
-        """processing → shipped, gated by OrderedItemPolicy."""
         item = self.service.get_ordered_item(item_id)
 
         decision = self.item_policy.decide_for_item(
@@ -703,7 +771,6 @@ class CartWorkflow:
         *,
         scheduled_at: Optional[datetime] = None,
     ) -> Dict[str, Any]:
-        """processing → scheduled, gated by OrderedServicePolicy."""
         service = self.service.get_ordered_service(service_id)
 
         extras: Dict[str, Any] = {}
@@ -733,11 +800,6 @@ class CartWorkflow:
         captured_amount: Optional[Union[Decimal, float, str]] = None,
         transaction_details: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """
-        Convenience: run Phase 2 (payment) and Phase 3 (inventory
-        confirmation) back-to-back. `captured_amount` is forwarded to
-        `process_payment` unchanged; it is coerced to `Decimal` there.
-        """
         payment_result = await self.process_payment(
             cart_id=cart_id,
             payment_method=payment_method,
@@ -763,24 +825,6 @@ class CartWorkflow:
         cart: Optional[Cart] = None,
         **extras: Any,
     ) -> Dict[str, Any]:
-        """
-        Shared core for every `mark_cart_*` method.
-
-        Two modes, chosen by the caller:
-
-        - Pass `cart=<Cart>`: apply the decision to the in-memory
-          object the caller already holds, without any database
-          lookup. Used by `create_cart`, where the cart is being
-          assembled and shouldn't be touched in the DB until the
-          whole flow succeeds. Combine with `is_local=True` to skip
-          persistence.
-
-        - Pass `cart_id=<int>`: load the cart from the database,
-          apply the decision, and persist the new status. Used by
-          the standalone transition endpoints.
-
-        If both are supplied, `cart` wins and `cart_id` is ignored.
-        """
         if cart is None:
             cart = self.service.get_cart_by_id(cart_id, eager_load=True)
 
@@ -799,7 +843,6 @@ class CartWorkflow:
     def _apply_cart_decision_locally(
         self, cart: Cart, decision
     ) -> Dict[str, Any]:
-        """Apply the decision to an in-memory cart. No DB write."""
         cart.cart_status = decision.target
         cart.updated_at = datetime.now()
 
@@ -819,7 +862,6 @@ class CartWorkflow:
     def _apply_cart_decision(
         self, cart: Cart, decision
     ) -> Dict[str, Any]:
-        """Persist the cart's new status per a policy decision."""
         cart.cart_status = decision.target
         cart.updated_at = datetime.now()
         self.service.cart_repo.update_cart(cart)
@@ -853,7 +895,6 @@ class CartWorkflow:
     async def _check_inventory_availability(
         self, reservation_plan: Dict[int, Dict]
     ) -> None:
-        """Remote: read-only bulk availability check."""
         if not reservation_plan:
             return
 
@@ -886,19 +927,10 @@ class CartWorkflow:
         created_items: List[OrderedItem],
         created_services: List[OrderedService],
     ) -> None:
-        """
-        Remote: reserve inventory for persisted items + consumptions.
-
-        Idempotency guard: if an ordered item is already reserved
-        (from a previous failed attempt that didn't release
-        cleanly), release it before re-reserving. This is a no-op
-        on a fresh cart and a self-heal on a retry.
-        """
         if not reservation_plan:
             logger.info("No items to reserve")
             return
 
-        # ── Idempotency guard ────────────────────────────────────────
         stale_items: List[OrderedItem] = [
             item for item in created_items
             if (item.reserved_quantity or 0) > 0
@@ -912,9 +944,6 @@ class CartWorkflow:
             try:
                 await self._release_inventory(stale_items, [])
             except InventoryConflictError as conflict:
-                # 409 "no matching reservation" means the reservation
-                # doesn't exist on the server. That's already the state
-                # we want. Any other conflict is a real failure.
                 logger.info(
                     "Stale reservation already gone on the server (%s) — "
                     "proceeding with reserve",
@@ -933,7 +962,6 @@ class CartWorkflow:
             for item in stale_items:
                 item.reserved_quantity = 0
 
-        # ── Reserve ordered items ───────────────────────────────────
         ordered_reserve_items: List[Dict[str, Any]] = [
             {
                 "id": item.id_ordered_item,
@@ -954,7 +982,6 @@ class CartWorkflow:
                 len(ordered_reserve_items),
             )
 
-        # ── Reserve consumptions ────────────────────────────────────
         consumption_reserve_items: List[Dict[str, Any]] = []
         for service in created_services:
             for consumption in service.product_consumption or []:
@@ -986,10 +1013,6 @@ class CartWorkflow:
                     len(consumption_reserve_items),
                 )
             except Exception:
-                # Undo the ordered-item reserve we just did. If the
-                # release fails, the caller must know — otherwise
-                # the items stay reserved and the next attempt will
-                # hit the same InventoryConflictError.
                 if ordered_reserve_items:
                     try:
                         await self.inventory_client.release_inventory(
@@ -1015,20 +1038,11 @@ class CartWorkflow:
                         )
                 raise
 
-
     async def _release_inventory(
         self,
         items: List[Any],
         consumptions: List[Any],
     ) -> None:
-        """
-        Remote: release inventory. Raises on failure.
-
-        Renamed from `_safe_release_inventory` — the previous version
-        swallowed every exception, which let rollback paths pretend
-        they had cleaned up when they hadn't. Callers that genuinely
-        want best-effort must catch the exception themselves.
-        """
         ordered_release: List[Dict[str, Any]] = []
         for item in items or []:
             iid = getattr(item, "id_ordered_item", None) or (
@@ -1084,12 +1098,6 @@ class CartWorkflow:
         items: List[Any],
         consumptions: List[Any],
     ) -> None:
-        """
-        Best-effort release — for rollback paths that must not mask
-        the original exception. Logs and continues on failure.
-
-        Use `_release_inventory` when the release must succeed.
-        """
         try:
             await self._release_inventory(items, consumptions)
         except Exception:
@@ -1104,7 +1112,6 @@ class CartWorkflow:
         created_services: List[OrderedService],
         reservation_plan: Dict[int, Dict],
     ) -> None:
-        """Remote: confirm the reservations that were just created."""
         ordered_payload: List[Dict[str, Any]] = [
             {"id": item.id_ordered_item, "quantity": str(item.ordered_quantity)}
             for item in created_items
@@ -1113,7 +1120,6 @@ class CartWorkflow:
 
         consumption_payload: List[Dict[str, Any]] = []
         for service in created_services:
-            service = self.service.get_ordered_service(service.ordered_service_id)
             for consumption in service.product_consumption or []:
                 pid = consumption.consumed_product_id
                 plan = reservation_plan.get(pid, {})
@@ -1134,61 +1140,6 @@ class CartWorkflow:
             ordered_payload,
             consumption_payload,
         )
-
-    # async def _safe_release_inventory(
-    #     self,
-    #     items: List[Any],
-    #     consumptions: List[Any],
-    # ) -> None:
-    #     """Remote: best-effort release. Never raises."""
-    #     try:
-    #         ordered_release: List[Dict[str, Any]] = []
-    #         for item in items or []:
-    #             iid = getattr(item, "id_ordered_item", None) or (
-    #                 item.get("id") if isinstance(item, dict) else None
-    #             )
-    #             qty = getattr(item, "ordered_quantity", None) or (
-    #                 item.get("quantity") if isinstance(item, dict) else None
-    #             )
-    #             pid = getattr(item, "product_id", None) or (
-    #                 item.get("product_id") if isinstance(item, dict) else None
-    #             )
-    #             if iid:
-    #                 ordered_release.append({
-    #                     "id": iid,
-    #                     "quantity": qty,
-    #                     "product_id": pid,
-    #                 })
-
-    #         if ordered_release:
-    #             await self.inventory_client.release_inventory(
-    #                 items=ordered_release,
-    #                 item_type="ordered_item",
-    #             )
-
-    #         consumption_release: List[Dict[str, Any]] = []
-    #         for c in consumptions or []:
-    #             cid = getattr(c, "id_product_consumption", None) or (
-    #                 c.get("id") if isinstance(c, dict) else None
-    #             )
-    #             qty = getattr(c, "product_reserved_quantity", 0) or (
-    #                 c.get("quantity", 0) if isinstance(c, dict) else 0
-    #             )
-    #             if cid:
-    #                 consumption_release.append({
-    #                     "id": cid,
-    #                     "quantity": qty,
-    #                 })
-
-    #         if consumption_release:
-    #             await self.inventory_client.release_inventory(
-    #                 items=consumption_release,
-    #                 item_type="consumption",
-    #             )
-
-    #         logger.info("Inventory released")
-    #     except Exception:
-    #         logger.exception("Failed to release inventory")
 
     # ================================================================
     # INTERNAL — local payload helpers
@@ -1240,41 +1191,18 @@ class CartWorkflow:
 
     @staticmethod
     def _as_decimal(value: Any) -> Optional[Decimal]:
-        """
-        Coerce to Decimal for money arithmetic.
-
-        Accepted inputs:
-        * Decimal        — passthrough
-        * int            — Decimal(int) (exact)
-        * float          — Decimal(str(f)) so we get the shortest
-                            round-trip representation the wire intended,
-                            NOT the binary expansion
-        * str            — parsed, must be a valid finite Decimal
-
-        Rejects non-finite values (NaN, Infinity). A malformed finance
-        response with `"amount": "Infinity"` would otherwise poison every
-        downstream comparison.
-
-        Returns None when the value cannot be interpreted as money, so
-        callers can branch on "unusable" vs "zero".
-        """
         if value is None:
             return None
 
         if isinstance(value, Decimal):
             d = value
         elif isinstance(value, bool):
-            # bool is an int subclass; a payment amount of True/False is
-            # a bug, not a quantity.
             return None
         elif isinstance(value, int):
             d = Decimal(value)
         elif isinstance(value, float):
-            # Reject non-finite floats before they reach Decimal.
             if value != value or value in (float("inf"), float("-inf")):
                 return None
-            # `str(float)` gives the shortest round-trip ("803.71"),
-            # `Decimal(float)` would give the full binary expansion.
             d = Decimal(str(value))
         elif isinstance(value, str):
             try:
@@ -1304,14 +1232,6 @@ class CartWorkflow:
     async def delete_cart(
         self, cart_id: int, force_delete: bool = False
     ) -> bool:
-        """
-        Orchestrates: persist delete → release remote (if needed).
-
-        Release is skipped when the cart is already in a terminal
-        state (canceled/completed) whose transition already released
-        inventory. This avoids the double-release that occurs when
-        cancel is followed by archive/delete.
-        """
         logger.info("Deleting cart %s (force=%s)", cart_id, force_delete)
 
         cart = self.service.get_cart_by_id(cart_id, eager_load=True)
@@ -1326,11 +1246,8 @@ class CartWorkflow:
             in ("canceled", "cancelled", "completed", "abandoned")
         )
 
-        # Persist first.
         deleted = self.service.cart_repo.delete_cart_by_id_sync(cart_id)
 
-        # Then release, only if not already released by a prior
-        # transition.
         if deleted and (items or consumptions) and not already_released:
             try:
                 await self._release_inventory(items, consumptions)
