@@ -677,12 +677,52 @@ class CartService:
 
     # ==================== Persist cart (local) ====================
 
-    async def persist_cart(
-        self,
-        cart: Cart,
-        total_price: Decimal,
-        person_obj: Optional[Any],
-    ) -> Tuple[Cart, List[OrderedItem], List[OrderedService], Invoice]:
+    def get_consumption_snapshot_for_cart(
+        self, cart_id: int
+    ) -> List[Dict[str, Any]]:
+        """Local: fetch product_consumption rows for a cart as dicts."""
+        return self.cart_repo.get_consumption_snapshot_for_cart(cart_id)
+
+    async def persist_cart(self, cart, total_price, person_obj):
+        # 1. Snapshot the child data BEFORE persisting the cart, so we
+        #    never need to read `cart.ordered_item` / `cart.ordered_service`
+        #    after any commit.
+        items_data = [
+            {
+                "product_id": i.product_id,
+                "ordered_quantity": i.ordered_quantity,
+                "vat_rate": i.vat_rate,
+                "unit_price": i.unit_price,
+                "discount_amount": i.discount_amount,
+            }
+            for i in cart.ordered_item or []
+        ]
+        services_data = [
+            {
+                "service_id": s.service_id,
+                "ordered_service_quantity": s.ordered_service_quantity,
+                "unit_price": s.unit_price,
+                "subtotal": s.subtotal,
+                "ordered_service_notes": s.ordered_service_notes,
+                "ordered_service_delivery_status": s.ordered_service_delivery_status,
+                "scheduled_at": s.scheduled_at,
+                "consumptions": [
+                    {
+                        "consumed_product_id": c.consumed_product_id,
+                        "requirement_id": c.requirement_id,
+                    }
+                    for c in (s.product_consumption or [])
+                ],
+            }
+            for s in cart.ordered_service or []
+        ]
+
+        # 2. Detach the transients from the cart so `create_cart` doesn't
+        #    cascade them and the request session doesn't hold them.
+        cart.ordered_item = []
+        cart.ordered_service = []
+
+        # 3. Persist cart (only scalars now; cascade has nothing to flush).
         invoice = Invoice(
             grand_total=total_price,
             invoice_status="unpaid",
@@ -692,40 +732,47 @@ class CartService:
             tax_amount=0.0,
         )
         created_invoice = self.invoice_repo.create_invoice(invoice)
-        logger.info("Created invoice: %s", created_invoice.invoice_id)
-
         cart.invoice_id = created_invoice.invoice_id
         cart = self.cart_repo.create_cart(cart)
-        logger.info("Cart created with ID: %s", cart.cart_id)
 
-        created_items: List[OrderedItem] = []
-        for ordered_item in cart.ordered_item:
-            ordered_item.cart_id = cart.cart_id
-            created_item = self.order_repo.create_order_item(ordered_item)
-            created_item.reserved_quantity = 0
-            created_items.append(created_item)
-            logger.info(
-                "Created ordered item ID: %s", created_item.id_ordered_item
-            )
+        # 4. Create items from the snapshot, not from cart.ordered_item.
+        created_items = []
+        for data in items_data:
+            item = OrderedItem(cart_id=cart.cart_id, reserved_quantity=0, **data)
+            created = self.order_repo.create_order_item(item)
+            created_items.append(created)
 
-        created_services: List[OrderedService] = []
-        for ordered_service in cart.ordered_service:
-            ordered_service.cart_id = cart.cart_id
-            created_service = self.cart_repo.create_ordered_service(
-                ordered_service
-            )
-            # inserted_service = self.cart_repo.get_ordered_service_by_id(
-            #     created_service.ordered_service_id)
-            created_services.append(created_service)
-            logger.info(
-                "Created ordered service ID: %s",
-                created_service.ordered_service_id,
-            )
+        # 5. Create services + consumptions from the snapshot.
+        created_services = []
+        consumption_snapshot = []
+        for data in services_data:
+            consumptions = data.pop("consumptions")
+            service = OrderedService(cart_id=cart.cart_id, **data)
+            service.product_consumption = [
+                ProductConsumption(
+                    consumed_product_id=c["consumed_product_id"],
+                    requirement_id=c["requirement_id"],
+                    product_reserved_quantity=0,
+                )
+                for c in consumptions
+            ]
+            created = self.cart_repo.create_ordered_service(service)
+            created_services.append(created)
+            for c in (created.product_consumption or []):
+                consumption_snapshot.append({
+                    "id": c.id_product_consumption,
+                    "requirement_id": c.requirement_id,
+                    "consumed_product_id": c.consumed_product_id,
+                    "quantity": int(c.product_reserved_quantity or 0),
+                    "ordered_service_id": created.ordered_service_id,
+                })
 
-        cart.ordered_item = created_items
-        cart.ordered_service = created_services
+        return (
+            cart, created_items, created_services, created_invoice,
+            consumption_snapshot,
+        )
 
-        return cart, created_items, created_services, created_invoice
+
 
     # ==================== Payment & invoice persistence (local) ====================
 

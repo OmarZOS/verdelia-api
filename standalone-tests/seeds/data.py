@@ -907,31 +907,27 @@ def generate_delivery_data(
     *,
     shipping_method: str = "standard",
     broker_id: Optional[int] = None,
+    carrying_user_id: Optional[int] = None,
+    destination_address_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Sub-object `delivery` for `POST /business/carts`.
 
-    FIX: `delivery_broker_id` is now part of the payload.
+    Emits both the flat columns the Delivery_API accepts *and* a
+    `destination_address` sub-object (or a pre-resolved
+    `delivery_address_id` when the caller already has one). The
+    server's `persist_*` flow reads `destination_address.id_address`
+    first, then falls back to `create_address_from_location`, so
+    either shape works.
 
-    The API contract currently treats brokers as optional (the
-    Delivery_Info_API schema has no broker field). But
-    `DeliveryPolicy.confirmed_to_shipped` requires
-    `delivery_broker_id > 0`. That mismatch was the root cause of
-    every `/ship` 409 in the logs. Two ways to resolve:
-
-      * If brokers are optional: remove `has_broker` from the
-        `confirmed_to_shipped` predicate (server-side) and leave
-        this generator as-is.
-      * If brokers are required: leave the predicate alone, and pass
-        `broker_id` here.
-
-    Until that decision is made, pass `broker_id=None` to preserve
-    the current behavior (deliveries will fail to ship), or pass a
-    real broker id to test the shipped path.
+    `broker_id` defaults to 1 so `confirmed → shipped` is not
+    blocked by a missing broker. `carrying_user_id` is optional;
+    if supplied, the delivery carries it from creation, skipping
+    the separate assignment patch.
     """
     payload: Dict[str, Any] = {
         "delivery_shipping_method": shipping_method,
         "delivery_package_count": random.randint(1, 3),
-        "delivery_total_weight": round(random.uniform(0.1, 5.0), 2),
+        "delivery_total_weight": round(random.uniform(0.5, 5.0), 2),
         "delivery_cargo_dimensions": (
             f"{random.randint(10, 40)}x"
             f"{random.randint(10, 40)}x"
@@ -940,12 +936,23 @@ def generate_delivery_data(
         ),
         "delivery_goods_description": "Cart contents",
         "delivery_provider_id": provider_id,
-        "delivery_broker_id":1,
+        "delivery_broker_id": broker_id if broker_id is not None else 1,
         "delivery_fee": random_price(100.0, 800.0),
         "delivery_special_instructions": None,
     }
-    if broker_id is not None:
-        payload["delivery_broker_id"] = broker_id
+
+    # Prefer the pre-resolved address id when the caller has one.
+    if destination_address_id is not None:
+        payload["delivery_address_id"] = destination_address_id
+    else:
+        # Otherwise emit a location payload for the server to
+        # create an address from. This matches the shape
+        # `generate_delivery_info_data` uses for orders.
+        payload["destination_address"] = generate_location_data()
+
+    if carrying_user_id is not None:
+        payload["carrying_user_id"] = carrying_user_id
+
     return payload
 
 
@@ -1024,23 +1031,162 @@ def generate_delivery_info_data(
     provider_id: int = 0,
     delivery_fee: float = 0.0,
     broker_id: Optional[int] = None,
+    destination_address_id: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Sub-object `delivery_info` for `POST /business/orders`.
+    payload: Dict[str, Any] = {
+        "delivery_fee": float(delivery_fee),
+        "delivery_broker_id": broker_id if broker_id is not None else 1,
+    }
+    if destination_address_id is not None:
+        # The server reads `id_address` on the nested object; when it
+        # is 0, `create_address_from_location` runs. To skip that and
+        # reuse an existing address, set `id_address` to the real id.
+        payload["destination_address"] = {
+            **generate_location_data(),
+            "id_address": destination_address_id,
+        }
+    else:
+        payload["destination_address"] = generate_location_data()
+    return payload
 
-    This is NOT the same as `Delivery_API`. `Delivery_Info_API`
-    carries only a destination address, a fee, and (optionally) a
-    broker — it is the optional payload the order router accepts as
-    `delivery_info`. The full `Delivery_API` (used to create a
-    delivery row) has many more fields.
+def generate_delivery_details_patch(
+    *,
+    carrying_user_id: Optional[int] = None,
+    package_count: Optional[int] = None,
+    total_weight: Optional[float] = None,
+    shipping_method: Optional[str] = None,
+    goods_description: Optional[str] = None,
+    broker_id: Optional[int] = None,
+    provider_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Patch body for `POST /delivery/{id}/details`.
 
-    FIX: `delivery_broker_id` is threaded through if supplied. See
-    `generate_delivery_data` for the rationale — the same decision
-    about whether brokers are optional applies here.
+    Every field the verification policy reads that can be set after
+    creation is exposed here. Only the supplied fields are emitted,
+    so the patch is minimal.
+
+    Typical carrier-assignment patch:
+
+        generate_delivery_details_patch(carrying_user_id=carrier_id)
+
+    Typical package-completion patch before `processing → confirmed`:
+
+        generate_delivery_details_patch(
+            package_count=3, total_weight=2.5, shipping_method="express",
+        )
+    """
+    patch: Dict[str, Any] = {}
+    if carrying_user_id is not None:
+        patch["carrying_user_id"] = carrying_user_id
+    if package_count is not None:
+        patch["delivery_package_count"] = package_count
+    if total_weight is not None:
+        patch["delivery_total_weight"] = total_weight
+    if shipping_method is not None:
+        patch["delivery_shipping_method"] = shipping_method
+    if goods_description is not None:
+        patch["delivery_goods_description"] = goods_description
+    if broker_id is not None:
+        patch["delivery_broker_id"] = broker_id
+    if provider_id is not None:
+        patch["delivery_provider_id"] = provider_id
+    return patch
+
+
+def generate_tracking_ping_address(
+    destination_address_id: int,
+    *,
+    city: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Body for creating a second address used by `/tracking-pings`.
+
+    Returns the same shape as `generate_location_data()`, but the
+    city and coordinates are deliberately different from the
+    destination so the tracking predicate sees movement:
+
+        current_address_id != address_id   → shipped → in_transit OK
+        current_address_id == address_id   → out_for_delivery → delivered OK
+
+    `destination_address_id` is unused by the helper itself — it's a
+    required argument to force the caller to acknowledge that the
+    second address must be distinct. The route that creates the
+    address is `/location` (or the address sub-endpoint), and the
+    returned `id_address` is what `/tracking-pings` takes.
+    """
+    loc = generate_location_data()
+    # Make sure the city is not the same as the destination's when
+    # the caller passed one. Cheap: pick a different city by default.
+    if city is not None:
+        loc["address_city"] = city
+    else:
+        # Rotate to a different random city from the same pool.
+        loc["address_city"] = random.choice(
+            [c for c in REAL_CITIES if c != loc["address_city"]]
+        )
+    # And shift coordinates a bit so they're not identical either.
+    loc["location_latitude"] = round(
+        loc["location_latitude"] + random.uniform(0.1, 0.5), 6
+    )
+    loc["location_longitude"] = round(
+        loc["location_longitude"] + random.uniform(0.1, 0.5), 6
+    )
+    return loc
+
+
+def generate_refund_payment_data(
+    amount: Optional[float] = None,
+    *,
+    reference: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Body for `POST /delivery/{id}/refund-payment`.
+
+    `amount` defaults to a positive value ≤ 500 so it doesn't collide
+    with typical invoice totals. The reference is a short random
+    string when not supplied; the server uses it as
+    `payment_reference` and also as a correlation id for tests
+    that assert on a specific refund.
+
+    This is the *input* to verification. Calling `/refund` without
+    first POSTing this endpoint returns 409
+    (`transition_not_allowed`).
+    """
+    return {
+        "amount": float(amount) if amount is not None else random_price(50.0, 500.0),
+        "reference": reference or f"REF-{uuid.uuid4().hex[:8].upper()}",
+    }
+
+
+def generate_cart_data(
+    *,
+    status: str = "open",
+    total_amount: float = 0.0,
+    notes: Optional[str] = None,
+    payment_method: Optional[str] = None,
+    mark_paid: bool = False,
+) -> Dict[str, Any]:
+    """Sub-object `cart` for `POST /business/carts`.
+
+    Added:
+      * `payment_method` — when supplied, the cart is created with
+        `cart_payment=True` and `cart_paid_money=total_amount`.
+        The runner uses this to guarantee an invoice exists so a
+        later `/refund-payment` has somewhere to land.
+      * `mark_paid` — convenience; when True, also sets
+        `cart_payment=True` and `cart_paid_money` to the total,
+        without requiring the caller to pass a method (the server
+        picks its default).
+
+    The default `payment_method=None` keeps the "no intent" shape
+    the cart-focused tests were using.
     """
     payload: Dict[str, Any] = {
-        "destination_address": generate_location_data(),
-        "delivery_fee": float(delivery_fee),
+        "cart_status": status,
+        "cart_total_amount": total_amount,
+        "cart_notes": notes or f"Cart created {uuid.uuid4().hex[:6]}",
+        "cart_due_date": None,
+        "cart_payment": mark_paid or payment_method is not None,
+        "cart_deposit": False,
+        "cart_paid_money": total_amount if (mark_paid or payment_method) else 0.0,
+        "cart_payment_method": payment_method,
     }
-    if broker_id is not None:
-        payload["delivery_broker_id"] = broker_id
     return payload

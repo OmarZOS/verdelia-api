@@ -15,6 +15,20 @@ tracks stats, honors metering denials. Cart-specific work:
 
 The scenario exercises all three: clean carts, paid carts, and
 finalized carts.
+
+Address handling
+----------------
+The runner does not create addresses. The server's cart workflow
+does it, by resolving the `delivery.destination_address` payload
+through `LocationService.create_address_from_location`. The cart
+create response should carry the resulting `delivery` row with a
+populated `address_id`; that id is what the delivery scenario needs
+for `has_recipient` to pass.
+
+If the response does not carry an address id, the runner logs a
+warning rather than inventing one — a delivery with no address can
+never leave `pending`, and that failure should be visible in one
+line, not as a 409 six steps later.
 """
 
 import asyncio
@@ -35,6 +49,7 @@ from data import (
 
 
 class CartScenario(BaseScenario):
+
     name = "carts"
 
     # How the mix of created carts should break down. The scenario
@@ -51,14 +66,6 @@ class CartScenario(BaseScenario):
         product_pool: Optional[List[int]] = None,
         service_pool: Optional[List[int]] = None,
     ) -> int:
-        """Create carts against a rotating set of suppliers.
-
-        Each cart is built from the profile cycle — clean, paid,
-        deposit, finalized — so a batch exercises every path.
-
-        `product_pool` / `service_pool` are the ids the scenario can
-        draw from when building ordered items and services.
-        """
         if not supplier_ids:
             return 0
 
@@ -73,10 +80,23 @@ class CartScenario(BaseScenario):
         service_pool = service_pool or [1]
 
         created = 0
+        delivery_attempts = 0
+        delivery_addresses_recorded = 0
 
         for i in range(count):
             profile = self._PROFILES[i % len(self._PROFILES)]
             supplier_id = random.choice(supplier_ids)
+
+            # Decide whether this cart carries a delivery. If so,
+            # build the delivery payload with a location sub-object
+            # the server can turn into an address. The runner never
+            # creates the address itself.
+            delivery_payload: Optional[Dict[str, Any]] = None
+            if random.random() < 0.4:
+                delivery_attempts += 1
+                delivery_payload = generate_delivery_data(
+                    provider_id=supplier_id,
+                )
 
             payload = self._build_cart_payload(
                 profile=profile,
@@ -85,6 +105,7 @@ class CartScenario(BaseScenario):
                 buyer_user_id=user.id,
                 product_pool=product_pool,
                 service_pool=service_pool,
+                delivery_payload=delivery_payload,
             )
 
             try:
@@ -106,25 +127,25 @@ class CartScenario(BaseScenario):
                     self.stats["carts"] = self.stats.get("carts", 0) + 1
                     created += 1
 
-                    # Record the profile so downstream tests can pick
-                    # carts of a specific kind.
                     self.context.cart_profiles[cart_id] = profile
 
-                    # Exercise the post-create phases where the
-                    # profile calls for them.
+                    # ── Record the delivery + its address if present.
+                    # The cart response is the *only* reliable source
+                    # of address ids; the runner never creates
+                    # addresses itself.
+                    if delivery_payload is not None:
+                        if self._record_delivery_from_response(body):
+                            delivery_addresses_recorded += 1
+
                     if profile in ("paid", "finalized"):
-                        await self._pay_cart(
-                            user, cart_id, headers,
-                        )
+                        await self._pay_cart(user, cart_id, headers)
                     if profile == "finalized":
                         await self._confirm_inventory(
                             user, cart_id, headers,
                         )
 
                     if created % 5 == 0:
-                        print(
-                            f"   … {created}/{count} carts created"
-                        )
+                        print(f"   … {created}/{count} carts created")
                 else:
                     print(
                         f"   ⚠️ Could not extract cart id: "
@@ -132,8 +153,7 @@ class CartScenario(BaseScenario):
                     )
             elif response.status_code in (402, 429):
                 print(
-                    f"   ℹ️ Cart limit reached: "
-                    f"{response.status_code}"
+                    f"   ℹ️ Cart limit reached: {response.status_code}"
                 )
                 break
             else:
@@ -142,6 +162,26 @@ class CartScenario(BaseScenario):
                 )
 
             await asyncio.sleep(0.05)
+
+        # One-line summary that makes the address situation visible
+        # without requiring a second run to diagnose.
+        if delivery_attempts > 0:
+            if delivery_addresses_recorded == 0:
+                print(
+                    "   ⚠️ None of the cart responses carried a "
+                    "delivery address id. Deliveries created this "
+                    "run cannot leave `pending` (has_recipient will "
+                    "refuse). Check that the cart workflow resolves "
+                    "`delivery.destination_address` into an address "
+                    "and echoes `delivery.address_id` in the "
+                    "response."
+                )
+            elif delivery_addresses_recorded < delivery_attempts:
+                print(
+                    f"   ℹ️ {delivery_addresses_recorded}/"
+                    f"{delivery_attempts} carts with delivery "
+                    f"returned a resolvable address"
+                )
 
         print(f"✅ Created {created} carts")
         return created
@@ -159,14 +199,14 @@ class CartScenario(BaseScenario):
         buyer_user_id: int,
         product_pool: List[int],
         service_pool: List[int],
+        delivery_payload: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Compose the body for `POST /business/carts` for one profile.
 
         Profiles:
           * clean      — no payment intent; paid_money = 0
           * paid       — cart_payment = true, paid_money > 0,
-                         method = "wallet" (auto-completed on the
-                         finance side)
+                         method = "wallet"
           * deposit    — cart_deposit = true, paid_money < total,
                          method = "wallet"
           * finalized  — same as paid, and the scenario also calls
@@ -176,13 +216,11 @@ class CartScenario(BaseScenario):
         quantity = random.randint(1, 5)
 
         item = generate_ordered_item_data(product_id, quantity)
-        # Optional: add a service line for variety on some profiles.
         services = []
         if profile in ("paid", "finalized") and random.random() < 0.5:
             services.append(
                 generate_ordered_service_data(
-                    random.choice(service_pool),
-                    quantity=1,
+                    random.choice(service_pool), quantity=1,
                 )
             )
 
@@ -194,7 +232,6 @@ class CartScenario(BaseScenario):
         )
 
         if profile == "clean":
-            # No intent — paid_money stays 0.
             pass
         elif profile == "paid":
             cart_data["cart_payment"] = True
@@ -224,13 +261,107 @@ class CartScenario(BaseScenario):
         if random.random() < 0.3:
             payload["client"] = generate_person_data(extended=False)
 
-        # Some carts carry a delivery to exercise the delivery path.
-        if random.random() < 0.4:
-            payload["delivery"] = generate_delivery_data(
-                provider_id=provider_id,
-            )
+        # Use the pre-built delivery payload when supplied. The
+        # payload carries a `destination_address` location sub-object
+        # that the server's cart workflow resolves into a real
+        # `address_id` on the delivery row.
+        if delivery_payload is not None:
+            payload["delivery"] = delivery_payload
 
         return payload
+
+    # ══════════════════════════════════════════════════════════════
+    # Response extraction — the only source of address ids
+    # ══════════════════════════════════════════════════════════════
+
+    def _record_delivery_from_response(self, body: Any) -> bool:
+        """Extract the delivery from a cart-create response and record
+        its id + address id in the context.
+
+        Returns True if an address id was recorded — the caller uses
+        this to distinguish "server resolved the address" from
+        "server returned a delivery with no address".
+
+        Handles the common envelope shapes:
+          * {"data": {"delivery": {...}}}
+          * {"delivery": {...}}
+          * {"data": {"cart": {"delivery": {...}}}}
+        """
+        delivery = self._find_delivery(body)
+        if delivery is None:
+            return False
+
+        delivery_id = self._extract_delivery_id_from_row(delivery)
+        if delivery_id > 0 and delivery_id not in self.context.created_deliveries:
+            self.context.created_deliveries.append(delivery_id)
+
+        address_id = self._extract_address_id_from_row(delivery)
+        if address_id is not None and address_id > 0:
+            if address_id not in self.context.created_addresses:
+                self.context.created_addresses.append(address_id)
+            return True
+
+        # Delivery exists but has no address — log once per
+        # occurrence so a broken server-side resolution is visible.
+        print(
+            f"   ⚠️ delivery {delivery_id or '?'} from cart "
+            f"response has no address_id — has_recipient will "
+            f"refuse `pending → processing` for this delivery"
+        )
+        return False
+
+    @staticmethod
+    def _find_delivery(body: Any) -> Optional[Dict[str, Any]]:
+        """Locate the delivery dict inside a cart-create response."""
+        if not isinstance(body, dict):
+            return None
+
+        # Try top level, then `data`, then `data.cart`.
+        candidates: List[Any] = [
+            body.get("delivery"),
+            (body.get("data") or {}).get("delivery")
+            if isinstance(body.get("data"), dict) else None,
+            ((body.get("data") or {}).get("cart") or {}).get("delivery")
+            if isinstance(body.get("data"), dict)
+            and isinstance(body.get("data", {}).get("cart"), dict)
+            else None,
+        ]
+        for candidate in candidates:
+            if isinstance(candidate, dict):
+                return candidate
+        return None
+
+    @staticmethod
+    def _extract_delivery_id_from_row(
+        delivery: Dict[str, Any],
+    ) -> int:
+        for key in ("id_delivery", "delivery_id", "id"):
+            value = delivery.get(key)
+            if value:
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    continue
+        return 0
+
+    @staticmethod
+    def _extract_address_id_from_row(
+        delivery: Dict[str, Any],
+    ) -> Optional[int]:
+        for key in (
+            "address_id",
+            "delivery_address_id",
+            "delivery_address",
+        ):
+            value = delivery.get(key)
+            if isinstance(value, dict):
+                value = value.get("id_address") or value.get("id")
+            if value is not None:
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    continue
+        return None
 
     @staticmethod
     def _estimate_total(
@@ -275,9 +406,6 @@ class CartScenario(BaseScenario):
                     self.stats.get("cart_payments", 0) + 1
                 )
             else:
-                # A denial here isn't a hard failure of the run —
-                # clean carts can't be paid, and a wallet with no
-                # balance can't pay for a deposit cart. Log and move on.
                 print(
                     f"   ℹ️ Pay for cart {cart_id}: "
                     f"{response.status_code} {short(response.text, 100)}"
@@ -401,8 +529,6 @@ class CartScenario(BaseScenario):
                 headers=headers,
             )
             if response.status_code in (200, 204):
-                # Drop the id from the tracked list so the summary
-                # count is accurate.
                 if cart_id in self.context.created_carts:
                     self.context.created_carts.remove(cart_id)
                 return True

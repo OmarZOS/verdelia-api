@@ -48,8 +48,15 @@ from workflows.delivery_workflow import DeliveryWorkflow
 
 from core.logging_config import get_logger
 
+from decimal import Decimal
+from pydantic import BaseModel, Field
+
+
 logger = get_logger(__name__)
 
+class RefundCreate(BaseModel):
+    amount: Decimal = Field(..., ge=Decimal("0.0"))
+    reference: Optional[str] = None
 
 delivery_router = APIRouter()
 
@@ -106,6 +113,7 @@ def _http_from_transition_error(
     )
 
 
+
 def _extract_signals(body: Optional[Delivery_API]) -> Dict[str, Any]:
     """Pick the non-None signal fields off the body for the policy."""
     if body is None:
@@ -125,22 +133,12 @@ def _run_transition(
     target: str,
     body: Optional[Delivery_API] = None,
 ) -> dict:
-    """
-    One call, one read, one write. The workflow patches the row in
-    memory, decides, and persists in a single pass.
-    """
     try:
-        return workflow.transition(
-            delivery_id,
-            target,
-            body=body,
-            **_extract_signals(body),
-        )
+        return workflow.transition(delivery_id, target, body=body)
     except DeliveryNotFoundException:
         raise
     except DeliveryUpdateFailedException as e:
         raise _http_from_transition_error(action_label, e)
-
 
 # ============================================================================
 # READ
@@ -266,6 +264,37 @@ def get_delivery_next_states(
 # ============================================================================
 # METADATA-ONLY WRITE
 # ============================================================================
+
+
+@delivery_router.post(
+    "/{delivery_id}/refund-payment",
+    summary="Record a completed refund on the linked invoice",
+    description=(
+        "Records a completed refund payment against the delivery's "
+        "`delivery_invoice_ref`. Required to enable `delivered → refunded`. "
+        "Fails with 400 if the delivery has no linked invoice."
+    ),
+    responses={
+        200: {"description": "Refund recorded"},
+        400: {"model": ErrorResponseModel},
+        404: {"model": ErrorResponseModel},
+    },
+)
+def record_refund_payment(
+    delivery_id: int,
+    body: RefundCreate = Body(...),
+    workflow: DeliveryWorkflow = Depends(get_delivery_workflow),
+):
+    try:
+        return workflow.record_refund(
+            delivery_id, body.amount, body.reference
+        )
+    except DeliveryUpdateFailedException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": "refund_not_possible", "reason": str(e)},
+        )
+
 
 @delivery_router.post(
     "/{delivery_id}/details",

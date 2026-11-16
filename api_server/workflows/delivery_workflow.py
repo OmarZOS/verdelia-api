@@ -29,6 +29,7 @@ import logging
 
 from anyio import from_thread
 
+from repositories.financial_repository import FinancialRepository
 from core.models.api_models import Delivery_API, DeliveryStatus
 from core.models.models import Delivery
 from core.exceptions.specific.delivery_exceptions import (
@@ -46,6 +47,24 @@ from core.logging_config import get_logger
 logger = get_logger(__name__)
 
 
+
+
+READ_ONLY_FIELDS = (
+    "id_delivery",
+    "delivery_created_at",
+    "delivery_updated_at",
+    "delivery_status",
+    "delivery_ordered_items",
+)
+
+_NON_EDITABLE_STATUSES = frozenset(
+    {"delivered", "cancelled", "returned", "refunded"}
+)
+_TERMINAL_STATUSES = frozenset(
+    {"delivered", "cancelled", "returned", "refunded"}
+)
+
+
 # Signal fields on Delivery_API. Single source of truth for the patch filter.
 SIGNAL_FIELDS = (
     "delivery_confirmed",
@@ -55,6 +74,12 @@ SIGNAL_FIELDS = (
     "return_confirmed",
     "refund_completed",
 )
+
+_API_TO_COLUMN = {
+    "delivery_special_instructions": "special_instructions",
+    "delivery_address_id": "address_id",
+    "delivery_current_address_id": "current_address_id",
+}
 
 # Read-only fields on Delivery_API: never patched, status only ever
 # changes through a policy-approved transition.
@@ -72,10 +97,6 @@ _NON_EDITABLE_STATUSES = frozenset(
     {"delivered", "cancelled", "returned", "refunded"}
 )
 
-# Terminal statuses. A delivery in one of these can be archived.
-_TERMINAL_STATUSES = frozenset(
-    {"delivered", "cancelled", "returned", "refunded"}
-)
 
 
 class DeliveryWorkflow:
@@ -90,6 +111,11 @@ class DeliveryWorkflow:
         self.service = service or DeliveryService()
         self.order_workflow = order_workflow
         self.policy = delivery_policy or DeliveryPolicy()
+
+        # The only repo the policy reads through (for refund
+        # verification). Everything else goes through the service's
+        # own repos (`delivery_repo`, `address_repo`).
+        self.financial_repo = FinancialRepository()
 
     # ================================================================
     # CREATE
@@ -116,24 +142,26 @@ class DeliveryWorkflow:
     def _apply_body_to_instance(
         delivery: Delivery, body: Optional[Delivery_API]
     ) -> List[str]:
-        """
-        Mutate `delivery` with the patch fields from `body`. Returns
-        the list of fields that changed (for logging).
-        """
         if body is None:
             return []
-
-        excluded = set(SIGNAL_FIELDS) | set(READ_ONLY_FIELDS)
-        patch = body.model_dump(exclude_none=True, exclude=excluded)
+        excluded = set(READ_ONLY_FIELDS)
+        # `exclude_unset=True` is what we want: only fields the caller
+        # actually provided end up in the patch. `exclude_none=True`
+        # only skips fields whose *value* is None, which still includes
+        # every field with a non-None default (0, "", 0.0, "standard",
+        # etc.) — those then overwrite whatever the caller had set on a
+        # previous request.
+        patch = body.model_dump(exclude_unset=True, exclude=excluded)
         if not patch:
             return []
-
         for field, value in patch.items():
             if hasattr(value, "value"):
                 value = value.value
-            setattr(delivery, field, value)
-
+            # Map API field names to column names where they differ.
+            column = _API_TO_COLUMN.get(field, field)
+            setattr(delivery, column, value)
         return list(patch.keys())
+
 
     # ================================================================
     # TRANSITION (single read, single write, patch+transition in one pass)
@@ -144,29 +172,7 @@ class DeliveryWorkflow:
         delivery_id: int,
         target: str,
         body: Optional[Delivery_API] = None,
-        **signals: Any,
     ) -> Dict[str, Any]:
-        """
-        Patch (optionally) then transition, against one in-memory row.
-
-        Ordering of operations is load-bearing:
-
-          1. Load the row.
-          2. Apply the patch in memory (not persisted yet).
-          3. Ask the policy.
-          4. Run *pre-persist* side effects (currently: release
-             inventory). If any raise, the transition aborts and the
-             row is never persisted — the delivery stays in its
-             previous state with its reservation intact.
-          5. Persist the new status.
-          6. Run post-persist side effects (order advancement,
-             notifications, dispatch). Failures here are logged but do
-             not roll back the status change.
-
-        Signals (delivery_confirmed, proof_captured, …) come from the
-        caller. They flow into the policy predicate, never into the
-        persisted row.
-        """
         delivery = self.service.get_delivery_by_id(delivery_id)
 
         patched_fields: List[str] = []
@@ -174,9 +180,30 @@ class DeliveryWorkflow:
             patched_fields = self._apply_body_to_instance(delivery, body)
 
         decision = self.policy.decide_for_delivery(
-            delivery, target=target, **signals
+            delivery, target=target, wf=self,
         )
         if not decision.allowed:
+            logger.warning(
+                "Delivery %s → '%s' denied. State: "
+                "status=%r recipient_person_id=%r recipient_provider_id=%r "
+                "address_id=%r current_address_id=%r "
+                "package_count=%r total_weight=%r shipping_method=%r "
+                "carrier=%r broker=%r provider=%r",
+                delivery_id, target,
+                getattr(delivery, "delivery_status", None),
+                getattr(delivery, "recipient_person_id", None),
+                getattr(delivery, "recipient_provider_id", None),
+                getattr(delivery, "address_id", None),
+                getattr(delivery, "current_address_id", None),
+                getattr(delivery, "delivery_package_count", None),
+                getattr(delivery, "delivery_total_weight", None),
+                getattr(delivery, "delivery_shipping_method", None),
+                getattr(delivery, "carrying_user_id", None),
+                getattr(delivery, "delivery_broker_id", None),
+                getattr(delivery, "delivery_provider_id", None),
+            )
+
+
             logger.warning(
                 "Delivery %s → '%s' denied: %s",
                 delivery_id, target, decision.reason,
@@ -186,50 +213,23 @@ class DeliveryWorkflow:
                 error=f"Transition denied: {decision.reason}",
             )
 
-        # ── Pre-persist side effects ───────────────────────────────
-        # These must succeed for the transition to proceed. Currently
-        # only `release_inventory`: a cancelled delivery whose units
-        # are still on hold is worse than a delivery stuck in its
-        # previous state.
         pre_persist = {"release_inventory"}
         for effect in decision.side_effects:
             if effect not in pre_persist:
                 continue
             handler = self._effect_handler(effect)
-            if handler is None:
-                logger.debug(
-                    "Delivery %s: no handler for pre-persist effect '%s'",
-                    delivery_id, effect,
-                )
-                continue
-            handler(delivery, **signals)
+            if handler is not None:
+                handler(delivery)
 
-        # ── Persist the status change ──────────────────────────────
         delivery.delivery_status = decision.target
         saved = self.service.persist_delivery(delivery)
 
-        # ── Post-persist side effects ──────────────────────────────
-        remaining_effects = [
-            e for e in decision.side_effects if e not in pre_persist
-        ]
+        remaining = [e for e in decision.side_effects if e not in pre_persist]
         self._dispatch_side_effects(
             delivery_id=delivery_id,
-            side_effects=remaining_effects,
+            side_effects=remaining,
             delivery=saved,
-            **signals,
         )
-
-        if patched_fields:
-            logger.info(
-                "Delivery %s: patched %s and transitioned %s → %s",
-                delivery_id, patched_fields,
-                decision.current, decision.target,
-            )
-        else:
-            logger.info(
-                "Delivery %s: transitioned %s → %s",
-                delivery_id, decision.current, decision.target,
-            )
 
         return {
             "delivery_id": delivery_id,
@@ -244,7 +244,6 @@ class DeliveryWorkflow:
     # ================================================================
 
     def _effect_handler(self, effect: str):
-        """Map an effect name to its handler, or None."""
         return {
             "advance_order_to_shipped": self._advance_order_to_shipped,
             "advance_order_to_delivered": self._advance_order_to_delivered,
@@ -260,33 +259,23 @@ class DeliveryWorkflow:
         delivery_id: int,
         side_effects: List[str],
         delivery: Delivery,
-        **signals: Any,
     ) -> None:
-        """
-        Run post-persist side effects. Failures are logged, not raised —
-        the status change is already committed and rolling it back is
-        out of scope for this dispatcher. Effects that must be able to
-        abort the transition run in `transition` before the persist.
-        """
         for effect in side_effects:
             handler = self._effect_handler(effect)
             if handler is None:
-                logger.debug(
-                    "Delivery %s: no handler for side effect '%s'",
-                    delivery_id, effect,
-                )
                 continue
             try:
-                handler(delivery, **signals)
+                handler(delivery)
             except Exception:
                 logger.exception(
                     "Delivery %s: side effect '%s' failed",
                     delivery_id, effect,
                 )
 
+
     # ── Order advancement ───────────────────────────────────────────
 
-    def _advance_order_to_shipped(self, delivery: Delivery, **_) -> None:
+    def _advance_order_to_shipped(self, delivery: Delivery) -> None:
         if self.order_workflow is None:
             return
         if delivery.delivery_source_type != "placed_order":
@@ -302,7 +291,8 @@ class DeliveryWorkflow:
         except Exception as e:
             logger.info("Order %s not advanced to SHIPPED: %s", order_id, e)
 
-    def _advance_order_to_delivered(self, delivery: Delivery, **_) -> None:
+
+    def _advance_order_to_delivered(self, delivery: Delivery) -> None:
         if self.order_workflow is None:
             return
         if delivery.delivery_source_type != "placed_order":
@@ -310,7 +300,6 @@ class DeliveryWorkflow:
         order_id = delivery.delivery_source_id
         if not order_id:
             return
-
         siblings = self.service.delivery_repo.get_by_source(
             "placed_order", order_id
         )
@@ -319,11 +308,7 @@ class DeliveryWorkflow:
             for d in siblings
         )
         if not all_delivered:
-            logger.info(
-                "Order %s: sibling deliveries not all delivered", order_id
-            )
             return
-
         try:
             self.order_workflow.mark_order_delivered(
                 order_id, delivery_delivered=True
@@ -332,11 +317,10 @@ class DeliveryWorkflow:
         except Exception as e:
             logger.info("Order %s not advanced to DELIVERED: %s", order_id, e)
 
+
     # ── Inventory ───────────────────────────────────────────────────
 
-    def _confirm_inventory_for_delivery(
-        self, delivery: Delivery, **_
-    ) -> None:
+    def _confirm_inventory_for_delivery(self, delivery: Delivery) -> None:
         if self.order_workflow is None:
             return
         if delivery.delivery_source_type != "placed_order":
@@ -345,9 +329,7 @@ class DeliveryWorkflow:
         if not order_id:
             return
         try:
-            result = self.order_workflow.confirm_inventory_for_order(
-                order_id
-            )
+            result = self.order_workflow.confirm_inventory_for_order(order_id)
             logger.info(
                 "Order %s inventory confirmed: %s items",
                 order_id, result.get("items_confirmed", 0),
@@ -357,23 +339,8 @@ class DeliveryWorkflow:
                 "Order %s inventory confirmation failed", order_id
             )
 
-    def _release_inventory_for_delivery(
-        self, delivery: Delivery, **_
-    ) -> None:
-        """
-        Release any inventory still reserved on behalf of the parent
-        order.
 
-        Runs as a *pre-persist* effect of `transition` (and as the
-        first step of `delete_delivery`). A failure here must abort
-        the transition, otherwise the delivery is cancelled but the
-        units stay on hold.
-
-        Uses `anyio.from_thread.run` because the sync workflows run on
-        a worker thread with no event loop, and
-        `OrderWorkflow._safe_release_inventory` is an async coroutine
-        on the main event loop.
-        """
+    def _release_inventory_for_delivery(self, delivery: Delivery) -> None:
         if self.order_workflow is None:
             return
         if delivery.delivery_source_type != "placed_order":
@@ -381,7 +348,6 @@ class DeliveryWorkflow:
         order_id = delivery.delivery_source_id
         if not order_id:
             return
-
         try:
             order = self.order_workflow.service.get_order_by_id(
                 order_id, with_items=True
@@ -389,7 +355,6 @@ class DeliveryWorkflow:
             items = list(order.ordered_item or [])
             if not items:
                 return
-
             from_thread.run(
                 self.order_workflow._safe_release_inventory, items
             )
@@ -403,6 +368,7 @@ class DeliveryWorkflow:
                 delivery.id_delivery, order_id,
             )
             raise
+
 
     # ── Notifications ───────────────────────────────────────────────
 
@@ -426,6 +392,40 @@ class DeliveryWorkflow:
             "Delivery %s: assign provider %s",
             delivery.id_delivery, delivery.delivery_provider_id,
         )
+
+
+    def record_refund(
+        self, delivery_id: int, amount, reference: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Record a completed refund payment against the delivery's linked
+        invoice. Enables `delivered → refunded`.
+
+        This is the only evidence we *write* — everything else is
+        verified from columns that already exist on the delivery.
+        """
+        delivery = self.service.get_delivery_by_id(delivery_id)
+        if not delivery.delivery_invoice_ref:
+            raise DeliveryUpdateFailedException(
+                delivery_id=delivery_id,
+                error="Delivery has no linked invoice to refund",
+            )
+        payment = self.financial_repo.create_refund_payment(
+            invoice_id=delivery.delivery_invoice_ref,
+            amount=amount,
+            reference=reference,
+        )
+        logger.info(
+            "Delivery %s: refund recorded against invoice %s (payment id=%s)",
+            delivery_id, delivery.delivery_invoice_ref, payment.id_payment,
+        )
+        return {
+            "id_payment": payment.id_payment,
+            "delivery_id": delivery_id,
+            "invoice_id": delivery.delivery_invoice_ref,
+            "amount": str(amount),
+        }
+
 
     # ================================================================
     # METADATA-ONLY WRITE

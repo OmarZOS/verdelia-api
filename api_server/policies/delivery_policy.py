@@ -1,46 +1,11 @@
 # policies/delivery_policy.py
 """
-DeliveryPolicy — state rules for the Delivery lifecycle.
+DeliveryPolicy — verification-backed state rules.
 
-States (from the DB enum `delivery_status`):
-    pending, processing, confirmed, shipped, in_transit,
-    out_for_delivery, delivered, failed, cancelled, returned, refunded
-
-Transitions (from the schema diagram):
-    pending          → processing
-    processing       → confirmed
-    confirmed        → shipped
-    shipped          → in_transit
-    in_transit       → out_for_delivery
-    out_for_delivery → delivered
-    delivered        → returned
-    delivered        → refunded
-
-    pending          → cancelled
-    processing       → cancelled
-    confirmed        → cancelled
-    shipped          → cancelled
-
-    processing       → failed
-    in_transit       → failed
-    out_for_delivery → failed
-    failed           → returned
-
-Predicates split into three families:
-
-  - Structural: read a column on the Delivery. A delivery without a
-    destination cannot leave `pending`. A delivery with no provider
-    cannot be `shipped`. These are the invariants that make the state
-    meaningful.
-
-  - Signal: require an explicit keyword from the caller to confirm an
-    event that happened outside the database (carrier accepted,
-    proof-of-delivery captured, refund issued). Defaults are `False`
-    so a caller who forgets to assert the event gets a denial, not a
-    silent pass.
-
-  - Business: express a rule that is local to the delivery, like
-    "only cancellable before shipment". These are also enforced.
+Every predicate reads persisted state through the workflow's
+repositories. No caller-asserted booleans. The only way to enable a
+transition is to record the real-world evidence as a row first
+(tracking event, incident, proof-of-delivery, return, refund payment).
 """
 
 import logging
@@ -53,170 +18,187 @@ from policies.transitions import (
     PolicyBase,
     Transition,
     TransitionRegistry,
-    always,
 )
 
-from core.logging_config import get_logger
-
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
+# policies/delivery_policy.py — replace the verification block only
 
-# ============================================================================
-# STRUCTURAL PREDICATES — read the delivery
-# ============================================================================
+# ── Structural checks (read the Delivery row) ──────────────────────
 
-def has_recipient(delivery: Delivery) -> bool:
-    """
-    A delivery is only meaningful if it has somewhere to go. Required
-    before the delivery leaves `pending`: without a recipient or an
-    address, the delivery has no business being processed.
-    """
+def has_recipient(d: Delivery, wf: Any = None) -> bool:
     return bool(
-        (delivery.recipient_person_id or 0) > 0
-        or (delivery.recipient_provider_id or 0) > 0
-        or (delivery.address_id or 0) > 0
-        or (delivery.current_address_id or 0) > 0
+        (d.recipient_person_id or 0) > 0
+        or (d.address_id or 0) > 0
+    )
+
+def has_provider(d: Delivery, wf: Any = None) -> bool:
+    return (d.delivery_provider_id or 0) > 0
+
+def has_broker(d: Delivery, wf: Any = None) -> bool:
+    return (d.delivery_broker_id or 0) > 0
+
+def has_packages(d: Delivery, wf: Any = None) -> bool:
+    return (d.delivery_package_count or 0) > 0
+
+def has_positive_weight(d: Delivery, wf: Any = None) -> bool:
+    return (d.delivery_total_weight or 0) > 0
+
+def has_shipping_method(d: Delivery, wf: Any = None) -> bool:
+    return (d.delivery_shipping_method or "").strip() != ""
+
+def has_carrier(d: Delivery, wf: Any = None) -> bool:
+    return (d.carrying_user_id or 0) > 0
+
+def is_cancellable_window(d: Delivery, wf: Any = None) -> bool:
+    return (d.delivery_status or "").lower() in {
+        "pending", "processing", "confirmed",
+    }
+
+def has_destination(d: Delivery, wf: Any = None) -> bool:
+    return (d.address_id or 0) > 0
+
+def has_tracking_started(d: Delivery, wf: Any = None) -> bool:
+    return (d.current_address_id or 0) > 0
+def address_has_moved_off_destination(d: Delivery) -> bool:
+    return (
+        has_tracking_started(d)
+        and (d.current_address_id or 0) != (d.address_id or 0)
+    )
+
+def arrived_at_destination(d: Delivery) -> bool:
+    return (
+        has_carrier(d)
+        and has_destination(d)
+        and (d.current_address_id or 0) == (d.address_id or 0)
     )
 
 
-def has_provider(delivery: Delivery) -> bool:
+# ── Verification through existing repos ────────────────────────────
+
+def incident_accountable(d: Delivery, wf: Any) -> bool:
     """
-    A delivery cannot be shipped without a provider attached. This is
-    the supplier that owns the goods and hands them to the carrier.
+    Failure path verification.
+
+    With no incident table, the verifiable signal that an incident can
+    be reported is that a carrier is assigned and tracking has begun —
+    someone is accountable for the delivery at this point. Before
+    that, "failed" has no operational meaning (nothing to have failed).
     """
-    return (delivery.delivery_provider_id or 0) > 0
+    return has_carrier(d) and has_tracking_started(d)
 
-def has_broker(delivery: Delivery) -> bool:
+def carrier_assignment_exists(d: Delivery, wf: Any) -> bool:
+    """A carrier is assigned to the delivery."""
+    return has_carrier(d)
+
+def in_transit_event_recorded(d: Delivery, wf: Any) -> bool:
+    """Tracking address has left the origin."""
+    return address_has_moved_off_destination(d)
+
+def out_for_delivery_event_recorded(d: Delivery, wf: Any) -> bool:
+    """Tracking address has been set and is not the destination yet."""
+    return has_tracking_started(d) and not arrived_at_destination(d)
+
+def proof_of_delivery_exists(d: Delivery, wf: Any) -> bool:
+    """Carrier arrived at the destination address."""
+    return arrived_at_destination(d)
+
+def return_received(d: Delivery, wf: Any) -> bool:
     """
-    A delivery cannot be shipped without a provider attached. This is
-    the supplier that owns the goods and hands them to the carrier.
+    Return verification.
+
+    With no return table, the verifiable signal is that the tracking
+    address has moved *off* the delivery address after the goods had
+    arrived there — the shipment is in motion away from the
+    destination. Combined with `has_carrier`, this means a return trip
+    exists.
     """
-    return (delivery.delivery_broker_id or 0) > 0
+    return has_carrier(d) and address_has_moved_off_destination(d)
 
+def refund_payment_completed(d: Delivery, wf: Any) -> bool:
+    """A completed refund payment exists on the linked invoice."""
+    if not d.delivery_invoice_ref:
+        return False
+    try:
+        return wf.financial_repo.has_completed_refund(d.delivery_invoice_ref)
+    except Exception:
+        logger.exception("refund check failed for delivery %s", d.id_delivery)
+        return False
 
-def has_packages(delivery: Delivery) -> bool:
-    """
-    A delivery cannot leave `processing` without at least one package
-    declared. Package count is what turns an abstract "delivery" into
-    something a carrier can physically pick up.
-    """
-
-    
-
-
-
-    return (delivery.delivery_package_count or 0) > 0
-
-
-def has_positive_weight(delivery: Delivery) -> bool:
-    """
-    A declared weight is what the carrier bills against. Zero or
-    missing weight on a delivery is a sign the packing step never
-    finished.
-    """
-    return (delivery.delivery_total_weight or 0) > 0
-
-
-def has_shipping_method(delivery: Delivery) -> bool:
-    """
-    The delivery must have a shipping method chosen. Defaults to
-    `'standard'` at creation, so in practice this is always true — but
-    if a caller ever blanks the field, the transition is refused.
-    """
-    method = (delivery.delivery_shipping_method or "").strip()
-    return method != ""
-
-
-def is_cancellable_window(delivery: Delivery) -> bool:
-    """
-    Cancellation is a business decision that is only legal before the
-    goods are moving. Once `shipped`, the path out is `failed` →
-    `returned`, not `cancelled`.
-    """
-    status = (delivery.delivery_status or "").lower()
-    return status in {"pending", "processing", "confirmed"}
-
-
-# ============================================================================
-# SIGNAL PREDICATES — require an explicit caller assertion
-# ============================================================================
+# ── Verification checks (read related rows via the workflow) ───────
 #
-# These represent facts that are true in the world but not in the
-# database row. The caller asserts them; the policy refuses to guess.
-# Default is False so a forgotten signal is a denial, not a pass.
+# Signature: (delivery, wf) -> bool. `wf` is DeliveryWorkflow, which
+# exposes `tracking_repo`, `incident_repo`, `proof_repo`,
+# `return_repo`, `assignment_repo`, `financial_repo`.
 
-def carrier_accepted(
-    delivery: Delivery, *, delivery_confirmed: bool = False
-) -> bool:
-    """confirmed → shipped: the carrier picked up the goods."""
-    return delivery_confirmed
+def incident_is_open(d: Delivery, wf: Any) -> bool:
+    try:
+        return wf.incident_repo.has_open_incident(d.id_delivery)
+    except Exception:
+        logger.exception("incident check failed for delivery %s", d.id_delivery)
+        return False
+
+def carrier_assignment_exists(d: Delivery, wf: Any) -> bool:
+    if not has_carrier(d):
+        return False
+    try:
+        return wf.assignment_repo.is_accepted(d.id_delivery)
+    except Exception:
+        logger.exception("assignment check failed for delivery %s", d.id_delivery)
+        return False
+
+def in_transit_event_recorded(d: Delivery, wf: Any) -> bool:
+    try:
+        return wf.tracking_repo.has_event(d.id_delivery, "in_transit")
+    except Exception:
+        logger.exception("tracking check failed for delivery %s", d.id_delivery)
+        return False
+
+def out_for_delivery_event_recorded(d: Delivery, wf: Any) -> bool:
+    try:
+        return wf.tracking_repo.latest_event_type(d.id_delivery) == "out_for_delivery"
+    except Exception:
+        logger.exception("tracking check failed for delivery %s", d.id_delivery)
+        return False
+
+def proof_of_delivery_exists(d: Delivery, wf: Any) -> bool:
+    try:
+        return wf.proof_repo.has_valid_proof(d.id_delivery)
+    except Exception:
+        logger.exception("proof check failed for delivery %s", d.id_delivery)
+        return False
+
+def return_received(d: Delivery, wf: Any) -> bool:
+    try:
+        return wf.return_repo.has_received_return(d.id_delivery)
+    except Exception:
+        logger.exception("return check failed for delivery %s", d.id_delivery)
+        return False
+
+def refund_payment_completed(d: Delivery, wf: Any) -> bool:
+    if not d.delivery_invoice_ref:
+        return False
+    try:
+        return wf.financial_repo.has_completed_refund(d.delivery_invoice_ref)
+    except Exception:
+        logger.exception("refund check failed for delivery %s", d.id_delivery)
+        return False
 
 
-def in_transit_acknowledged(
-    delivery: Delivery, *, in_transit_acknowledged: bool = False
-) -> bool:
-    """shipped → in_transit: the carrier's tracking shows movement."""
-    return in_transit_acknowledged
-
-
-def proof_captured(
-    delivery: Delivery, *, proof_captured: bool = False
-) -> bool:
-    """out_for_delivery → delivered: signed receipt / photo / scan."""
-    return proof_captured
-
-
-def incident_reported(
-    delivery: Delivery, *, incident_reported: bool = False
-) -> bool:
-    """
-    * → failed: an operations user has filed an incident. Not a
-    signal the workflow should invent; someone has to say so.
-    """
-    return incident_reported
-
-
-def return_confirmed(
-    delivery: Delivery, *, return_confirmed: bool = False
-) -> bool:
-    """delivered/failed → returned: goods came back to origin."""
-    return return_confirmed
-
-
-def refund_completed(
-    delivery: Delivery, *, refund_completed: bool = False
-) -> bool:
-    """delivered → refunded: the finance side has issued the refund."""
-    return refund_completed
-
-
-# ============================================================================
-# POLICY
-# ============================================================================
+# ── Policy ─────────────────────────────────────────────────────────
 
 class DeliveryPolicy(PolicyBase):
-    """Delivery status rules."""
+    """Delivery status rules, verification-backed."""
 
     def _build_registry(self) -> TransitionRegistry:
         registry = TransitionRegistry(
             valid_states={
-                "pending",
-                "processing",
-                "confirmed",
-                "shipped",
-                "in_transit",
-                "out_for_delivery",
-                "delivered",
-                "failed",
-                "cancelled",
-                "returned",
-                "refunded",
+                "pending", "processing", "confirmed", "shipped",
+                "in_transit", "out_for_delivery", "delivered",
+                "failed", "cancelled", "returned", "refunded",
             },
             initial_state="pending",
-            # Terminal: nothing leaves these. `delivered` and `failed`
-            # still have outgoing edges (returned / refunded), so they
-            # are not in this set.
             terminal_states={"cancelled", "returned", "refunded"},
             normalize=lambda s: (s or "pending").lower(),
         )
@@ -225,7 +207,6 @@ class DeliveryPolicy(PolicyBase):
             # ── pending ─────────────────────────────────────────────
             Transition(
                 source="pending", target="processing",
-                # Structural only: a recipient is required. No signal.
                 predicate=has_recipient,
                 side_effects=("prepare_dispatch",),
                 name="pending_to_processing",
@@ -240,17 +221,18 @@ class DeliveryPolicy(PolicyBase):
             # ── processing ──────────────────────────────────────────
             Transition(
                 source="processing", target="confirmed",
-                # Structural: a recipient AND a package count are
-                # required. A delivery with no packages is still an
-                # abstraction, not something a carrier can handle.
-                predicate=lambda d: has_recipient(d) and has_packages(d),
+                predicate=lambda d, wf: (
+                    has_recipient(d)
+                    and has_packages(d)
+                    and has_positive_weight(d)
+                    and has_shipping_method(d)
+                ),
                 side_effects=("assign_provider",),
                 name="processing_to_confirmed",
             ),
             Transition(
                 source="processing", target="failed",
-                # Signal: someone has to file the incident.
-                predicate=incident_reported,
+                predicate=incident_is_open,
                 side_effects=("notify_recipient",),
                 name="processing_to_failed",
             ),
@@ -264,29 +246,29 @@ class DeliveryPolicy(PolicyBase):
             # ── confirmed ───────────────────────────────────────────
             Transition(
                 source="confirmed", target="shipped",
-                # Signal + structural: the carrier accepted AND there
-                # is a provider on the delivery. You cannot ship goods
-                # nobody owns.
-                predicate=lambda d, **kw: (
-                    has_broker(d) and has_provider(d) and carrier_accepted(d, **kw)
+                predicate=lambda d, wf: (
+                    has_broker(d)
+                    and has_provider(d)
+                    and carrier_assignment_exists(d, wf)
                 ),
                 side_effects=("advance_order_to_shipped",),
                 name="confirmed_to_shipped",
             ),
-            
             Transition(
                 source="confirmed", target="cancelled",
                 predicate=is_cancellable_window,
                 side_effects=("release_inventory",),
                 name="confirmed_to_cancelled",
             ),
-
             Transition(
                 source="confirmed", target="out_for_delivery",
-                # Structural: the delivery must still have a
-                # destination. Guards against a reroute that never
-                # completed.
-                predicate=has_recipient,
+                # Fast-path for same_day / courier: needs an accepted
+                # carrier but no intermediate shipped/in_transit
+                # tracking. Recipient must still be present.
+                predicate=lambda d, wf: (
+                    has_recipient(d)
+                    and carrier_assignment_exists(d, wf)
+                ),
                 side_effects=("notify_recipient",),
                 name="confirmed_to_out_for_delivery",
             ),
@@ -294,26 +276,21 @@ class DeliveryPolicy(PolicyBase):
             # ── shipped ─────────────────────────────────────────────
             Transition(
                 source="shipped", target="in_transit",
-                predicate=in_transit_acknowledged,
+                predicate=in_transit_event_recorded,
                 side_effects=("notify_recipient",),
                 name="shipped_to_in_transit",
             ),
-            # Cancellation is deliberately NOT allowed from `shipped`.
-            # Once in motion, the path out is `failed` → `returned`.
 
             # ── in_transit ──────────────────────────────────────────
             Transition(
                 source="in_transit", target="out_for_delivery",
-                # Structural: the delivery must still have a
-                # destination. Guards against a reroute that never
-                # completed.
-                predicate=has_recipient,
+                predicate=out_for_delivery_event_recorded,
                 side_effects=("notify_recipient",),
                 name="in_transit_to_out_for_delivery",
             ),
             Transition(
                 source="in_transit", target="failed",
-                predicate=incident_reported,
+                predicate=incident_is_open,
                 side_effects=("notify_recipient",),
                 name="in_transit_to_failed",
             ),
@@ -321,7 +298,7 @@ class DeliveryPolicy(PolicyBase):
             # ── out_for_delivery ────────────────────────────────────
             Transition(
                 source="out_for_delivery", target="delivered",
-                predicate=proof_captured,
+                predicate=proof_of_delivery_exists,
                 side_effects=(
                     "confirm_inventory",
                     "advance_order_to_delivered",
@@ -331,7 +308,7 @@ class DeliveryPolicy(PolicyBase):
             ),
             Transition(
                 source="out_for_delivery", target="failed",
-                predicate=incident_reported,
+                predicate=incident_is_open,
                 side_effects=("notify_recipient",),
                 name="out_for_delivery_to_failed",
             ),
@@ -339,13 +316,13 @@ class DeliveryPolicy(PolicyBase):
             # ── delivered ───────────────────────────────────────────
             Transition(
                 source="delivered", target="returned",
-                predicate=return_confirmed,
+                predicate=return_received,
                 side_effects=("release_inventory",),
                 name="delivered_to_returned",
             ),
             Transition(
                 source="delivered", target="refunded",
-                predicate=refund_completed,
+                predicate=refund_payment_completed,
                 side_effects=(),
                 name="delivered_to_refunded",
             ),
@@ -353,7 +330,7 @@ class DeliveryPolicy(PolicyBase):
             # ── failed ──────────────────────────────────────────────
             Transition(
                 source="failed", target="returned",
-                predicate=return_confirmed,
+                predicate=return_received,
                 side_effects=("release_inventory",),
                 name="failed_to_returned",
             ),
@@ -361,27 +338,17 @@ class DeliveryPolicy(PolicyBase):
 
         return registry
 
-    # ── Convenience ──────────────────────────────────────────────────
+    # ── Public API ──────────────────────────────────────────────────
 
     def decide_for_delivery(
-        self, delivery: Delivery, target: str, **extras: Any
+        self, delivery: Delivery, target: str, wf: Any = None
     ) -> Decision:
+        """
+        Decide a delivery transition. `wf` is the workflow — passed
+        through to verification predicates that read related rows.
+        """
         current = delivery.delivery_status or self.initial_state
-        return self.decide(current, target, delivery, **extras)
+        return self.decide(current, target, delivery, wf=wf)
 
     def is_cancellable(self, delivery: Delivery) -> bool:
         return is_cancellable_window(delivery)
-
-    # ── Error mapping ────────────────────────────────────────────────
-
-    def transition_error(self, decision: Decision) -> Exception:
-        return ValueError(
-            f"Illegal delivery transition '{decision.current}' → "
-            f"'{decision.target}': {decision.reason}"
-        )
-
-    def invalid_state_error(self, state: str) -> Exception:
-        return ValueError(
-            f"Invalid delivery status '{state}'. "
-            f"Valid: {sorted(self.valid_states)}"
-        )

@@ -62,19 +62,21 @@ class CartRepository:
             )
             return records[0] if records else None
 
-    def get_ordered_service_by_id(self, ordered_service_id: int) -> Optional[Cart]:
-        """Get cart by ID with optional eager loading"""
-        eager_fields = [
-            OrderedService.product_consumption
-        ]
-        
-        records = storage_broker.get(
-            OrderedService,
-            {OrderedService.ordered_service_id: ordered_service_id},
-            [],
-            eager_fields
-        )
-        return records[0] if records else None
+    def get_ordered_service_by_id(
+        self, ordered_service_id: int
+    ) -> Optional[OrderedService]:
+        with storage_broker.session_scope() as session:
+            svc = (
+                session.query(OrderedService)
+                .options(joinedload(OrderedService.product_consumption))
+                .filter(OrderedService.ordered_service_id == ordered_service_id)
+                .first()
+            )
+            if svc is None:
+                return None
+            _ = list(svc.product_consumption)   # force load before detaching
+            session.expunge_all()
+            return svc
 
     def list_carts(self, 
                 provider_id: int = 0,
@@ -287,8 +289,67 @@ class CartRepository:
         return update_record_in_api(cart)
     
     def create_ordered_service(self, service: OrderedService) -> OrderedService:
-        """Create an ordered service"""
         from features.insertion import insert_or_complete_or_raise
-        return insert_or_complete_or_raise(service)
+        created = insert_or_complete_or_raise(service)
+
+        # Force a load of the relationship in a live session.
+        if created is not None and created.ordered_service_id:
+            try:
+                _ = list(created.product_consumption or [])
+            except Exception:
+                # The instance is detached and the relationship wasn't
+                # materialized. Re-read it eagerly, but do NOT return the
+                # re-read object — return the original so the identity
+                # map stays consistent.
+                with storage_broker.session_scope() as session:
+                    refreshed = (
+                        session.query(OrderedService)
+                        .options(joinedload(OrderedService.product_consumption))
+                        .filter(
+                            OrderedService.ordered_service_id
+                            == created.ordered_service_id
+                        )
+                        .first()
+                    )
+                    if refreshed is not None:
+                        # Copy the child rows onto the original instance so
+                        # the caller's `created_service.product_consumption`
+                        # works without a session. Do not merge/re-attach.
+                        created.__dict__["product_consumption"] = list(
+                            refreshed.product_consumption
+                        )
+        return created
+
+    def get_consumption_snapshot_for_cart(
+        self, cart_id: int
+    ) -> List[Dict[str, Any]]:
+        """
+        Return all product_consumption rows belonging to the ordered
+        services of a cart, as plain dicts.
+
+        Dicts, not ORM objects, so the caller never holds a reference
+        to an instance whose session might close on it.
+        """
+        with storage_broker.session_scope() as session:
+            rows = (
+                session.query(ProductConsumption)
+                .join(
+                    OrderedService,
+                    ProductConsumption.consuming_service_id
+                    == OrderedService.ordered_service_id,
+                )
+                .filter(OrderedService.cart_id == cart_id)
+                .all()
+            )
+            return [
+                {
+                    "id": c.id_product_consumption,
+                    "requirement_id": c.requirement_id,
+                    "consumed_product_id": c.consumed_product_id,
+                    "quantity": int(c.product_reserved_quantity or 0),
+                    "ordered_service_id": c.consuming_service_id,
+                }
+                for c in rows
+            ]
     
 

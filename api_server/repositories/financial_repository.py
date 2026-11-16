@@ -1,5 +1,7 @@
 # repositories/financial_repository.py
+from datetime import datetime
 from typing import Optional, List, Tuple
+
 from core.models.models import Invoice, Payment
 import storage.storage_broker as storage_broker
 from sqlalchemy import exists, select, delete, func, desc, and_, or_
@@ -98,3 +100,42 @@ class FinancialRepository:
                 invoice_id, statuses, e,
             )
             return None
+
+    def has_completed_refund(self, invoice_id: int) -> bool:
+        try:
+            with storage_broker.session_scope() as session:
+                
+                return (
+                    session.query(Payment)
+                    .filter(
+                        Payment.payment_invoice_id == invoice_id,
+                        Payment.payment_type == "refund",
+                        Payment.payment_status == "completed",
+                    )
+                    .count() > 0
+                )
+        except Exception as e:
+                    logger.error(
+                        "Failed to check for completed refund for invoice %s: %s",
+                        invoice_id , e,
+                    )
+                    return None
+
+
+    def create_refund_payment(
+        self, invoice_id: int, amount, reference: Optional[str] = None
+    ) -> Payment:
+        payment = Payment(
+            payment_invoice_id=invoice_id,
+            payment_amount=amount,
+            payment_method="refund",
+            payment_status="completed",
+            payment_type="refund",
+            payment_reference=reference
+                or f"REF-{invoice_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            payment_notes=f"Refund against invoice {invoice_id}",
+        )
+        with storage_broker.session_scope() as session:
+            session.add(payment)
+            session.commit()
+        return payment

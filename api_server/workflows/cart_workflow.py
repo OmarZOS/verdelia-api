@@ -192,6 +192,7 @@ class CartWorkflow:
                 created_items,
                 created_services,
                 created_invoice,
+                consumption_snapshot,
             ) = await self.service.persist_cart(cart, total_price, person_obj)
 
             # Step 7 — remote: reserve inventory
@@ -300,16 +301,14 @@ class CartWorkflow:
         created_items: List[OrderedItem],
         created_services: List[OrderedService],
         inventory_reserved: bool,
+        consumption_snapshot: Optional[List[Dict[str, Any]]] = None,
     ) -> Optional[Exception]:
         release_error: Optional[Exception] = None
         if inventory_reserved:
             try:
                 await self._release_inventory(
                     created_items,
-                    [
-                        c for svc in created_services
-                        for c in (svc.product_consumption or [])
-                    ],
+                    list(consumption_snapshot or []),
                 )
             except Exception as rel_err:
                 release_error = rel_err
@@ -617,10 +616,21 @@ class CartWorkflow:
         cart_id: Optional[int] = None,
     ) -> Dict[str, Any]:
         ordered_payload = self._build_confirm_ordered_payload(items)
-        consumption_payload = self._build_confirm_consumption_payload(services)
+
+        # Consumptions come from the repo, as plain dicts — never from
+        # the ORM relationship on `services`. The services were loaded by
+        # a session that has since closed; reading `.product_consumption`
+        # would detach-error.
+        consumption_snapshot: List[Dict[str, Any]] = []
+        if cart_id is not None:
+            consumption_snapshot = (
+                self.service.get_consumption_snapshot_for_cart(cart_id)
+            )
+        consumption_payload = self._build_confirm_consumption_payload(
+            consumption_snapshot
+        )
 
         if not ordered_payload and not consumption_payload:
-            logger.info("No items to confirm for cart %s", cart_id)
             return {
                 "cart_id": cart_id,
                 "items_confirmed": 0,
@@ -629,8 +639,7 @@ class CartWorkflow:
 
         try:
             await self.inventory_client.bulk_confirm(
-                ordered_payload,
-                consumption_payload,
+                ordered_payload, consumption_payload,
             )
         except InsufficientStockError as e:
             raise CartInsufficientStockException(
@@ -642,15 +651,12 @@ class CartWorkflow:
             ) from e
 
         total = len(ordered_payload) + len(consumption_payload)
-        logger.info(
-            "Inventory confirmed (%d entries) for cart %s",
-            total, cart_id,
-        )
         return {
             "cart_id": cart_id,
             "items_confirmed": total,
             "success": True,
         }
+
 
     # ================================================================
     # EXPLICIT CART TRANSITIONS (policy-gated)
@@ -714,33 +720,27 @@ class CartWorkflow:
         return self._transition_cart(cart_id, target="open")
 
     async def cancel_cart(
-        self,
-        cart_id: int,
-        *,
-        reason: Optional[str] = None,
+        self, cart_id: int, *, reason: Optional[str] = None,
     ) -> Dict[str, Any]:
         cart = self.service.get_cart_by_id(cart_id, eager_load=True)
-
         decision = self.cart_policy.decide_for_cart(cart, target="canceled")
         if not decision.allowed:
             raise ValueError(f"Cart transition denied: {decision.reason}")
 
         items = list(cart.ordered_item or [])
-        services = list(cart.ordered_service or [])
-        consumptions = [
-            c for svc in services for c in (svc.product_consumption or [])
-        ]
+        consumption_snapshot = (
+            self.service.get_consumption_snapshot_for_cart(cart_id)
+        )
 
         result = self._apply_cart_decision(cart, decision)
 
-        if items or consumptions:
+        if items or consumption_snapshot:
             try:
-                await self._release_inventory(items, consumptions)
+                await self._release_inventory(items, consumption_snapshot)
             except Exception:
                 logger.error(
                     "Cancel succeeded but inventory release failed for "
-                    "cart %s — reservations are leaked and must be "
-                    "reconciled",
+                    "cart %s — reservations are leaked",
                     cart_id,
                 )
 
@@ -1163,26 +1163,14 @@ class CartWorkflow:
 
     @staticmethod
     def _build_confirm_consumption_payload(
-        services: List[Any],
+        consumption_snapshot: List[Dict[str, Any]],
     ) -> List[Dict[str, Any]]:
         payload: List[Dict[str, Any]] = []
-        for service in services or []:
-            if isinstance(service, dict):
-                consumptions = service.get("product_consumption", []) or []
-            else:
-                consumptions = getattr(service, "product_consumption", None) or []
-            for c in consumptions:
-                if isinstance(c, dict):
-                    cid = c.get("id") or c.get("id_product_consumption")
-                    qty = (
-                        c.get("quantity")
-                        or c.get("product_reserved_quantity", 0)
-                    )
-                else:
-                    cid = getattr(c, "id_product_consumption", None)
-                    qty = getattr(c, "product_reserved_quantity", 0)
-                if cid and qty and qty > 0:
-                    payload.append({"id": cid, "quantity": str(qty)})
+        for row in consumption_snapshot or []:
+            cid = row.get("id")
+            qty = row.get("quantity", 0)
+            if cid and qty and qty > 0:
+                payload.append({"id": cid, "quantity": str(qty)})
         return payload
 
     # ================================================================
@@ -1230,16 +1218,13 @@ class CartWorkflow:
     # ================================================================
 
     async def delete_cart(
-        self, cart_id: int, force_delete: bool = False
+        self, cart_id: int, force_delete: bool = False,
     ) -> bool:
-        logger.info("Deleting cart %s (force=%s)", cart_id, force_delete)
-
         cart = self.service.get_cart_by_id(cart_id, eager_load=True)
         items = list(cart.ordered_item or [])
-        services = list(cart.ordered_service or [])
-        consumptions = [
-            c for svc in services for c in (svc.product_consumption or [])
-        ]
+        consumption_snapshot = (
+            self.service.get_consumption_snapshot_for_cart(cart_id)
+        )
 
         already_released = (
             self.cart_policy.normalize(cart.cart_status)
@@ -1248,14 +1233,13 @@ class CartWorkflow:
 
         deleted = self.service.cart_repo.delete_cart_by_id_sync(cart_id)
 
-        if deleted and (items or consumptions) and not already_released:
+        if deleted and (items or consumption_snapshot) and not already_released:
             try:
-                await self._release_inventory(items, consumptions)
+                await self._release_inventory(items, consumption_snapshot)
             except Exception:
                 logger.error(
                     "Delete succeeded but inventory release failed for "
-                    "cart %s — reservations are leaked and must be "
-                    "reconciled",
+                    "cart %s — reservations are leaked",
                     cart_id,
                 )
 

@@ -1129,7 +1129,7 @@ class Delivery_API(BaseModel):
     # Recipient information
     recipient_person: Optional[int] = Field(default=None, description="Recipient person ID")
     recipient_provider: Optional[int] = Field(default=None, description="Recipient provider ID")
-    
+    carrying_user_id: Optional[int] = Field(default=None, description="Carrying user ID")
     # Cargo details
     delivery_package_count: Optional[int] = Field(default=0, description="Number of packages")
     delivery_total_weight: Optional[float] = Field(default=None, ge=0, description="Total weight (kg)")
