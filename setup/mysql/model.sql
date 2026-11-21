@@ -1007,11 +1007,13 @@ CREATE TABLE IF NOT EXISTS `verdelia`.`ordered_item` (
   `order_id` INT NULL DEFAULT NULL,
   `taxable_amount` DECIMAL(12,2) NULL DEFAULT NULL,
   `subtotal` DECIMAL(12,2) NULL,
+  `delivery_id` INT NULL,
   PRIMARY KEY (`id_ordered_item`),
   INDEX `fk_ordered_item_1_idx` (`product_id` ASC) VISIBLE,
   INDEX `fk_ordered_item_3_idx` (`order_id` ASC) VISIBLE,
   INDEX `fk_ordered_item_2_idx` (`cart_id` ASC) VISIBLE,
   INDEX `fk_ordered_item_4_idx` (`discount_id` ASC) VISIBLE,
+  INDEX `fk_ordered_item_delivery1_idx` (`delivery_id` ASC) VISIBLE,
   CONSTRAINT `fk_ordered_item_1`
     FOREIGN KEY (`product_id`)
     REFERENCES `verdelia`.`product` (`id_product`)
@@ -1030,6 +1032,11 @@ CREATE TABLE IF NOT EXISTS `verdelia`.`ordered_item` (
   CONSTRAINT `fk_ordered_item_4`
     FOREIGN KEY (`discount_id`)
     REFERENCES `verdelia`.`discount` (`id_discount`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_ordered_item_delivery1`
+    FOREIGN KEY (`delivery_id`)
+    REFERENCES `verdelia`.`delivery` (`id_delivery`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -1726,6 +1733,8 @@ CREATE TABLE IF NOT EXISTS `verdelia`.`delivery` (
   INDEX `fk_delivery_5_idx` (`delivery_broker_id` ASC) VISIBLE,
   INDEX `fk_delivery_7_idx` (`delivery_invoice_ref` ASC) VISIBLE,
   INDEX `fk_delivery_3_idx` (`carrying_user_id` ASC) VISIBLE,
+  INDEX `fk_delivery_6_idx` (`recipient_person_id` ASC) VISIBLE,
+  INDEX `fk_delivery_8_idx` (`recipient_provider_id` ASC) VISIBLE,
   CONSTRAINT `fk_delivery_1`
     FOREIGN KEY (`address_id`)
     REFERENCES `verdelia`.`address` (`id_address`)
@@ -1754,6 +1763,16 @@ CREATE TABLE IF NOT EXISTS `verdelia`.`delivery` (
   CONSTRAINT `fk_delivery_3`
     FOREIGN KEY (`carrying_user_id`)
     REFERENCES `verdelia`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_delivery_6`
+    FOREIGN KEY (`recipient_person_id`)
+    REFERENCES `verdelia`.`person` (`id_person`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_delivery_8`
+    FOREIGN KEY (`recipient_provider_id`)
+    REFERENCES `verdelia`.`product_provider` (`id_product_provider`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;

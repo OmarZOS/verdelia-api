@@ -54,6 +54,15 @@ class UserService:
         if not user:
             raise UserNotFoundException(user_id=user_id)
         return user
+
+    def get_wallet_by_user_id(self, user_id: int):
+        """Get user by ID with optional full details"""
+        wallet_id = self.user_repo.get_wallet_id_by_user_id(user_id)
+        if not wallet_id:
+            raise UserNotFoundException(user_id=user_id)
+        return wallet_id
+
+    
     
     def create_user_record(
         self,

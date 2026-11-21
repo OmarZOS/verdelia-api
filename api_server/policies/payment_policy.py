@@ -25,12 +25,12 @@ from policies.transitions import (
 
 def gateway_charge_started(payment: Payment) -> bool:
     """pending → processing: the gateway charge must be in flight."""
-    return bool(payment.payment_reference)
+    return bool(payment.payment_amount)
 
 
 def gateway_failed(payment: Payment) -> bool:
     """pending/processing/partial → failed: gateway returned a failure."""
-    if not payment.payment_reference:
+    if not payment.payment_amount:
         return False
     return float(payment.payment_amount or 0) <= 0
 

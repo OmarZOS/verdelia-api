@@ -182,6 +182,7 @@ class Person(Base):
     person_location = relationship('Location', back_populates='person')
     patient = relationship('Patient', back_populates='patient_person')
     cart = relationship('Cart', back_populates='client_person')
+    delivery = relationship('Delivery', back_populates='recipient_person')
     service_contribution = relationship('ServiceContribution', back_populates='person')
 
 
@@ -870,7 +871,8 @@ class ProductProvider(Base):
     additional_fee = relationship('AdditionalFee', back_populates='provider')
     cart = relationship('Cart', back_populates='provider')
     conversation = relationship('Conversation', back_populates='conversation_provider')
-    delivery = relationship('Delivery', back_populates='delivery_provider')
+    delivery = relationship('Delivery', foreign_keys='[Delivery.delivery_provider_id]', back_populates='delivery_provider')
+    delivery_ = relationship('Delivery', foreign_keys='[Delivery.recipient_provider_id]', back_populates='recipient_provider')
     management_rule = relationship('ManagementRule', back_populates='rule_provider')
     product = relationship('Product', back_populates='provider')
     provided_service = relationship('ProvidedService', back_populates='provider')
@@ -1051,12 +1053,16 @@ class Delivery(Base):
         ForeignKeyConstraint(['delivery_broker_id'], ['delivery_broker.id_delivery_broker'], name='fk_delivery_5'),
         ForeignKeyConstraint(['delivery_invoice_ref'], ['invoice.invoice_id'], name='fk_delivery_7'),
         ForeignKeyConstraint(['delivery_provider_id'], ['product_provider.id_product_provider'], name='fk_delivery_4'),
+        ForeignKeyConstraint(['recipient_person_id'], ['person.id_person'], name='fk_delivery_6'),
+        ForeignKeyConstraint(['recipient_provider_id'], ['product_provider.id_product_provider'], name='fk_delivery_8'),
         Index('fk_delivery_1_idx', 'address_id'),
         Index('fk_delivery_2_idx', 'current_address_id'),
         Index('fk_delivery_3_idx', 'carrying_user_id'),
         Index('fk_delivery_4_idx', 'delivery_provider_id'),
         Index('fk_delivery_5_idx', 'delivery_broker_id'),
-        Index('fk_delivery_7_idx', 'delivery_invoice_ref')
+        Index('fk_delivery_6_idx', 'recipient_person_id'),
+        Index('fk_delivery_7_idx', 'delivery_invoice_ref'),
+        Index('fk_delivery_8_idx', 'recipient_provider_id')
     )
 
     id_delivery = Column(Integer, primary_key=True)
@@ -1087,7 +1093,10 @@ class Delivery(Base):
     current_address = relationship('Address', foreign_keys=[current_address_id], back_populates='delivery_')
     delivery_broker = relationship('DeliveryBroker', back_populates='delivery')
     invoice = relationship('Invoice', back_populates='delivery')
-    delivery_provider = relationship('ProductProvider', back_populates='delivery')
+    delivery_provider = relationship('ProductProvider', foreign_keys=[delivery_provider_id], back_populates='delivery')
+    recipient_person = relationship('Person', back_populates='delivery')
+    recipient_provider = relationship('ProductProvider', foreign_keys=[recipient_provider_id], back_populates='delivery_')
+    ordered_item = relationship('OrderedItem', back_populates='delivery')
 
 
 class LedgerEntry(Base):
@@ -1377,13 +1386,15 @@ class OrderedItem(Base):
     __tablename__ = 'ordered_item'
     __table_args__ = (
         ForeignKeyConstraint(['cart_id'], ['cart.cart_id'], name='fk_ordered_item_2'),
+        ForeignKeyConstraint(['delivery_id'], ['delivery.id_delivery'], name='fk_ordered_item_delivery1'),
         ForeignKeyConstraint(['discount_id'], ['discount.id_discount'], name='fk_ordered_item_4'),
         ForeignKeyConstraint(['order_id'], ['placed_order.id_placed_order'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_ordered_item_3'),
         ForeignKeyConstraint(['product_id'], ['product.id_product'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_ordered_item_1'),
         Index('fk_ordered_item_1_idx', 'product_id'),
         Index('fk_ordered_item_2_idx', 'cart_id'),
         Index('fk_ordered_item_3_idx', 'order_id'),
-        Index('fk_ordered_item_4_idx', 'discount_id')
+        Index('fk_ordered_item_4_idx', 'discount_id'),
+        Index('fk_ordered_item_delivery1_idx', 'delivery_id')
     )
 
     id_ordered_item = Column(Integer, primary_key=True)
@@ -1403,8 +1414,10 @@ class OrderedItem(Base):
     order_id = Column(Integer)
     taxable_amount = Column(DECIMAL(12, 2))
     subtotal = Column(DECIMAL(12, 2))
+    delivery_id = Column(Integer)
 
     cart = relationship('Cart', back_populates='ordered_item')
+    delivery = relationship('Delivery', back_populates='ordered_item')
     discount = relationship('Discount', back_populates='ordered_item')
     order = relationship('PlacedOrder', back_populates='ordered_item')
     product = relationship('Product', back_populates='ordered_item')

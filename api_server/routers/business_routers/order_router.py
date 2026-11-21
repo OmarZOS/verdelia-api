@@ -314,16 +314,8 @@ def get_user_orders(
     )
 
     try:
-        orders, total = order_service.get_user_orders(user_id, offset, limit)
-        return {
-            "data": orders,
-            "pagination": {
-                "offset": offset,
-                "limit": limit,
-                "total": total,
-                "next_offset": offset + limit if offset + limit < total else None,
-            },
-        }
+        orders = order_service.get_user_orders(user_id, offset, limit)
+        return orders
     except UserNotFoundException:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -356,7 +348,7 @@ def get_order(
 
     try:
         order = order_service.get_order_by_id(order_id, with_items=include_items)
-
+        return order
         response = {"order": order}
 
         if include_items and hasattr(order, 'ordered_item'):
@@ -406,44 +398,40 @@ def get_order_items(
     logger.info(f"Fetching items for order ID: {order_id}")
 
     try:
-        order_service.get_order_by_id(order_id, with_items=True)
         items = order_service.get_order_items(order_id)
+        # items = order_service.get_order_items(order_id)
 
-        items_with_details = []
-        for item in items:
-            item_dict = {
-                "id": item.id_ordered_item,
-                "product_id": item.product_id,
-                "quantity": item.ordered_quantity,
-                "unit_price": item.unit_price,
-                "vat_rate": item.vat_rate,
-                "total_price": (
-                    item.ordered_quantity
-                    * item.unit_price
-                    * (1 + item.vat_rate)
-                ),
-            }
+        # items_with_details = []
+        # for item in items:
+        #     item_dict = {
+        #         "id": item.id_ordered_item,
+        #         "product_id": item.product_id,
+        #         "quantity": item.ordered_quantity,
+        #         "unit_price": item.unit_price,
+        #         "vat_rate": item.vat_rate,
+        #         "total_price": (
+        #             item.ordered_quantity
+        #             * item.unit_price
+        #             * (1 + item.vat_rate)
+        #         ),
+        #     }
 
-            try:
-                product = order_service.product_repo.get_product_by_id(
-                    item.product_id
-                )
-                if product:
-                    item_dict["product_name"] = product.product_name
-                    item_dict["product_brand"] = product.product_brand
-                    item_dict["product_category"] = product.product_category_id
-            except Exception as e:
-                logger.warning(
-                    f"Could not fetch product {item.product_id}: {e}"
-                )
+        #     try:
+        #         product = order_service.product_repo.get_product_by_id(
+        #             item.product_id
+        #         )
+        #         if product:
+        #             item_dict["product_name"] = product.product_name
+        #             item_dict["product_brand"] = product.product_brand
+        #             item_dict["product_category"] = product.product_category_id
+        #     except Exception as e:
+        #         logger.warning(
+        #             f"Could not fetch product {item.product_id}: {e}"
+        #         )
 
-            items_with_details.append(item_dict)
+        #     items_with_details.append(item_dict)
 
-        return {
-            "order_id": order_id,
-            "items": items_with_details,
-            "total_items": len(items_with_details),
-        }
+        return items
 
     except OrderNotFoundException:
         raise

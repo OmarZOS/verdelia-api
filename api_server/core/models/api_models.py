@@ -1099,6 +1099,11 @@ class OrderedItem_API(BaseModel):
     ordered_quantity: Optional[int] = Field(default=1, gt=0, description="Quantity ordered")
     unit_price: Optional[Decimal] = Field(default=0.0, ge=0, description="Unit price")
     vat_rate: Optional[Decimal] = Field(default=0.0, ge=0, le=100, description="VAT percentage")
+    delivery_id: Optional[int] = Field(
+        default=None,
+        description="Delivery this item belongs to (nullable until assigned)",
+    )
+
     
     @field_validator('ordered_quantity')
     @classmethod

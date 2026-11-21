@@ -106,59 +106,28 @@ class FinancialService:
     # Payment status transitions
     # ------------------------------------------------------------------ #
 
-    def update_payment_status(
-        self,
-        payment_id: int,
-        new_status: str,
-        note: Optional[str] = None,
-    ) -> Payment:
-        """
-        Transition a payment to a new status, validating against the
-        PAYMENT_TRANSITIONS table. Optionally appends `note` for audit.
-        """
+    def update_payment_status(self, payment_id, new_status, note=None):
         payment = self.financial_repo.get_payment_by_id(payment_id)
-        previous = self._norm_status(payment.payment_status)
-
         if not payment:
             raise PaymentNotFoundException(payment_id=payment_id)
 
         current = self._norm_status(payment.payment_status)
         target = self._norm_status(new_status)
-
-        
-        allowed_targets = PAYMENT_TRANSITIONS.get(current, set())
-        if target not in allowed_targets:
+        allowed = PAYMENT_TRANSITIONS.get(current, set())
+        if target not in allowed:
             raise PaymentCreationFailedException(
-                error=f"Invalid payment status transition: '{current}' → '{target}'",
+                error=(
+                    f"Invalid payment status transition: "
+                    f"'{current}' → '{target}'"
+                ),
                 details={
                     "payment_id": payment_id,
                     "current_status": current,
                     "requested_status": target,
-                    "allowed": sorted(allowed_targets),
+                    "allowed": sorted(allowed),
                 },
             )
-
-        payment.payment_status = target
-
-        if note:
-            stamped = f"[{datetime.utcnow().isoformat()}] {target}: {note}"
-            existing = payment.payment_notes or ""
-            payment.payment_notes = f"{existing}\n{stamped}".strip()
-
-        updated_payment = self.financial_repo.update_payment(payment)
-
-        if updated_payment.payment_invoice_id:
-            invoice = self.financial_repo.get_invoice_by_id(updated_payment.payment_invoice_id)
-            if invoice:
-                # Distinguish "refund of a settled payment" from "cancel of a pending payment"
-                if target == "cancelled" and previous in ("completed", "partial"):
-                    invoice.invoice_status = InvoiceStatus.REFUNDED
-                    self.financial_repo.update_invoice(invoice)
-                else:
-                    self._recompute_invoice_status(invoice)
-
-
-        return updated_payment
+        return self.apply_payment_status(payment, target, reason=note)
 
     def get_payment_by_id(self, payment_id: int) -> Optional[Payment]:
         return self.financial_repo.get_payment_by_id(payment_id)
@@ -216,21 +185,60 @@ class FinancialService:
         return self.financial_repo.get_deposits(cart_id, offset, limit) or []
 
     def get_financial_items(
+            self,
+            supplier_id: int = 0,
+            person_id: int = 0,
+            client_id: int = 0,
+            seller_id: int = 0,
+            cart_id: int = 0,
+            order_id: int = 0,
+            deposit_id: int = 0,
+            invoice_id: int = 0,
+            offset: int = 0,
+            limit: int = 10,
+        ) -> Dict[str, Any]:
+            return {
+                "payments": self.get_payments(invoice_id or None, offset, limit),
+                "deposits": self.get_deposits(cart_id or None, offset, limit),
+                "invoices": [],
+                "receipts": [],
+            }
+    def apply_payment_status(
         self,
-        supplier_id: int = 0,
-        person_id: int = 0,
-        client_id: int = 0,
-        seller_id: int = 0,
-        cart_id: int = 0,
-        order_id: int = 0,
-        deposit_id: int = 0,
-        invoice_id: int = 0,
-        offset: int = 0,
-        limit: int = 10,
-    ) -> Dict[str, Any]:
-        return {
-            "payments": self.get_payments(invoice_id or None, offset, limit),
-            "deposits": self.get_deposits(cart_id or None, offset, limit),
-            "invoices": [],
-            "receipts": [],
-        }
+        payment: Payment,
+        new_status: str,
+        *,
+        reason: Optional[str] = None,
+    ) -> Payment:
+        """
+        Persist a status the caller has already validated through
+        PaymentPolicy. Does NOT re-check transitions — the policy owns
+        that. Recomputes the invoice status.
+        """
+        previous = self._norm_status(payment.payment_status)
+        target = self._norm_status(new_status)
+
+        payment.payment_status = target
+        if reason:
+            stamped = f"[{datetime.utcnow().isoformat()}] {target}: {reason}"
+            payment.payment_notes = (
+                f"{payment.payment_notes}\n{stamped}".strip()
+                if payment.payment_notes else stamped
+            )
+
+        updated = self.financial_repo.update_payment(payment)
+
+        if updated.payment_invoice_id:
+            invoice = self.financial_repo.get_invoice_by_id(
+                updated.payment_invoice_id
+            )
+            if invoice:
+                if target == "cancelled" and previous in (
+                    "completed", "partial"
+                ):
+                    invoice.invoice_status = InvoiceStatus.REFUNDED
+                    self.financial_repo.update_invoice(invoice)
+                else:
+                    self._recompute_invoice_status(invoice)
+
+        return updated

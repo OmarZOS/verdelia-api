@@ -2,7 +2,7 @@
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import joinedload, selectinload
 from core.models.persistent_models import Location
-from core.models.models import Address, AppUser,  Person, PersonDetails, Subscription
+from core.models.models import Address, AppUser,  Person, PersonDetails, Subscription, Wallet
 import storage.storage_broker as storage_broker
 
 class UserRepository:
@@ -55,7 +55,14 @@ class UserRepository:
         
         
         return users[0] if users else None
-    
+
+
+
+    def get_wallet_id_by_user_id(self, user_id: int) -> List[AppUser]:
+        """Get user by username"""
+        return storage_broker.get(table= AppUser, conditions={AppUser.id_app_user: user_id})[0].app_user_wallet_id
+
+
     def get_by_name(self, username: str) -> List[AppUser]:
         """Get user by username"""
         return storage_broker.get(table= AppUser, conditions={AppUser.app_user_name: username})

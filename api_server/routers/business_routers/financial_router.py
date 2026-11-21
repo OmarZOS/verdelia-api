@@ -12,10 +12,16 @@ Legacy compatibility endpoints (kept for older clients):
     GET    /doc/...                 → paginated financial document fetch
 """
 
-from fastapi import APIRouter, Depends, Query, status, Path, Body
+import json
+
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect, status, Path, Body
 from typing import List, Optional, Dict, Any
 import logging
 
+from fastapi.responses import StreamingResponse
+
+from services.helpers.auth.auth_dependencies import get_current_user_id
+from services.payment_qr_service import PaymentQrService
 from core.exceptions.specific.finance_exceptions import (
     FinancialItemNotFoundException,
     PaymentCreationFailedException,
@@ -35,12 +41,20 @@ from services.cart_service import CartService
 from services.financial_service import FinancialService
 
 from core.logging_config import get_logger
+from services.payment_qr_service import payment_qr_service, PaymentQrService
 
-logger = get_logger(__name__)
+from workflows.payment_workflow import PaymentWorkflow, payment_workflow
+
 
 
 financial_router = APIRouter()
 
+def get_payment_workflow() -> PaymentWorkflow:
+    return payment_workflow
+logger = get_logger(__name__)
+
+def get_payment_qr_service() -> PaymentQrService:
+    return payment_qr_service
 
 # ==================== Dependencies ====================
 
@@ -73,17 +87,11 @@ def get_financial_service() -> FinancialService:
         **get_crud_error_responses(include_404=True, include_409=True),
     },
 )
-def create_payment(
+async def create_payment(
     payment: Payment_API = Body(...),
-    financial_service: FinancialService = Depends(get_financial_service),
+    user_id: int = Depends(get_current_user_id),
+    payment_workflow: PaymentWorkflow = Depends(get_payment_workflow),
 ):
-    """
-    Create a payment.
-
-    Note: The service creates a local Payment row. Whether it also forwards
-    to the external Finance microservice depends on
-    `FinancialService.create_payment`.
-    """
     logger.info(
         f"Creating payment - invoice:{payment.payment_invoice_id}, "
         f"amount:{payment.payment_amount}, "
@@ -92,7 +100,7 @@ def create_payment(
     )
 
     try:
-        created = financial_service.create_payment(payment)
+        created = await payment_workflow.create_payment(payment,user_id)
 
         return {
             "success": True,
@@ -111,7 +119,6 @@ def create_payment(
                 ),
             },
         }
-
     except PaymentCreationFailedException:
         raise
     except Exception as e:
@@ -207,14 +214,13 @@ def update_payment_status(
 )
 def confirm_payment(
     payment_id: int = Path(..., gt=0),
-    financial_service: FinancialService = Depends(get_financial_service),
+    payment_workflow: PaymentWorkflow = Depends(get_payment_workflow),
 ):
-    """Confirm a pending payment (PENDING → PAID)."""
     logger.info(f"Confirming payment {payment_id}")
-
     try:
-        updated = financial_service.update_payment_status(payment_id=payment_id, new_status="completed")
-
+        updated = payment_workflow.confirm(payment_id)
+        if updated is None:
+            raise PaymentNotFoundException(payment_id=payment_id)
         return {
             "success": True,
             "message": f"Payment {payment_id} confirmed",
@@ -230,7 +236,6 @@ def confirm_payment(
     except Exception as e:
         logger.error(f"Failed to confirm payment {payment_id}: {e}")
         raise PaymentCreationFailedException(error=str(e))
-
 
 @financial_router.post(
     "/payments/{payment_id}/reject",
@@ -746,3 +751,162 @@ def get_finances(
     except Exception as e:
         logger.error(f"Failed to fetch financial documents: {e}")
         raise FinancialItemNotFoundException(details={"error": str(e)})
+
+
+
+
+# ==================== Payment QR Endpoints ====================
+
+
+@financial_router.post(
+    "/payments/qr",
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a payment QR",
+    description=(
+        "Mint a QR ticket against an invoice. The caller renders the "
+        "returned `qr_text` as a QR code; the payer's wallet scans it "
+        "and settles via the wallet backend, which calls the "
+        "`/payments/qr/{ticket_id}/settle` endpoint.\n\n"
+        "Use `/payments/qr/stream/{ticket_id}` to wait for the outcome."
+    ),
+    responses={
+        201: {"description": "QR ticket created"},
+        400: {"model": ErrorResponseModel},
+        404: {"model": ErrorResponseModel},
+    },
+)
+def create_payment_qr(
+    invoice_id: int = Body(..., embed=True, gt=0),
+    amount: float = Body(..., embed=True, gt=0),
+    currency: str = Body("DZD", embed=True),
+    payee_id: str = Body("", embed=True),
+    note: Optional[str] = Body(None, embed=True),
+    qr_service: PaymentQrService = Depends(get_payment_qr_service),
+):
+    """Create a QR ticket for a payment against an invoice."""
+    logger.info(
+        "Creating payment QR - invoice:%s amount:%s currency:%s",
+        invoice_id, amount, currency,
+    )
+
+    try:
+        ticket = qr_service.create_ticket(
+            invoice_id=invoice_id,
+            amount=amount,
+            currency=currency,
+            payee_id=payee_id,
+            note=note,
+        )
+        return {
+            "success": True,
+            "message": "QR ticket created",
+            "data": {
+                "ticket_id": ticket.ticket_id,
+                "qr_text": ticket.qr_text,
+                "expires_at": ticket.expires_at.isoformat(),
+            },
+        }
+    except ValueError as e:
+        raise PaymentCreationFailedException(error=str(e))
+    except Exception as e:
+        logger.error("Failed to create payment QR: %s", e)
+        raise PaymentCreationFailedException(
+            error=str(e),
+            details={"invoice_id": invoice_id, "amount": amount},
+        )
+
+@financial_router.websocket("/payments/qr/ws/{ticket_id}")
+async def watch_payment_qr_ws(
+    websocket: WebSocket,
+    ticket_id: str,
+):
+    ticket = payment_qr_service.get_ticket(ticket_id)
+    if not ticket:
+        await websocket.close(code=4404)
+        return
+    await websocket.accept()
+    try:
+        async for event in ticket.subscribe():
+            await websocket.send_text(json.dumps(event))
+    except WebSocketDisconnect:
+        pass
+    finally:
+        await websocket.close()
+
+
+@financial_router.delete(
+    "/payments/qr/{ticket_id}",
+    summary="Cancel a payment QR ticket",
+    description=(
+        "Invalidate a ticket before it settles. Best effort — a "
+        "settled ticket is unaffected, and the TTL expires unsold "
+        "tickets anyway."
+    ),
+    responses={
+        200: {"description": "Ticket cancelled"},
+        404: {"model": ErrorResponseModel},
+    },
+)
+async def cancel_payment_qr(
+    ticket_id: str = Path(...),
+    qr_service: PaymentQrService = Depends(get_payment_qr_service),
+):
+    """Cancel a QR ticket. Idempotent when the ticket is already terminal."""
+    logger.info("Cancelling payment QR %s", ticket_id)
+    ok = await qr_service.cancel_ticket(ticket_id)
+    if not ok:
+        raise PaymentNotFoundException(payment_id=ticket_id)
+    return {
+        "success": True,
+        "message": f"QR {ticket_id} cancelled",
+        "data": {"ticket_id": ticket_id},
+    }
+
+
+@financial_router.post(
+    "/payments/qr/{ticket_id}/settle",
+    summary="Settle a QR ticket (internal)",
+    description=(
+        "Called by the wallet backend when the payer scans and pays "
+        "(or fails). Authenticate this — it's not a public endpoint."
+    ),
+    include_in_schema=False,  # hide from the public OpenAPI
+)
+async def settle_payment_qr(
+    ticket_id: str = Path(...),
+    outcome: str = Body(..., embed=True),
+    message: Optional[str] = Body(None, embed=True),
+    reference: Optional[str] = Body(None, embed=True),
+    qr_service: PaymentQrService = Depends(get_payment_qr_service),
+    payment_workflow: PaymentWorkflow = Depends(get_payment_workflow),
+):
+    try:
+        ok = await qr_service.settle_ticket(
+            ticket_id=ticket_id,
+            outcome=outcome,
+            message=message,
+            reference=reference,
+        )
+    except ValueError as e:
+        raise PaymentCreationFailedException(error=str(e))
+    if not ok:
+        raise PaymentNotFoundException(payment_id=ticket_id)
+
+    # When the QR carried an invoice + amount, materialise the payment
+    # through the workflow so it settles immediately for wallet.
+    ticket = qr_service.get_ticket(ticket_id)
+    if ticket is not None and outcome.lower() in ("paid", "completed"):
+        try:
+            await payment_workflow.settle_qr(
+                invoice_id=ticket.invoice_id,
+                amount=ticket.amount,
+                currency=ticket.currency,
+                payer_wallet_id=ticket.payer_wallet_id,       # ← required
+                payee_wallet_id=ticket.payee_wallet_id,
+                reference=reference or ticket_id,
+                notes=f"QR {ticket_id} settled",
+            )
+        except Exception:
+            logger.exception("Workflow settle for QR %s failed", ticket_id)
+
+    return {"success": True, "data": {"ticket_id": ticket_id}}

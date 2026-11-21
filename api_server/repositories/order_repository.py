@@ -1,7 +1,11 @@
 # repositories/order_repository.py
+import logging
 from typing import Optional, List, Dict, Any
 from core.models.models import PlacedOrder, OrderedItem, Product, AppUser, Person
 import storage.storage_broker as storage_broker
+
+
+logger = logging.getLogger(__name__)
 
 class OrderRepository:
     """Repository for Order-related database operations"""
@@ -13,7 +17,7 @@ class OrderRepository:
                 PlacedOrder,
                 {PlacedOrder.id_placed_order: order_id},
                 [],
-                [PlacedOrder.ordered_item]
+                [{PlacedOrder.ordered_item:[{OrderedItem.product:[]},{OrderedItem.delivery:[]}]}]
             )
         else:
             records = storage_broker.get(
@@ -38,14 +42,16 @@ class OrderRepository:
     
     def get_user_orders(self, user_id: int, offset: int = 0, limit: int = 100) -> List[PlacedOrder]:
         """Get all orders for a user"""
-        return storage_broker.get(
+        data = storage_broker.get(
             PlacedOrder,
             {PlacedOrder.ordering_user_id: user_id},
-            [OrderedItem],
-            None,
+            [],
+            [{PlacedOrder.ordered_item:[{OrderedItem.delivery:[]}]},PlacedOrder.invoice],
             offset=offset,
             limit=limit
         )
+        logger.warning(len(data))
+        return data
     
     def get_order_items(self, order_id: int) -> List[OrderedItem]:
         """Get all items for an order"""
@@ -53,7 +59,7 @@ class OrderRepository:
             OrderedItem,
             {OrderedItem.order_id: order_id},
             [],
-            [OrderedItem.product],
+            [{  OrderedItem.delivery: []},OrderedItem.product],
             None
         )
     
@@ -160,7 +166,7 @@ class OrderItemRepository:
             OrderedItem,
             {OrderedItem.order_id: order_id},
             [],
-            [OrderedItem.product]
+            [{  OrderedItem.delivery: []},OrderedItem.product]
         )
     
     def get_by_product(self, product_id: int) -> List[OrderedItem]:
@@ -169,8 +175,10 @@ class OrderItemRepository:
             OrderedItem,
             {OrderedItem.product_id: product_id},
             [],
-            [OrderedItem.order]
+            [{  OrderedItem.delivery: []},OrderedItem.order]
         )
+
+
     
     def create(self, item: OrderedItem) -> OrderedItem:
         """Create an order item"""
